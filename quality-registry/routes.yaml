@@ -1,0 +1,49 @@
+# Chains that recur, as control structure rather than prose.
+
+pre-merge:
+  pattern: linear
+  when: "a change is ready to land"
+  chain: [quality-review, quality-test, quality-gate]
+  gate: "every finding reaches its evidence floor before quality-gate is asked"
+
+close-the-gap:
+  pattern: linear
+  when: "a review named behaviour that nothing verifies"
+  chain: [quality-test]
+
+broken-again:
+  pattern: linear
+  when: "something that passed now fails"
+  chain: [quality-regression, quality-test]
+  gate: "the failure is reproduced before a guard is written"
+
+unreliable-suite:
+  pattern: linear
+  when: "the suite fails without a change"
+  chain: [quality-regression, quality-metrics]
+
+baseline:
+  pattern: report-only
+  when: "is this getting better or worse"
+  chain: [quality-metrics]
+  stops_at: "snapshots with their extraction commands, and the trend. Nothing is proposed"
+
+what-first:
+  pattern: linear
+  when: "there is more rot than time"
+  chain: [quality-metrics, quality-debt]
+  gate: "every interest score names the number it came from"
+
+ship-decision:
+  pattern: report-only
+  when: "can this go out"
+  chain: [quality-gate]
+  stops_at: "the verdict, its conditions, and the evidence each rests on"
+
+review-to-zero:
+  pattern: loop
+  when: "close every blocking finding before this lands"
+  chain: [quality-review, quality-test]
+  oracle: "no blocking finding remains, and one full pass adds none"
+  checker: other-engine          # resolved at run time to one that is not running this
+  max_cycles: 4

@@ -1,0 +1,32 @@
+# A record of misroutes.
+#
+# This does not reproduce how a model chooses. It is a proxy for finding
+# missing and duplicated signals, and "fixtures pass" does not mean "nothing
+# will be misrouted".
+
+- ask: "grade these findings and say what evidence each one has"
+  expect: quality-review
+- ask: "is this pull request correct and robust"
+  expect: quality-review
+- ask: "this behaviour has no oracle, write the test"
+  expect: quality-test
+- ask: "enumerate the boundary and edge cases for this input"
+  expect: quality-test
+- ask: "close the coverage gap the review found"
+  expect: quality-test
+- ask: "this test now fails and it used to pass, bisect it"
+  expect: quality-regression
+- ask: "the suite is flaky, quarantine and repair"
+  expect: quality-regression
+- ask: "what is our coverage and mutation score trend"
+  expect: quality-metrics
+- ask: "capture a baseline for defect density and complexity"
+  expect: quality-metrics
+- ask: "inventory the technical debt and tell me what to fix first"
+  expect: quality-debt
+- ask: "score the repayment order by interest"
+  expect: quality-debt
+- ask: "can we release, and what is blocking"
+  expect: quality-gate
+- ask: "design the gate criteria and the definition of done"
+  expect: quality-gate

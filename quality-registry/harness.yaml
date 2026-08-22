@@ -1,0 +1,175 @@
+# Budgets and vocabulary. The validator reads thresholds from here and nowhere
+# else: a number copied into prose becomes a second definition that drifts.
+#
+# Raising a limit is the last resort. Try merging, deleting, compressing, and
+# relocating first (VALUES.md).
+
+# One declaration. Every namespaced name derives from it, and a rule checks
+# that they still agree.
+set: quality
+prefix: quality-            # <set>-
+shared_dir: _quality        # _<set>
+
+# Every directory this set owns carries the set name — `<set>-*` or `_<set>` —
+# so that copying any of them into a shared skills directory cannot collide.
+# This set is why the rule exists: its install line was `cp -R quality-* _common
+# <skills dir>`, and `_common` in that directory belongs to an unrelated set, so
+# running it wrote into someone else's repository.
+# `skills/` holds everything the CLI reads. The set's own directories still
+# carry the set name.
+skills_dir: skills
+platform_dirs: [.git, .github, .claude, skills, docs]   # named by the platform, not by this set
+
+limits:
+  skill_md_lines: 128         # measured at adoption: 238-286, all over. Raised from 120
+                              # when the outcome block was delivered into every skill: a
+                              # finding is adjudicated by whoever emits it or consumes it,
+                              # and neither opens the shared directory to be told so
+  description_chars: 200      # the listing truncates past this
+  playbook_lines: 300
+  playbooks_per_skill: 8
+  shared_file_lines: 160     # HANDOFF is a catalogue of seven payload schemas;
+                             # compression removed a table it duplicated, not the schemas
+  shared_lines_total: 860     # measured: 759 before OUTCOMES.md, 833 after. Eight
+                              # contracts: this set carries a payload-schema
+                              # catalogue and a severity vocabulary the others do not
+  skills_max: 8               # 6 in use, 2 spare for demand found in use
+  routes_max: 12
+  route_stages_max: 6
+  repo_md_lines_total: 4200     # measured: 3721. reference/ carries no line budget of
+                                # its own but is counted here, so this total is the only
+                                # ceiling standing over it. Set at roughly five reference
+                                # pages above the measurement rather than at twice it:
+                                # a limit of 7600 against a corpus of 3721 was never going
+                                # to fire, and a budget that cannot fire is not a budget.
+                                # Raising it is the last resort (VALUES.md §3).
+
+
+listing:
+  packs_needed_above: 20
+
+# No class here is read-only, and the set should not claim otherwise: every skill
+# appends to a log it owns under `.agents/quality/` (_quality/OPERATIONAL.md §3),
+# so `doc-write` is the floor rather than a step down from one.
+#
+# What separates it from `full` is the absence of Edit, and that is a mechanism:
+# V15 fails if a skill's allowed-tools and its class disagree. "Never source" is
+# not a mechanism — Write creates a file anywhere. So each skill names the paths
+# it may write in its own Never list, where it is loaded on every launch;
+# OPERATIONAL.md §1 says the same thing and is read on a minority of them.
+#
+# Why the boundary is worth its ink: a reviewer that also writes the fix has
+# nothing left to review (_quality/CONTRACT.md § Independence).
+permission_classes:
+  doc-write:
+    tools: "Read, Grep, Glob, Bash, Write"     # findings, ledgers, plans. Never source
+    writes: true
+  full:
+    tools: "Read, Grep, Glob, Bash, Write, Edit"
+    writes: true
+
+forbidden_description_terms:
+  - "Not for"
+  - "not for"
+  - "instead of"
+  - "rather than"
+
+# All three CLIs read the same SKILL.md, so any of them may be the one running
+# — the producing engine is a property of the run, not of this file. An earlier
+# version pinned `produced_by: claude` here, which quietly approved `checker:
+# codex` on a run that was itself codex.
+#
+# Detection was tried and does not work: codex launched from inside Claude Code
+# inherits `CLAUDECODE` and `CLAUDE_CODE_*`, so a nested run reads as its parent.
+# The caller states which engine is running; when it does not, the runner stops.
+engines:
+  runs_on: [claude, codex, agy]     # two or more, or no run can check itself out
+
+# What a refuting engine attacks in this domain, and what counts as having broken
+# the claim. The tool is the same in every set (`quality-tools/refute.py`); the lens is
+# not, and a refuter with no domain framing is a second opinion rather than an
+# adversary.
+refutation:
+  lens: |
+    A claimed defect or a ship verdict. Attack the rung before the content: a finding
+    graded at execution must name what was run and what it printed. Then check whether
+    a reproduction actually reproduces, and whether several findings are one root cause
+    counted more than once — an inflated count is a real defect in the report.
+  refuted_when: >-
+    the evidence does not reach the rung it claims, the reproduction does not
+    reproduce, or the finding is one root cause counted several times
+
+vocabulary:
+  patterns: [linear, loop, report-only]
+  checkers: [other-engine]
+  evidence_levels: [E0, E1, E2, E3, E4, E5, E6]
+  residual_classes: [BLOCKED, OUT-OF-SCOPE, DEFERRED, HYPOTHESIS]
+  statuses: [DONE, PARTIAL, BLOCKED]
+  tiers: [T0, T1, T2]
+  finding_outcomes: [real, refuted, accepted, moot, open]
+
+
+document_labels: [contract, guidance, deferred]
+# Patterns match the path from the repository root, so they carry `skills/`.
+label_by_path:
+  "skills/_quality/ROUTING.md": guidance
+  "skills/_quality/*.md": contract
+  "skills/*/SKILL.md": contract
+  "skills/*/playbooks/*.md": guidance
+  "skills/*/reference/*.md": deferred
+
+# Content that goes stale belongs in reference/, which carries no line budget
+# and is checked for freshness instead.
+rot_patterns:
+  - '\b(19|20)\d{2}-\d{2}\b'
+  - '\bv\d+\.\d+(\.\d+)?\b'
+
+reference_headers: ["Purpose:", "Read when:", "Verified:"]
+# A `Verified:` date records that someone looked once, and a date has no failure
+# mode. V31 requires the line to name what re-checks it — or to say plainly that
+# nothing does. An unchecked page is fine; an unchecked page that reads like a
+# checked one is not.
+verified_markers:
+  - "no automated check"      # the honest admission, and the common case
+  - "by running"
+  - "produced by running"
+  - "confirmed by running"
+  - "performing the operation"
+  - "quoted from"
+  - "recomputed"
+  - "re-run by"
+  - "re-runs"
+  - "re-derives"
+  - "re-checked"
+  - "re-verified"
+  - "make figures"
+  - "holds every"
+  - "holds the two"
+  - "holds them to"
+
+
+# Paths that belong to the host project, not to this set. A skill writes to
+# these and must be able to name them without the path checker treating them as
+# a broken reference into its own tree.
+external_paths: [".agents/", "CLAUDE.md", "AGENTS.md", "GEMINI.md", "settings.json"]
+
+# The one mechanism this set has that its siblings do not. The rule that checks
+# it is identical in all six sets; this block is the whole difference, which is
+# what keeps six copies of the validator from becoming six dialects.
+#
+# `required_of` names the skills that emit findings or decide on them.
+# Measurement and debt read the record; they do not produce entries in it.
+# `own_word` is the substring each must carry outside the delivered block — the
+# rule is stated for all, and owned in each skill's own words.
+signature:
+  name: outcomes
+  contract: OUTCOMES.md
+  vocabulary: finding_outcomes
+  required_of: [quality-review, quality-gate, quality-regression]
+  own_word: adjudicat
+
+delivered:
+  sizing:  { section: "Before starting" }
+  outcome: { section: "Verify with" }
+  values:  { section: "Decide first" }
+  report:  { section: "Verify with" }

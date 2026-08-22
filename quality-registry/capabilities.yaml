@@ -1,0 +1,71 @@
+# What each skill owns, what it does not, and the words that select it.
+#
+# `not:` is the only place a boundary is written. Putting boundaries in
+# descriptions means every skill added rewrites its neighbours, and the
+# marginal cost of an addition stops being O(1).
+#
+# `signals` are the words a request actually uses. Each must appear literally
+# in that skill's description: the listing carries name and description only,
+# so a signal that lives here and nowhere else never reaches the engine.
+
+quality-review:
+  class: doc-write            # findings and directives. Never the fix itself
+  does: [diff-review, correctness, robustness, clarity, absence-checks, finding-grading]
+  not:
+    - what: "writing the test that closes a gap the review found"
+      go: quality-test
+    - what: "rot that predates this change"
+      go: quality-debt
+    - what: "whether the findings are enough to stop a release"
+      go: quality-gate
+  signals: [correct, robust, clear, findings, evidence, unchecked]
+
+quality-test:
+  class: full                 # tests and test infrastructure only
+  does: [oracle-derivation, level-selection, boundary-design, gap-closure, suite-audit]
+  not:
+    - what: "diagnosing a test that used to pass"
+      go: quality-regression
+    - what: "code that cannot be tested without restructuring"
+      go: quality-debt
+  signals: [oracle, test level, boundary, edge cases, coverage gap, fail]
+
+quality-regression:
+  class: full
+  does: [bisection, flaky-classification, flaky-repair, quarantine, reproduction]
+  not:
+    - what: "coverage for behaviour that never had a test"
+      go: quality-test
+    - what: "the trend in how often this happens"
+      go: quality-metrics
+  signals: [regression, bisection, flaky, quarantine, reproduction, now fails]
+
+quality-metrics:
+  class: doc-write            # snapshots and reports. Measures, proposes nothing
+  does: [coverage, mutation-score, defect-density, complexity, dora, snapshots, trends]
+  not:
+    - what: "deciding what to do about a number"
+      go: quality-debt
+    - what: "deciding whether a number permits a release"
+      go: quality-gate
+  signals: [mutation score, defect density, complexity, DORA, baseline, trend]
+
+quality-debt:
+  class: doc-write            # a ledger and a plan. Never the repayment itself
+  does: [inventory, interest-scoring, blast-radius, repayment-order, deferral-rationale]
+  not:
+    - what: "producing the numbers the score rests on"
+      go: quality-metrics
+    - what: "a defect introduced by the change under review"
+      go: quality-review
+  signals: [technical debt, interest, repayment, what to fix first]
+
+quality-gate:
+  class: full                 # CI and gate configuration only
+  does: [ship-decision, criteria-design, blocking-rules, overrides, definition-of-done]
+  not:
+    - what: "producing the evidence the decision consumes"
+      go: quality-metrics
+    - what: "grading an individual finding"
+      go: quality-review
+  signals: [ship decision, gate criteria, blocking, release, override]
