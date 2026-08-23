@@ -48,6 +48,7 @@ Phases: `INTENT → SCOPE → AXES → ABSENCE → GRADE → EMIT`.
 | Going deep on one axis | [review-axes](reference/review-axes.md) |
 | The change was machine-generated | [ai-code-review](reference/ai-code-review.md) — fluency is the one thing generation guarantees |
 | About to emit a finding | [traps](playbooks/traps.md) |
+| A finding spans places, an order, a disagreement, or a region | [visualise](playbooks/visualise.md) — a reader who has to reassemble it will skim it. ASCII by default, and the drawing carries the finding's rung, never a better one |
 | A finding cannot reach its floor | Emit it as `HYPOTHESIS` with the one command that would settle it, below the fold. Do not downgrade it and ship it as a finding |
 | Three tools flagged the same root cause | One finding with three sources. Agreement raises confidence, never count |
 | The rot predates this change | Not this skill's. It is a debt entry, and saying so is part of the review |

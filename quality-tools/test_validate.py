@@ -290,6 +290,28 @@ def _(r): sub(r / f"{S}quality-regression/SKILL.md", "adjudicated the same way",
               "settled the same way")
 
 
+@case("V36")
+def _(r): (r / f"{S}quality-review/playbooks/visualise.md").unlink()
+
+
+@case("V36-undefined")
+def _(r):
+    """A trigger the registry declares and the pages never define."""
+    for g in (r / f"{S}quality-review/playbooks/visualise.md",
+              r / f"{S}quality-review/reference/diagram-forms.md"):
+        g.write_text(g.read_text(encoding="utf-8").replace("`ordering`", "sequencing"),
+                     encoding="utf-8")
+
+
+@case("V36-unreachable")
+def _(r): sub(r / f"{S}quality-review/SKILL.md",
+              "[visualise](playbooks/visualise.md)", "the visualise guidance")
+
+
+@case("V36-none-declared")
+def _(r): sub(r / "quality-registry/harness.yaml", "finding_visuals:", "unused_visuals:")
+
+
 def main() -> int:
     baseline = run(ROOT)
     if "green" not in baseline:
