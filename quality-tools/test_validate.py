@@ -270,6 +270,21 @@ def _(r):
             return
 
 
+@case("V34-undeclared")
+def _(r):
+    """A tool link nothing declares is a capability nobody decided to grant."""
+    (r / "skills/quality-test/render.py").symlink_to("../../quality-tools/render.py")
+
+
+@case("V34-missing-tool")
+def _(r): sub(r / "quality-registry/harness.yaml",
+              "  refute.py: all", "  refute.py: all\n  nosuch.py: all")
+
+
+@case("V34-none-declared")
+def _(r): sub(r / "quality-registry/harness.yaml", "linked_tools:", "unlinked_tools:")
+
+
 @case("V35")
 def _(r): sub(r / f"{S}quality-regression/SKILL.md", "adjudicated the same way",
               "settled the same way")
