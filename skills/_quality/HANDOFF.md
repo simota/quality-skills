@@ -4,7 +4,9 @@
 > **Tier:** `spine`. Precedence: `_quality/VALUES.md` § Rule precedence.
 
 How work crosses a skill edge without losing its warrant. Every payload below is plain Markdown or
-JSONL committed under `.agents/quality/` — never chat-only state.
+JSONL committed under `.agents/quality/` — never chat-only state. **A payload is the record, not
+the report**: what a person reads is a bounded view over it (`_quality/REPORT.md`), never a payload
+rendered field by field.
 
 ## 0. Where each payload lives
 

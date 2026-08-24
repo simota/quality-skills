@@ -124,3 +124,17 @@ Reasoning alone is `E0` and never ships as a finding.
 Every finding carries a claim, its rung and source, a concrete failure, and what
 would refute it; severity and blocking are separate; what was not reviewed is
 named; and everything found outside this change left as a directive, not an edit.
+<!-- deliver:surface -->
+- **Say only what the moment needs.** Start: one line naming what will be checked and what is
+  excluded. Mid-run: silence, unless the reader must act now — a finding that changes the verdict,
+  a blocked path, work that would grow the scope. Progress is not information, and a tool call is
+  already visible. Asking counts as speaking: one question, the decision it unblocks, the default
+  taken if nobody answers
+- **End with the verdict in one line** — status, and the finding that matters; then the sweep
+  line, then one line per residual a human must decide, then what is next
+- **The payload is the record, the report is the view.** Every finding, rung and outcome lives
+  there; ten findings with two that matter are reported as the two and the count of the rest
+- **Ceiling: `T0` one line · `T1` six · `T2` ten**, plus the findings file itself — named, never
+  reproduced. Over it means cutting content, not reformatting it: no restatement of the request,
+  no closing summary, no narration of what was read (`_quality/REPORT.md`)
+<!-- /deliver:surface -->

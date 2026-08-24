@@ -116,6 +116,7 @@ follows the link and finds the file, which is what makes this fail quietly.
 | [`skills/_quality/VALUES.md`](skills/_quality/VALUES.md) | The order when two goods conflict, rule precedence, and the escape hatch |
 | [`skills/_quality/OPERATIONAL.md`](skills/_quality/OPERATIONAL.md) | Read-only defaults, the journal, state files, language, AUTORUN |
 | [`skills/_quality/ROUTING.md`](skills/_quality/ROUTING.md) | Guidance. Which skill owns the call when two could take it |
+| [`skills/_quality/REPORT.md`](skills/_quality/REPORT.md) | What a person reads: the order, the ceiling per tier, and why the payload is the record |
 
 ## Layout
 
