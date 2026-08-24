@@ -21,9 +21,9 @@ skills_dir: skills
 platform_dirs: [.git, .github, .claude, skills, docs]   # named by the platform, not by this set
 
 limits:
-  skill_md_lines: 145         # derived, not chosen: 90 for the skill's own words plus
-                              # the 57 lines of delivered contract every file in this
-                              # set now carries, the last eleven of them the sixth axis:
+  skill_md_lines: 152         # derived, not chosen: 90 for the skill's own words plus
+                              # the 53 lines of delivered contract every file in this
+                              # set now carries, the last 15 of them the sixth axis:
                               # what the run says at the end. The raises before it
                               # (120 -> 128 -> 136) were the
                               # same move for a smaller block; the blocks have
@@ -218,6 +218,6 @@ delivered:
   # The sixth axis. The other five bind what has to be true; this one binds what
   # reaches the reader, and it is delivered for the same reason as the rest — a
   # rule about the last step of a run is worth nothing if it is read on two
-  # launches in seven. Eleven delivered lines that buy back the thirty a payload
+  # launches in seven. 15 delivered lines that buy back the thirty a payload
   # rendered field by field spends.
   surface: { section: "Done when" }

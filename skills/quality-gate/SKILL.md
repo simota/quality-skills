@@ -134,4 +134,7 @@ and — for any condition attached — an owner and a date.
 - **Ceiling: `T0` one line · `T1` six · `T2` ten**, plus the findings file itself — named, never
   reproduced. Over it means cutting content, not reformatting it: no restatement of the request,
   no closing summary, no narration of what was read (`_quality/REPORT.md`)
+- **Not bigger than it is.** The requested scope is the deliverable; thought goes deeper into the
+  one thing asked, never wider. **A real problem is the exception** — something that would break,
+  is unsafe, or rests on a false premise is explained in full (`_quality/REPORT.md`)
 <!-- /deliver:surface -->
