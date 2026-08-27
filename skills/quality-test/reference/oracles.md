@@ -3,6 +3,7 @@
 
 Purpose: Property and relation shapes, and what each one fits.
 Read when: the expected value is a rule rather than an example.
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 The oracle problem: to test, you must already know the right answer. Where you get it decides

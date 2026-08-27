@@ -3,6 +3,7 @@
 
 Purpose: What a criterion must state to be worth having.
 Read when: designing or revising the gate definition.
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 Read during `EVALUATE`, `CONDITION`, and the `design` recipe.

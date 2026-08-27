@@ -3,6 +3,7 @@
 
 Purpose: Repairing each cause class at the cause, not at the symptom.
 Read when: the class is known and the repair has to hold.
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 Read during `CAUSE` and `REPAIR`. Each class has one correct repair and one tempting wrong one.

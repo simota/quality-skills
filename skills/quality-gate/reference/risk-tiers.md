@@ -3,6 +3,7 @@
 
 Purpose: How deep the gate goes, by what the change can cost.
 Read when: sizing a gate to a change.
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 Read during `TIER`. Tier is determined by the **surface the change touches** and by

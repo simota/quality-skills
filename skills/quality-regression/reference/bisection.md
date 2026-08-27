@@ -3,6 +3,7 @@
 
 Purpose: Narrowing to the change that did it, including when the range is not clean.
 Read when: finding the culprit commit.
+Source: git, pytest, jest, cargo, go test — the bisect mechanics and the exit codes are theirs.
 Verified: 2026-08-21 — the exit table and the false-good table are re-run and recomputed by `make figures`.
 
 Read during `LOCATE`. Bisection is fast and reliable when the predicate is scripted, and

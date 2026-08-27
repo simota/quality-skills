@@ -3,6 +3,7 @@
 
 Purpose: The commands that produce each metric, and their scoping flags.
 Read when: producing a number rather than quoting one.
+Source: git, gh, pytest, jest, vitest, cargo, go test — every command below is one of theirs, run against whatever is installed.
 Verified: 2026-08-21 — the pickaxe and `--shortstat` claims are re-run by `make figures`; the per-ecosystem tables are not checked.
 
 Read during `MEASURE`. Every snapshot records the command **as run**, including flags and scope,

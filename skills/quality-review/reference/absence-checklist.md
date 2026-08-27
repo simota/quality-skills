@@ -3,6 +3,7 @@
 
 Purpose: The guards whose absence is the defect, per changed behaviour.
 Read when: asking what is missing rather than what is wrong.
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 Read during `PROBE-ABSENCE`. This phase exists because reading a diff shows what was written;

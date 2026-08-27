@@ -3,6 +3,7 @@
 
 Purpose: What a given number of snapshots licenses you to claim.
 Read when: comparing snapshots, or being asked whether something is improving.
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 Read during `COMPARE` and `REPORT`. Most metric misuse happens here, not at measurement time.

@@ -3,6 +3,7 @@
 
 Purpose: The inputs that make up an interest score, and where each number comes from.
 Read when: scoring an entry, or explaining why one outranks another.
+Source: git — the touch-frequency counts come from its own commands.
 Verified: 2026-08-21 — `make figures` re-derives this page against `_quality/SEVERITY.md` §4 on
 every run: the formula byte-identical in both files, every band scale the same set on both sides,
 and both worked examples recomputed to the precision they claim. The three command warnings below

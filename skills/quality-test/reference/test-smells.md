@@ -3,6 +3,7 @@
 
 Purpose: The shapes a test takes when it proves nothing.
 Read when: auditing a suite, or before committing a new test.
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 Read for the `audit` recipe. A suite can be large, green, fast, and prove nothing. These are the

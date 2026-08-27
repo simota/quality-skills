@@ -3,6 +3,7 @@
 
 Purpose: Partitions, boundaries, and error paths, applied per input.
 Read when: enumerating the cases a behaviour needs.
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 Read during `CASES`. The goal is not many cases; it is the **fewest cases that would catch the

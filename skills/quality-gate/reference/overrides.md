@@ -3,6 +3,7 @@
 
 Purpose: How a gate is passed deliberately, and what that must leave behind.
 Read when: someone needs past a gate.
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 Read for the `override` recipe. Overrides are legitimate and necessary. What is never legitimate

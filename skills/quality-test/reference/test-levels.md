@@ -3,6 +3,7 @@
 
 Purpose: What each level can falsify, and what it costs.
 Read when: deciding where a case belongs.
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 Pick the level by **what must be falsifiable**, then pay the cost knowingly. Convention ("we write

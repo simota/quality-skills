@@ -3,6 +3,7 @@
 
 Purpose: The failure modes specific to generated code.
 Read when: the change was machine-generated.
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 Read for the `ai` recipe. Generated code fails differently from hand-written code, and the

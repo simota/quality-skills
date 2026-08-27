@@ -3,6 +3,7 @@
 
 Purpose: Sequencing repayment, and what has to exist before restructuring starts.
 Read when: turning a ranked ledger into an order of work.
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 Read during `SEQUENCE` and `JUSTIFY-REST`. The order of repayment matters more than the total

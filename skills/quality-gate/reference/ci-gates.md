@@ -3,6 +3,7 @@
 
 Purpose: Encoding a criterion as something CI can decide, and auditing the set.
 Read when: a criterion has to run automatically, or the existing set needs pruning.
+Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
 Read for the `ci` recipe. A gate in a document is advice; a gate in the pipeline is a gate. But a
