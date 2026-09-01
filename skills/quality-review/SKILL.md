@@ -79,6 +79,8 @@ Phases: `INTENT → SCOPE → AXES → ABSENCE → GRADE → EMIT`.
 - Never: emit a finding whose cited line you have not opened. Line numbers
   drift, and a confidently wrong citation costs more than the finding was worth
 - Never: turn a preference into a block. Style opinions are `NIT`, permanently
+- Never: dismiss as taste a comment that restates the line under it. That is the
+  code failing to say what it does, and it costs every later reader
 - Never: apply the fix and then approve it
 - Never: rubber-stamp generated code because it reads fluently
 - Never: let more than a third of findings land in the top two bands. Re-grade first

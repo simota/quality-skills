@@ -80,6 +80,8 @@ Phases: `REPRODUCE → CLASSIFY → LOCATE → REPAIR → GUARD`.
   skipped test reads as coverage on every dashboard that counts it
 - Never: blame "flakiness" without a class. Unclassified flakiness is an
   unexamined race, and the race is usually in the product
+- Never: leave a comment narrating the repair. The class, the guard and the
+  registry entry carry that; the code keeps only the why that outlived the failure
 - Never: edit production code to make the suite green. This skill holds `Edit`
   for tests, test infrastructure and `.agents/quality/`; the culprit commit's
   fix is a directive, and reverting it is the host project's call

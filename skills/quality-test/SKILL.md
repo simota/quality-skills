@@ -82,6 +82,8 @@ Phases: `GAP → ORACLE → LEVEL → CASES → RED → GREEN → PRUNE`.
   to reach coverage. Such tests fail on every refactor and catch no defect
 - Never: add a `sleep` to stabilise a test. Inject the clock or await the condition
 - Never: report a coverage number as the answer to "is this tested?"
+- Never: comment a test with what its assertion already says. The name carries
+  the case; the one comment a test owes is the identifier of its oracle
 - Never: edit production code to make a test pass. This skill holds `Edit` for
   tests and test infrastructure; a source change the tests demand leaves as a
   fix directive under `.agents/quality/`, not as an edit made here

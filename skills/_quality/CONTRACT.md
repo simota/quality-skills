@@ -139,3 +139,20 @@ Before reporting, run both halves and state both results:
 
 Report it in one line: `swept, 1 marker / 1 in open; 9 claims / 9 at floor`.
 **While either pair fails to match, the status is not `DONE`.**
+
+## 10. Comments — the code says what, a comment says why
+
+A comment restating the line under it is a defect in the code, not a sentence
+missing from it. **The test is mechanical: cover the comment and read the
+code.** Nothing lost — delete it. Something lost — put it in the code, renaming
+or extracting until the comment has become the name, then delete it anyway.
+
+What survives is what code cannot carry: why this way and not the obvious way,
+the constraint from outside, and in this pack above all **the oracle's
+identifier** — the spec clause, ticket or recorded run an expected value came
+from. **Deleting those is the opposite failure and costs more**: a `what` is
+re-read off the code, where an unattributed expected value is a claim at no rung
+at all. A `#TODO(agent):` marker and a licence header are never trimmed by this.
+
+**Nothing checks this automatically**, §9 included: it is a reading pass over
+the files this run wrote. Comments elsewhere are not this run's to strip.
