@@ -34,7 +34,7 @@ run, the environment is unavailable, a human check has no owner. It is never the
 
 **Floors** (`suite pass rate ≥ floor`, `mutation score ≥ floor`) are read from the `floors:` block
 of `.agents/quality/gate.yml`. A criterion whose floor is unrecorded is unevaluable: author it via
-the `design` recipe rather than inventing a number.
+`reference/criteria.md` rather than inventing a number.
 
 ## The three verdicts
 
@@ -52,16 +52,16 @@ is a defect", and saying so precisely is what keeps the gate trusted.
 
 | Tier | Surface |
 |------|---------|
-| `T0` | docs, comments, non-shipped config |
-| `T1` | internal refactor with existing coverage |
-| `T2` | feature, business logic, UI |
-| `T3` | auth, money, data mutation, migration, public API |
-| `T4` | irreversible: data deletion, one-way migration, external commitment |
+| `R0` | docs, comments, non-shipped config |
+| `R1` | internal refactor with existing coverage |
+| `R2` | feature, business logic, UI |
+| `R3` | auth, money, data mutation, migration, public API |
+| `R4` | irreversible: data deletion, one-way migration, external commitment |
 
 **Required inputs per tier are defined once, in `reference/risk-tiers.md`** — read that table at
-`TIER`, not this one. Duplicating it here is how the two drift apart and a `T1` change with a
+`SCOPE`, not this one. Duplicating it here is how the two drift apart and an `R1` change with a
 `BLOCK` finding resolves differently depending on which file was opened last.
 
 Tier comes from the **surface**, never from urgency or from how the change was described. An
-urgent `T3` change is a `T3` change with less time, which is an argument for a smaller change, not
+urgent `R3` change is an `R3` change with less time, which is an argument for a smaller change, not
 a smaller gate.

@@ -6,7 +6,7 @@ Read when: going deep on correctness, robustness, or clarity.
 Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
-Read during `SWEEP`. Ordered by yield, not by category tidiness.
+Read during `AXES`. Ordered by yield, not by category tidiness.
 
 ---
 

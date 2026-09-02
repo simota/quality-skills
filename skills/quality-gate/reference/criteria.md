@@ -6,7 +6,7 @@ Read when: designing or revising the gate definition.
 Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
-Read during `EVALUATE`, `CONDITION`, and the `design` recipe.
+Read during `EVALUATE` and `DECIDE`, and whenever the gate definition is being designed or revised.
 
 ---
 
@@ -28,7 +28,7 @@ short enough to be respected.
 | Suite green with zero skips added | test runner + skip count | skip count is the counterweight to a green run |
 | Suite pass rate ≥ `floors.suite_pass_rate` over the last N runs | `quality-metrics` | measures reliability, not one lucky run |
 | Mutation score on the touched module ≥ `floors.mutation_score[<module>]` | `quality-metrics` | cannot be raised by assertion-free tests |
-| Rollback verified for `T3`+ | a documented, exercised undo | requires an artifact, not a statement |
+| Rollback verified for `R3`+ | a documented, exercised undo | requires an artifact, not a statement |
 | Migration is reversible or has a stated forward-fix | migration review | forces the question before the deploy |
 | No new `CRITICAL` dependency advisory | audit tool | mechanical |
 

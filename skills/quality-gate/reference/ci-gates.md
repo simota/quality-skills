@@ -6,7 +6,7 @@ Read when: a criterion has to run automatically, or the existing set needs pruni
 Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
-Read for the `ci` recipe. A gate in a document is advice; a gate in the pipeline is a gate. But a
+Read when a criterion is being encoded in CI. A gate in a document is advice; a gate in the pipeline is a gate. But a
 pipeline full of checks nobody can act on is how bypass becomes routine.
 
 ---
@@ -22,7 +22,7 @@ Before a check is added, write its row:
 | Red means | the suite cannot detect injected defects in billing |
 | Developer does | add a test with a named oracle for the surviving mutant listed in the report |
 | Runtime | ~4 min |
-| Blocking? | yes, `T3`+ only |
+| Blocking? | yes, `R3`+ only |
 | Removal condition | when billing is retired or the score holds above 0.8 for two quarters |
 
 **"Developer does"** is the field that decides whether the check helps. A red with no obvious next
@@ -52,7 +52,7 @@ changes, or merge on green-so-far. Structure for feedback speed:
 stage 1  (< 2 min, blocking)   lint --quiet, type check, unit tests, changed-file checks
 stage 2  (< 10 min, blocking)  integration tests, build, security advisories
 stage 3  (nightly, reporting)  mutation, full e2e, load, dependency drift
-stage 4  (on T3+ only)         preview deploy, migration dry run, rollback exercise
+stage 4  (on R3+ only)         preview deploy, migration dry run, rollback exercise
 ```
 
 Anything expensive belongs in stage 3 with a **trend alert**, not in the blocking path — except
@@ -95,7 +95,7 @@ floors:
     src/billing: 0.60            # per-module; unlisted modules have no mutation floor
 
 tiers:
-  T2:
+  R2:
     criteria:
       - id: no-block-findings
         command: "<quality-review invocation>"
@@ -109,8 +109,8 @@ tiers:
         red_means: "changed behaviour has no test with a named oracle"
         next_step: "quality-test gap closure"
         remove_when: "never"
-  T3:
-    inherits: T2
+  R3:
+    inherits: R2
     criteria:
       - id: rollback-verified
         command: "manual — link the exercised rollback"
@@ -122,7 +122,7 @@ tiers:
 
 Every tier is a mapping with a `criteria:` list. Mixing a mapping key (`inherits:`) with bare
 sequence items at the same level is not valid YAML — verify with a parser before committing, and
-make that check part of the `ci` recipe.
+make that parse part of encoding it.
 
 Keeping the criteria in a vendor-neutral file is what lets the pipeline be rewritten without
 quietly losing a criterion in the translation.

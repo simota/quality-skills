@@ -6,7 +6,7 @@ Read when: auditing a suite, or before committing a new test.
 Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
-Read for the `audit` recipe. A suite can be large, green, fast, and prove nothing. These are the
+Read when auditing a suite. A suite can be large, green, fast, and prove nothing. These are the
 patterns that produce that state, ordered by how common they are.
 
 ---
@@ -58,5 +58,5 @@ protection.
 ## On deleting tests
 
 Every proposed deletion carries the defect class it fails to catch, and goes to the owner rather
-than straight into a commit (`quality-test/SKILL.md` § Ask First). A suite that shrinks is usually healthier
+than straight into a commit (`quality-test/SKILL.md` § Always / Never). A suite that shrinks is usually healthier
 — but "usually" is not a mandate, and a deleted test is invisible in every future review.

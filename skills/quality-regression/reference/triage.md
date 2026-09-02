@@ -6,7 +6,7 @@ Read when: several things are failing and not all of them can be chased.
 Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
-Read for `triage` and `repro`. The goal of triage is **not** to fix anything. It is to know what
+Read during `REPRODUCE` and `CLASSIFY`. The goal of triage is **not** to fix anything. It is to know what
 you have, so that fixing effort goes where it pays.
 
 ---

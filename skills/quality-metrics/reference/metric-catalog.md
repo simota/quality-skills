@@ -6,7 +6,7 @@ Read when: choosing a metric, or being asked what one means.
 Source: DORA — the delivery metrics are theirs; the rest of the catalogue is this set's own.
 Verified: 2026-08-21 — no automated check.
 
-Read during `QUESTION` and `SELECT`. Organised by the decision each metric can change. A metric
+Read during `SCOPE`. Organised by the decision each metric can change. A metric
 that changes no decision is not measured, however easy it is to collect.
 
 ---

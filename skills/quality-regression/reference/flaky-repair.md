@@ -6,7 +6,7 @@ Read when: the class is known and the repair has to hold.
 Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
-Read during `CAUSE` and `REPAIR`. Each class has one correct repair and one tempting wrong one.
+Read during `REPAIR`. Each class has one correct repair and one tempting wrong one.
 The wrong one is listed first, by name, because it is what gets reached for under time pressure.
 
 ---

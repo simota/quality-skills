@@ -6,7 +6,7 @@ Read when: naming what a ledger entry actually is.
 Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
-Read during `LOCATE` and `COST`. Different debt types have different interest drivers, and
+Read during `MEASURE` and `SCORE`. Different debt types have different interest drivers, and
 misclassifying one produces a ranking that is confidently wrong.
 
 ---

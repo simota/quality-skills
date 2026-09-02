@@ -29,13 +29,11 @@ noise at the next.**
 |---|---|---|
 | **Start** | What will be done and what is excluded, with the tier if it is not obvious | one line |
 | **A question** | The one decision that is blocked, and the default taken if nobody answers | one question, one line |
-| **Mid-run** | Nothing — unless the reader must act now: a divergence from what was agreed, a path found blocked, work that would grow the scope, a finding that changes the verdict the reader is waiting for | one line each, or silence |
-| **End** | The report below | the ceiling below |
+| **Mid-run** | A line whenever the reader must act now: a divergence from what was agreed, a path found blocked, work that would grow the scope, a finding that changes the verdict the reader is waiting for | one line each |
+| **End** | The report below | the bound below |
 
-**Progress is not information.** "running the suite", "now reading the diff", "nothing so far"
-tell the reader nothing they can act on, and they cost the same attention as the line that
-matters. A tool call is already visible; narrating it a second time is the commonest way a run
-fills a screen while saying nothing.
+**Say what the reader can act on.** A tool call is already visible; the mid-run line that earns
+its place is the one that tells the reader something changed since the start line.
 
 **A question is not a status update.** Ask when guessing wrong would be expensive to undo, ask one
 thing, and say what happens if the answer never comes.
@@ -53,21 +51,17 @@ thing, and say what happens if the answer never comes.
 
 A run with nothing unresolved reports lines 1 and 2 and stops.
 
-## Ceiling
+## Bound
 
-| Tier (`_quality/SIZING.md`) | The whole report |
-|---|---|
-| `T0` | one line |
-| `T1` | six lines |
-| `T2` | ten lines, plus the findings file itself |
-
-**Over the ceiling means cutting content, not reformatting it.** A table, a nested list, and a
-heading per finding are the three ways a report grows while appearing to have been tightened.
+The report is the four parts above and nothing else. A `T0` answer (`_quality/SIZING.md`) is the
+verdict line alone; a `T2` report also names the findings file. Length follows the number of
+residuals a human must decide, never the amount of work done — a report that reproduces the
+payload is the failure this file exists to stop.
 
 **Ten findings, two that matter: report the two and the count of the rest** (`_quality/VALUES.md`
 §4). The other eight are in the payload with their rungs, which is where someone acting on them
 would look. A diagram that meets a trigger in the review skill's `visualise` playbook is content
-and does not count against the ceiling — it replaces the sentences a reader would have had to
+and does not count against the bound — it replaces the sentences a reader would have had to
 reassemble. One that restates a sentence costs the reader twice and counts double.
 
 ## The deliverable is not the report
@@ -89,13 +83,11 @@ to make.
 a false premise, say what is wrong, why, and the options, at whatever length that takes. **Cut
 noise, never risk.**
 
-## Never in a report
+## Shape
 
-- A restatement of the request, or of what the run was about to check
-- A closing summary of what was just said
-- Findings the payload already lists in full, or a walk through every rung awarded
-- Narration of process: what was read, which tool ran, what was tried first
-- Confidence about a claim nobody doubted, or hedging that changes no decision
+A table or a heading earns its place when the reader scans it faster than the prose it replaces;
+a heading per finding is the payload rendered again. Every sentence either states the verdict,
+the evidence under it, a decision someone must make, or the next step.
 
 ## Asked for more
 

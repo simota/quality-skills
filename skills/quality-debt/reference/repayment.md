@@ -6,7 +6,7 @@ Read when: turning a ranked ledger into an order of work.
 Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
-Read during `SEQUENCE` and `JUSTIFY-REST`. The order of repayment matters more than the total
+Read during `SEQUENCE`, and when justifying what is left alone. The order of repayment matters more than the total
 effort: a sequence where each step lowers the cost of the next finishes; one that starts with the
 hardest step stalls and gets reverted.
 
@@ -50,7 +50,7 @@ check, not an assumption.
 
 ## Naming a seam
 
-For the `seam` recipe. "This code is untestable" is not actionable; the seam is.
+For the entry whose blocker is untestable code. "This code is untestable" is not actionable; the seam is.
 
 | Blocker | Seam | Smallest opening |
 |---------|------|------------------|

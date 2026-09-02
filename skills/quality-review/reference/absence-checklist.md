@@ -6,7 +6,7 @@ Read when: asking what is missing rather than what is wrong.
 Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
-Read during `PROBE-ABSENCE`. This phase exists because reading a diff shows what was written;
+Read during `ABSENCE`. This phase exists because reading a diff shows what was written;
 most real defects are what was not.
 
 **The method:** for each behaviour the change introduces or alters, ask *what must be true for

@@ -3,8 +3,8 @@
 
 > **Tier:** `spine` — in effect on every run of every `quality-*` skill.
 
-Shared operational contract for the six quality skills. This pack is **self-contained**: it never
-reads from `~/.claude/skills/_quality/`. Everything a `quality-*` skill needs is in this directory.
+Shared operational contract for the six quality skills. Everything a `quality-*` skill needs is in
+this directory.
 
 ---
 
@@ -75,10 +75,10 @@ A missing state file means **empty, not broken**. Specifically:
 
 | Skill | Missing state | Behaviour |
 |-------|---------------|-----------|
-| `quality-gate` | no `gate.yml` | run the `design` recipe first, then the requested one — never `NO-GO` for want of criteria that were never authored |
+| `quality-gate` | no `gate.yml` | design the gate first, then decide — never `NO-GO` for want of criteria that were never authored |
 | `quality-debt` | no debt ledger | empty ledger; the run is pure intake |
 | `quality-regression` | no `flaky.jsonl` | empty registry; no quarantine list to review |
-| `quality-metrics` | no `metrics.jsonl` | `baseline` recipe; report that no comparison is possible yet |
+| `quality-metrics` | no `metrics.jsonl` | take the first snapshot; report that no comparison is possible yet |
 | `quality-review` / `quality-test` | no findings log or gap list | nothing carried forward; proceed |
 
 ## 4. Output language

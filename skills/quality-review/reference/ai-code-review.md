@@ -6,7 +6,7 @@ Read when: the change was machine-generated.
 Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
-Read for the `ai` recipe. Generated code fails differently from hand-written code, and the
+Read when the change was machine-generated. Generated code fails differently from hand-written code, and the
 difference is exploitable: the defects cluster in known places.
 
 ---

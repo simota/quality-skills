@@ -6,7 +6,7 @@ Read when: someone needs past a gate.
 Source: none — nothing outside this page can move what it states.
 Verified: 2026-08-21 — no automated check.
 
-Read for the `override` recipe. Overrides are legitimate and necessary. What is never legitimate
+Read when someone wants past a gate. Overrides are legitimate and necessary. What is never legitimate
 is an override that leaves no trace, because the trace is the only thing that distinguishes a
 considered exception from a gate that does not work.
 
@@ -49,7 +49,7 @@ the dashboard" compensates for a detection gap, not for a correctness gap.
 
 ## What may never be overridden
 
-- A `T4` criterion (`risk-tiers.md`). If a `T4` requirement is unmet, the change waits.
+- An `R4` criterion (`risk-tiers.md`). If an `R4` requirement is unmet, the change waits.
 - Anything protecting data that cannot be recovered.
 - A criterion whose failure mode is silent — where nobody would notice being wrong. The whole value of the check is that nobody else will catch it.
 - The record itself. There is no override of the override process.

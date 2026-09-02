@@ -11,7 +11,7 @@ were confirmed by running them in a fixture repository: `rev-list --count` on on
 the commit count, the `--name-only | grep -c` form on a directory returned commits × files, and
 `grep -c` printed 0 and exited 1 on no matches.
 
-Read during `MEASURE-INTEREST` and `RANK`. The formula and the canonical band scale are in
+Read during `MEASURE` and `SCORE`. The formula and the canonical band scale are in
 `_quality/SEVERITY.md` §4; this file is how to get each raw input from data rather than from
 feeling, and how to map it to a band.
 

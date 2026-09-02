@@ -26,9 +26,8 @@ Engine quirks, re-checked by `make engines` rather than dated:
 * `codex exec` rejects a schema without `additionalProperties: false`, at every
   level. Schemas are normalised here so callers write ordinary JSON Schema.
 * `agy --print` returns an envelope; the validated object is `structured_output`.
-* `claude -p` has no schema flag at all. The shape is asked for in the prompt and
-  the required keys are checked here, which is a weaker guarantee than the other
-  two enforce — said plainly rather than left to look the same.
+* `claude -p` takes `--json-schema`; the validated object is `structured_output`
+  in the JSON envelope, the same field name as agy.
 """
 from __future__ import annotations
 
@@ -84,20 +83,14 @@ def run(engine: str, prompt: str, schema: dict) -> dict:
                 raise EngineError(f"codex wrote no answer.\n{_tail(r)}")
             return _parse(engine, body)
         if engine == "claude":
-            argv = ["claude", "-p", prompt + "\n\nReply with one JSON object matching "
-                    f"this schema and nothing else:\n{json.dumps(schema)}",
-                    "--output-format", "json"]
+            argv = ["claude", "-p", prompt, "--output-format", "json",
+                    "--json-schema", json.dumps(strict(schema))]
             r = _spawn(engine, argv)
             envelope = _parse(engine, r.stdout)
-            body = envelope.get("result")
-            if not isinstance(body, str):
-                raise EngineError(f"claude returned no result field.\n{_tail(r)}")
-            got = _parse(engine, body.strip().strip("`").removeprefix("json").strip())
-            missing = [k for k in schema.get("required") or [] if k not in got]
-            if missing:
-                raise EngineError(f"claude's object is missing {missing}; it enforces "
-                                  "no schema, so this is the only place that notices")
-            return got
+            body = envelope.get("structured_output")
+            if not isinstance(body, dict):
+                raise EngineError(f"claude returned no structured_output.\n{_tail(r)}")
+            return body
         if engine == "agy":
             argv = ["agy", f"--print={prompt}", "--output-format", "json",
                     "--json-schema", str(s)]
