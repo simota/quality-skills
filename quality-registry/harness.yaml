@@ -149,6 +149,15 @@ vocabulary:
   statuses: [DONE, PARTIAL, BLOCKED]
   tiers: [T0, T1, T2]
   finding_outcomes: [real, refuted, accepted, moot, open]
+  # The four value sets the payloads in HANDOFF.md switch on. Declared so that
+  # V20 holds each word to one definition and V38 holds every schema to these
+  # spellings — `low` in a playbook fell through nothing while they were only
+  # written on the page. `NIT` and `HYPOTHESIS` each sit in two keys on purpose:
+  # one word, one meaning, two axes that share it.
+  severities: [CRITICAL, HIGH, MEDIUM, LOW, NIT]
+  blocking: [BLOCK, FOLLOW-UP, NIT]
+  confidence: [CONFIRMED, LIKELY, HYPOTHESIS]
+  verdicts: [GO, GO-WITH-CONDITIONS, NO-GO]
 
 
 document_labels: [contract, guidance, deferred]

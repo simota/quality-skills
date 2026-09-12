@@ -36,6 +36,10 @@ Phases: `INTAKE → MEASURE → SCORE → SEQUENCE → EMIT`.
   enough to ship" are numbers somebody has to choose), or when the work would set
   a gate that blocks other people. `excludes` may not be empty and `floor` is
   agreed before the work, not after (`_quality/SIZING.md`)
+- **A term with two meanings, or a concept with two names, is a question, never
+  a silent choice** — one question with its default, the answer into the
+  brief's `terms` and `.agents/glossary.md`, and the glossary's names only from
+  then on (`_quality/SIZING.md` § Terms)
 <!-- /deliver:sizing -->
 
 ## Decide first

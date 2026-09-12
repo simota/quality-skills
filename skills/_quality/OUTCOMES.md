@@ -66,7 +66,7 @@ worse than no precision number is a fabricated one.
   and nobody learned anything
 - **A `refuted` finding that recurs in the next review** is the record working.
   Cite the earlier refutation rather than re-litigating from scratch
-- **Severity is not an outcome.** A `low` finding that was genuinely there is
+- **Severity is not an outcome.** A `LOW` finding that was genuinely there is
   `real`. Merging the two axes is how a set of trivia becomes a precision score
 - **`accepted` requires a name and a reason**, or it is `open` with better
   manners

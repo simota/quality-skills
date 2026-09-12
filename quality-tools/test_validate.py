@@ -145,8 +145,8 @@ def _(r): sub(r / f"{S}_quality/HANDOFF.md", "`_quality/OPERATIONAL.md` §3", "`
 
 @case("V20")
 def _(r):
-    f = r / f"{S}_quality/CONTRACT.md"
-    f.write_text(f.read_text(encoding="utf-8").replace("HYPOTHESIS", "MAYBE"), encoding="utf-8")
+    """The definition row becomes a mention; the word is still on the page."""
+    sub(r / f"{S}_quality/CONTRACT.md", "| `HYPOTHESIS` |", "| HYPOTHESIS |")
 
 
 @case("V21")
@@ -310,6 +310,11 @@ def _(r): sub(r / f"{S}quality-review/SKILL.md",
 
 @case("V36-none-declared")
 def _(r): sub(r / "quality-registry/harness.yaml", "finding_visuals:", "unused_visuals:")
+
+
+@case("V38")
+def _(r): sub(r / f"{S}quality-review/playbooks/traps.md", "<!-- quality:guidance -->\n",
+              "<!-- quality:guidance -->\nverdict: KEEP | DROP\n")
 
 
 @case("V37")

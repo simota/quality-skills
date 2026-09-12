@@ -43,6 +43,8 @@ Before executing, any of these makes the dialogue mandatory:
   flakiness", and "good enough to ship" are numbers somebody has to choose, and
   an agent choosing them silently has taken the decision
 - The work would set or move a gate that blocks other people's merges
+- A term in the request, the code or the suite carries two meanings, or one
+  concept goes by two names, and the host's glossary does not settle it
 
 **Reading to find out is not executing.** The suite, the history, the existing
 gate definition, and the journal answer more questions than the person can. And
@@ -60,6 +62,7 @@ excludes: [...]                   # what will not be checked. May not be empty
 baseline: "<the observed starting state, with the command that produced it>"
 floor: "<the evidence rung this run must reach>"   # _quality/CONTRACT.md §2
 open_questions: []                # execution does not begin until empty
+terms: {}                         # the names this run uses, spelled as the glossary spells them
 ```
 
 - **`baseline` carries its command or it is not a baseline.** "The suite was
@@ -69,6 +72,22 @@ open_questions: []                # execution does not begin until empty
 - **`excludes` may not be empty.** It is the only thing a downstream skill can
   check itself against
 - **Execution does not begin while `open_questions` is non-empty**
+
+## Terms — one name per concept, one concept per name
+
+The host's glossary is `.agents/glossary.md` when it exists. Read it before the
+brief is settled and write with its names only — finding, directive, journal,
+report alike. A term the work has to coin goes into `terms`, and at `T1` or
+above it is proposed in the dialogue rather than invented on the way.
+
+**An ambiguous or inconsistent term is never resolved by a silent choice.**
+Two meanings for one word, or two names for one concept, is a question
+(`_quality/REPORT.md`): one question, with the default named — the spelling
+the code already uses most. The answer lands in `terms` and is appended to the
+glossary as `term · means · not to be called`, so the next run inherits the
+decision rather than the ambiguity. A `T1` may create the glossary for its
+first settled term; a `T0` never does — it marks what it found `OUT-OF-SCOPE`
+and moves on.
 
 ## Constraints do not loosen mid-run
 

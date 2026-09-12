@@ -112,7 +112,19 @@ Attached to a finding, independent of severity.
 |-------|---------|
 | `CONFIRMED` | reproduced, or proven from code with the path shown |
 | `LIKELY` | strong static evidence, not executed |
-| `HYPOTHESIS` | worth checking; carries the one command that would settle it |
 
-`HYPOTHESIS` findings never block and are never counted. They are listed last, under their own
+The third label is `HYPOTHESIS`, defined once as the residual class of that name
+(`_quality/CONTRACT.md` § Residuals): believed, could not reach its floor,
+carries the one command that would settle it. `HYPOTHESIS` findings never block and are never counted. They are listed last, under their own
 heading, so a reader can stop reading before them.
+
+## Verdict labels
+
+What `quality-gate` returns (`_quality/HANDOFF.md` §6). What each one owes is in
+that skill's verdicts playbook.
+
+| Label | Meaning |
+|-------|---------|
+| `GO` | every criterion met; ship |
+| `GO-WITH-CONDITIONS` | ship now; a specified follow-up is owed, with owner and date |
+| `NO-GO` | a criterion is unmet and shipping is not justified, or the evidence could not be obtained |
