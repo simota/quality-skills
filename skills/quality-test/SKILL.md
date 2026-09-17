@@ -102,27 +102,27 @@ commonest cause is asserting something that was already true.
 - **Name the defect class each test guards**, in one line. A test whose failure
   mode cannot be stated is covering nothing, whatever the line count says
 <!-- deliver:report -->
-- **Every claim carries its rung and reaches its floor** (`_quality/CONTRACT.md`
-  §1-2): `E0` reasoning alone never ships · `E1` static · `E2` execution · `E3`
-  automated test · `E4` independent oracle · `E5` integration · `E6` production.
-  A claim that cannot reach its floor is **not downgraded and shipped anyway** —
-  it is emitted as a `HYPOTHESIS` with the one command that would settle it
-- **Report `status`**: `DONE` (every claim at floor, every residual classified) /
-  `PARTIAL` / `BLOCKED` (say what was tried)
+- **Every claim carries its actual rung and claim-specific warrant** (`_quality/CONTRACT.md`
+  §1-3). Choose the cheapest sufficient check; an executed command or named test form alone
+  proves nothing about a different claim. `E4` needs a traced independent expectation,
+  not a different agent. A bounded `E1` proof may establish a defect; a gate's unmet fixed
+  criterion may justify `NO-GO` without `E3`. Missing evidence is not a proved defect
+- **Preserve the original question's unresolved parts**; narrowing a claim does not close them.
+  Unsupported claims remain `HYPOTHESIS` with the observation or safe check needed
+- **Report `status`**: `DONE` (claims warranted, residuals classified) / `PARTIAL` / `BLOCKED`
 - **Every residual is `BLOCKED` / `OUT-OF-SCOPE` / `DEFERRED` / `HYPOTHESIS`**
   and appears in the handoff's `open`; a run holding `Write` also leaves a
   `#TODO(agent):` marker carrying that class where a reader would next look
 - **Never omit the sweep** — markers against `open`, claims made against claims
-  at floor: `swept, 0 markers; 9 claims / 9 at floor`. While either pair
-  disagrees the status is not `DONE`
+  at floor. While either pair disagrees the status is not `DONE`
 <!-- /deliver:report -->
 <!-- deliver:outcome -->
-- **Every finding is adjudicated, and the outcome is recorded**: `real` ·
-  `refuted` · `accepted` · `moot` · `open`. `refuted` means somebody opened the
-  cited line — a finding waved away is `open`. Report precision as
-  `real / (real + refuted)` with the count. **A rate of one is the more common
-  defect**: it usually means the findings could not be refuted, or that `open`
-  was read as agreement (`_quality/OUTCOMES.md`)
+- **For findings emitted or adjudicated, record the outcome**: `real` · `refuted` ·
+  `accepted` · `moot` · `open`. Refutation needs checked evidence; disagreement stays `open`.
+  When reporting `real / (real + refuted)`, include all five counts and scope/source/method;
+  a zero denominator is undefined. The rate alone says nothing about open work, missed
+  defects or overall quality, and one is not suspicious by itself (`_quality/OUTCOMES.md`).
+  A run with no findings owes no precision report and must not manufacture findings
 <!-- /deliver:outcome -->
 
 ## Done when
