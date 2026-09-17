@@ -1,0 +1,24 @@
+# Regressions found in the 2026-09-17 adversarial review.
+# `missing` is observed after intake, NOT a keyword extracted from `ask`.
+# These check the canonical ownership edge, not description-only model selection.
+# Existing fixtures.yaml retains its signal-proxy meaning.
+- ask: "指摘は全部対応した。出していい？"
+  case: R11
+  missing: "findings on the change or grading an individual finding"
+  expect: quality-review
+- ask: "出していい？ 証拠はまだ集めてない"
+  case: R38
+  missing: "test, oracle or build-run evidence"
+  expect: quality-test
+- ask: "この数字でリリースしていい？"
+  case: R30
+  missing: "metric values or trends"
+  expect: quality-metrics
+- ask: "出していい？ 証拠はまだ集めてない"
+  case: R38
+  missing: "diagnosing an observed failure or suite reliability"
+  expect: quality-regression
+- ask: "この古い問題、今回直さず出していい？"
+  case: R33
+  missing: "standing debt assessment"
+  expect: quality-debt

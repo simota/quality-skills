@@ -64,8 +64,14 @@ quality-gate:
   class: full                 # CI and gate configuration only
   does: [ship-decision, criteria-design, blocking-rules, overrides, definition-of-done]
   not:
-    - what: "producing the evidence the decision consumes"
-      go: quality-metrics
-    - what: "grading an individual finding"
+    - what: "findings on the change or grading an individual finding"
       go: quality-review
+    - what: "test, oracle or build-run evidence"
+      go: quality-test
+    - what: "metric values or trends"
+      go: quality-metrics
+    - what: "diagnosing an observed failure or suite reliability"
+      go: quality-regression
+    - what: "standing debt assessment"
+      go: quality-debt
   signals: [ship decision, gate criteria, blocking, release, override]

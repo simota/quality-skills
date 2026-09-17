@@ -1,6 +1,6 @@
-- **Every finding is adjudicated, and the outcome is recorded**: `real` ·
-  `refuted` · `accepted` · `moot` · `open`. `refuted` means somebody opened the
-  cited line — a finding waved away is `open`. Report precision as
-  `real / (real + refuted)` with the count. **A rate of one is the more common
-  defect**: it usually means the findings could not be refuted, or that `open`
-  was read as agreement (`_quality/OUTCOMES.md`)
+- **For findings emitted or adjudicated, record the outcome**: `real` · `refuted` ·
+  `accepted` · `moot` · `open`. Refutation needs checked evidence; disagreement stays `open`.
+  When reporting `real / (real + refuted)`, include all five counts and scope/source/method;
+  a zero denominator is undefined. The rate alone says nothing about open work, missed
+  defects or overall quality, and one is not suspicious by itself (`_quality/OUTCOMES.md`).
+  A run with no findings owes no precision report and must not manufacture findings

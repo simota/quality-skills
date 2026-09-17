@@ -4,7 +4,7 @@ pre-merge:
   pattern: linear
   when: "a change is ready to land"
   chain: [quality-review, quality-test, quality-gate]
-  gate: "every finding reaches its evidence floor before quality-gate is asked"
+  gate: "criteria are fixed before evaluation; required evidence is acquired before the gate decides, not before intake"
 
 close-the-gap:
   pattern: linear
@@ -38,7 +38,8 @@ ship-decision:
   pattern: report-only
   when: "can this go out"
   chain: [quality-gate]
-  stops_at: "the verdict, its conditions, and the evidence each rests on"
+  gate: "intake reads current payloads and invokes only missing or stale evidence owners from capabilities.yaml; gate never produces that evidence"
+  stops_at: "after acquisition: the verdict, its conditions and evidence; unobtainable required evidence yields NO-GO (insufficient evidence)"
 
 review-to-zero:
   pattern: loop
