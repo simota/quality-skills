@@ -86,24 +86,59 @@ JSON_TYPES = {
 
 
 def conforms(engine: str, got, schema: dict) -> dict:
-    """The answer has every required key, each property of its declared type.
+    """The answer matches the schema, nested objects and arrays included.
 
     The engines are asked to honour the schema, not trusted to: a `"false"` where
     a boolean was asked for is truthy, and would read as a refutation.
     """
     if not isinstance(got, dict):
         raise EngineError(f"{engine} answered {type(got).__name__}, not an object: {got!r}"[:400])
-    missing = [k for k in schema.get("required") or [] if k not in got]
-    if missing:
-        raise EngineError(f"{engine} answered without {missing}: {got!r}"[:400])
-    for k, spec in (schema.get("properties") or {}).items():
-        want = spec.get("type") if isinstance(spec, dict) else None
-        if k not in got or want is None:
-            continue
-        kinds = want if isinstance(want, list) else [want]
-        if not any(JSON_TYPES.get(w, lambda v: True)(got[k]) for w in kinds):
-            raise EngineError(f"{engine} answered {k}={got[k]!r}, not {want}")
+    problem = mismatch(got, schema, "answer")
+    if problem:
+        raise EngineError(f"{engine}: {problem}"[:400])
     return got
+
+
+def mismatch(value, schema, where: str) -> str | None:
+    """The first way `value` breaks `schema`, or None.
+
+    Covers the keywords these schemas use — type, enum, required, properties,
+    additionalProperties: false, items, anyOf/oneOf/allOf. Anything else is
+    not checked, and a schema leaning on it is not validated by this.
+    """
+    if not isinstance(schema, dict):
+        return None
+    want = schema.get("type")
+    if want is not None:
+        kinds = want if isinstance(want, list) else [want]
+        if not any(JSON_TYPES.get(w, lambda v: True)(value) for w in kinds):
+            return f"{where}={value!r} is not {want}"
+    if "enum" in schema and value not in schema["enum"]:
+        return f"{where}={value!r} is not one of {schema['enum']}"
+    for sub in schema.get("allOf") or []:
+        if (problem := mismatch(value, sub, where)):
+            return problem
+    for key in ("anyOf", "oneOf"):
+        subs = schema.get(key)
+        if subs and all(mismatch(value, s, where) for s in subs):
+            return f"{where}={value!r} matches none of its {key}"
+    if isinstance(value, dict):
+        missing = [k for k in schema.get("required") or [] if k not in value]
+        if missing:
+            return f"{where} is missing {missing}"
+        props = schema.get("properties") or {}
+        if schema.get("additionalProperties") is False:
+            extra = sorted(set(value) - set(props))
+            if extra:
+                return f"{where} carries undeclared {extra}"
+        for k, spec in props.items():
+            if k in value and (problem := mismatch(value[k], spec, f"{where}.{k}")):
+                return problem
+    if isinstance(value, list) and isinstance(schema.get("items"), dict):
+        for i, item in enumerate(value):
+            if (problem := mismatch(item, schema["items"], f"{where}[{i}]")):
+                return problem
+    return None
 
 
 def run(engine: str, prompt: str, schema: dict) -> dict:
