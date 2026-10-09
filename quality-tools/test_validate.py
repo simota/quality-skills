@@ -22,10 +22,10 @@ sys.dont_write_bytecode = True                     # no __pycache__ in the tools
 import validate                                    # noqa: E402  — for RULES only
 
 
-def run(root: Path) -> str:
+def run(root: Path) -> tuple[int, str]:
     r = subprocess.run([sys.executable, str(root / "quality-tools" / "validate.py")],
                        capture_output=True, text=True)
-    return r.stdout + r.stderr
+    return r.returncode, r.stdout + r.stderr
 
 
 S = "skills/"          # everything the CLI reads lives here
@@ -55,6 +55,16 @@ def _(r): sub(r / f"{S}quality-test/SKILL.md", "## Owns", "## Owns\n" + "x\n" * 
 @case("V2")
 def _(r): sub(r / f"{S}quality-test/SKILL.md", "Writing tests that can actually fail",
               "Not for quality-regression. Writing tests that can actually fail")
+
+
+@case("V2-case")
+def _(r): sub(r / f"{S}quality-test/SKILL.md", "Writing tests that can actually fail",
+              "NOT FOR audits. Writing tests that can actually fail")
+
+
+@case("V2-name-case")
+def _(r): sub(r / f"{S}quality-test/SKILL.md", "Writing tests that can actually fail",
+              "Quality-Regression aside. Writing tests that can actually fail")
 
 
 @case("V3")
@@ -93,6 +103,10 @@ def _(r): sub(r / "quality-registry/fixtures.yaml",
               '- ask: "grade these findings and say what evidence each one has"\n  expect: quality-gate')
 
 
+@case("V10-empty")
+def _(r): (r / "quality-registry/fixtures.yaml").write_text("[]\n", encoding="utf-8")
+
+
 @case("V11")
 def _(r):
     import shutil
@@ -123,6 +137,10 @@ def _(r): sub(r / f"{S}quality-review/SKILL.md", "allowed-tools: Read, Grep, Glo
               "allowed-tools: Read, Grep, Glob, Edit, Write, Bash")
 
 
+@case("V15-writes")
+def _(r): sub(r / "quality-registry/harness.yaml", "    writes: true", "    writes: false")
+
+
 @case("V16")
 def _(r): sub(r / f"{S}quality-test/SKILL.md", "## Done when", "## Finished when")
 
@@ -151,8 +169,8 @@ def _(r):
 
 @case("V21")
 def _(r): sub(r / f"{S}quality-test/SKILL.md",
-              """`RED` is the evidence and it is not a formality (`E3`, or `E4` where the oracle
-is a property, metamorphic relation, or mutation).""",
+              """`RED` is the evidence and it is not a formality (`E3`, or `E4` where the oracle's
+expectation is traced to the spec, a property, or a prior version — never the code).""",
               "`RED` is the evidence and it is not a formality.")
 
 
@@ -167,6 +185,16 @@ def _(r): sub(r / f"{S}_quality/CONTRACT.md", "<!-- quality:contract -->", "<!--
 
 @case("V24")
 def _(r): sub(r / f"{S}_quality/ROUTING.md", "`quality-debt`", "`quality-rot`")
+
+
+@case("V24-hyphenated")
+def _(r): sub(r / f"{S}_quality/ROUTING.md", "`quality-debt`",
+              "`quality-debt` (once `quality-tech-debt`)")
+
+
+@case("V23-undeclared")
+def _(r): sub(r / "quality-registry/harness.yaml", "document_labels: [contract, guidance, deferred]",
+              "document_labels: [contract, deferred]")
 
 
 @case("V25")
@@ -344,9 +372,16 @@ def _(r):
 def _(r): sub(r / "quality-registry/harness.yaml", "source_authorities:", "unused_authorities:")
 
 
+@case("V39")
+def _(r): sub(r / "quality-registry/routes.yaml", "chain: [quality-review, quality-test, quality-gate]",
+              "chain: [quality-review, quality-test, quality-review, quality-test, "
+              "quality-review, quality-test, quality-gate]")
+
+
 def main() -> int:
-    baseline = run(ROOT)
-    if "green" not in baseline:
+    # The exit code, not a word in the output: "green" can appear in a failure line.
+    rc, baseline = run(ROOT)
+    if rc != 0:
         print("the working tree is already failing; fix that first:\n" + baseline)
         return 1
 
@@ -357,7 +392,7 @@ def main() -> int:
             shutil.copytree(ROOT, copy, symlinks=True,
                             ignore=shutil.ignore_patterns(".git", "__pycache__"))
             mutate(copy)
-            out = run(copy)
+            _, out = run(copy)
             expect = rule.split("-")[0]
             if not re.search(rf"^\s*{expect}: ", out, re.M):
                 bad.append(rule)

@@ -10,6 +10,7 @@ belongs in a review, not in this file.
 from __future__ import annotations
 
 import re
+import subprocess
 import sys
 import unicodedata
 from pathlib import Path
@@ -107,15 +108,16 @@ def v1_sizes():
 
 
 def v2_description_terms():
+    # Case-blind: "Not For" or "Quality-Test" is the same boundary in other type.
     others = set(SKILLS)
     for d in SKILL_DIRS:
-        desc = frontmatter(read(d / "SKILL.md")).get("description", "")
+        desc = frontmatter(read(d / "SKILL.md")).get("description", "").lower()
         for term in H["forbidden_description_terms"]:
-            if term in desc:
+            if term.lower() in desc:
                 fail("V2", f"{d.name} description contains {term!r}; "
                            "boundaries belong in capabilities.yaml `not:`")
         for name in others - {d.name}:
-            if name in desc:
+            if name.lower() in desc:
                 fail("V2", f"{d.name} description names {name}")
 
 
@@ -200,8 +202,12 @@ def v9_signals():
 
 
 def v10_fixtures():
+    # An empty or misshapen fixtures file is a check that passes on nothing.
+    if not isinstance(FIX, list) or not FIX:
+        fail("V10", "fixtures.yaml is not a non-empty list; no routing is checked")
+        return
     pairs = [(_norm(s), name) for name, c in CAP.items() for s in c.get("signals", [])]
-    for entry in FIX if isinstance(FIX, list) else []:
+    for entry in FIX:
         ask, expect = _norm(entry["ask"]), entry["expect"]
         hits = [(len(sig), owner) for sig, owner in pairs if sig in ask]
         if not hits:
@@ -245,6 +251,12 @@ def v14_patterns():
 
 def v15_permission_class():
     classes = H["permission_classes"]
+    # `writes` is a claim about the tools, so it is held to them.
+    for cname, spec in classes.items():
+        grants = bool(re.search(r"\b(Write|Edit)\b", spec.get("tools", "")))
+        if "writes" in spec and spec["writes"] is not grants:
+            fail("V15", f"class {cname} says writes: {spec['writes']} but its tools "
+                        f"{'do' if grants else 'do not'} grant Write or Edit")
     for d in SKILL_DIRS:
         declared = CAP.get(d.name, {}).get("class")
         if declared not in classes:
@@ -299,6 +311,8 @@ def v19_paths_resolve():
     applies to the shared contracts too — they are read *by* a skill, so a
     sibling-relative path in them points at nothing once installed.
     """
+    if not SKILL_DIRS:
+        return                            # V3 reports an empty roster
     probe = SKILL_DIRS[0]
     shared = sorted((SKILLS_ROOT / SHARED).glob("*.md"))
     for d in SKILL_DIRS:
@@ -386,6 +400,11 @@ def v22_markers_classified():
 
 def v23_labels():
     import fnmatch
+    declared = H.get("document_labels") or []
+    for pat, label in H["label_by_path"].items():
+        if label not in declared:
+            fail("V23", f"label_by_path gives {pat} the label {label!r}, "
+                        f"which document_labels {declared} does not declare")
     for f in sorted(ROOT.rglob("*.md")):
         if ".git" in f.parts:
             continue
@@ -415,7 +434,7 @@ def v24_rendered_tables():
         if name not in readme:
             fail("V24", f"README.md does not list {name}")
     for doc, text in ((SKILLS_ROOT / ROUTING_FILE, routing), (ROOT / "README.md", readme)):
-        for found in set(re.findall(rf"`({PREFIX}[a-z]+)`", text)):
+        for found in set(re.findall(rf"`({PREFIX}[a-z][a-z-]*[a-z])`", text)):
             if found not in SKILLS:
                 fail("V24", f"{doc.relative_to(ROOT)} names {found}, which does not exist")
 
@@ -829,6 +848,14 @@ def v38_enumerations_declared():
                             "which harness.yaml vocabulary does not declare")
 
 
+def v39_route_stages():
+    """A chain longer than the budget is a pipeline nobody will run to the end."""
+    for name, r in ROUTES.items():
+        n = len(r.get("chain") or [])
+        if n > LIM["route_stages_max"]:
+            fail("V39", f"route {name} chains {n} stages (max {LIM['route_stages_max']})")
+
+
 RULES = [v1_sizes, v2_description_terms, v3_roster, v4_playbook_orphans,
          v5_playbook_budget, v6_budgets, v7_routes_real, v8_links, v9_signals,
          v10_fixtures, v11_count, v12_prefix, v13_route_budget, v14_patterns,
@@ -844,15 +871,29 @@ RULES = [v1_sizes, v2_description_terms, v3_roster, v4_playbook_orphans,
          v35_signature,
          v36_finding_visuals,
          v37_source_pins_the_rot,
-         v38_enumerations_declared]
+         v38_enumerations_declared,
+         v39_route_stages]
+
+
+def hooks_state() -> str:
+    """Asked of git: .git is a file in a worktree or submodule, not a directory."""
+    try:
+        r = subprocess.run(["git", "rev-parse", "--git-path", "hooks/pre-commit"],
+                           cwd=ROOT, capture_output=True, text=True)
+    except OSError:
+        return "unknown (no git)"
+    if r.returncode != 0:
+        return "unknown (not a git checkout)"
+    return "on" if (ROOT / r.stdout.strip()).exists() else "off — run: make hooks"
 
 
 def main() -> int:
+    # Paths and page text reach the terminal verbatim; a non-UTF-8 console must
+    # not turn a failure report into a UnicodeEncodeError.
+    sys.stdout.reconfigure(errors="replace")
     for rule in RULES:
         rule()
-    hooks = (ROOT / ".git" / "hooks" / "pre-commit").exists()
-    print(f"{len(RULES)} rules · {len(SKILLS)} skills · "
-          f"hooks {'on' if hooks else 'off — run: make hooks'}")
+    print(f"{len(RULES)} rules · {len(SKILLS)} skills · hooks {hooks_state()}")
     if FAILURES:
         for f in sorted(FAILURES):
             print(f"  {f}")

@@ -31,8 +31,10 @@ Every claim is parsed out of the page rather than restated here, so a page edite
 to say something false fails as loudly as a tool that changed underneath it.
 """
 import math
+import os
 import pathlib
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -45,6 +47,15 @@ BISECTION = ROOT / "skills/quality-regression/reference/bisection.md"
 EXTRACTION = ROOT / "skills/quality-metrics/reference/extraction.md"
 failures: list[str] = []
 
+# Run from the pre-commit hook, git exports GIT_DIR and GIT_INDEX_FILE; inherited,
+# they point the throwaway `git init`/`commit` below at the developer's own
+# repository. Every git here sees only its own tree, and no user or system config
+# can change what it prints.
+GIT_ENV = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+GIT_ENV.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull,
+               GIT_AUTHOR_NAME="check", GIT_AUTHOR_EMAIL="check@example.invalid",
+               GIT_COMMITTER_NAME="check", GIT_COMMITTER_EMAIL="check@example.invalid")
+
 
 def fail(where: str, msg: str) -> None:
     failures.append(f"  {where}: {msg}")
@@ -54,8 +65,8 @@ FORMULA = re.compile(r"^interest\s*=.*$", re.M)
 
 
 def check_formula() -> str:
-    a = FORMULA.findall(SEVERITY.read_text())
-    b = [l for l in FORMULA.findall(INTEREST.read_text()) if "(" in l]
+    a = FORMULA.findall(SEVERITY.read_text(encoding="utf-8"))
+    b = [l for l in FORMULA.findall(INTEREST.read_text(encoding="utf-8")) if "(" in l]
     if not a or not b:
         fail("formula", "no `interest = ...` line found in "
                         f"{'SEVERITY.md' if not a else 'interest.md'} — "
@@ -74,7 +85,7 @@ BAND_TABLE = re.compile(r"^\|[^|]*\|\s*(\d+\.\d+)\s*(?:—[^|]*)?\|\s*$", re.M)
 
 def severity_bands() -> dict[str, set[str]]:
     out = {}
-    for name, scale in OPERAND_ROW.findall(SEVERITY.read_text()):
+    for name, scale in OPERAND_ROW.findall(SEVERITY.read_text(encoding="utf-8")):
         vals = set(NUM.findall(scale))
         if vals:
             out[name] = vals
@@ -86,7 +97,7 @@ def severity_bands() -> dict[str, set[str]]:
 
 def interest_bands() -> dict[str, set[str]]:
     """Each `## Input n — <operand>` section owns the band table under it."""
-    text = INTEREST.read_text()
+    text = INTEREST.read_text(encoding="utf-8")
     sections = re.split(r"^## ", text, flags=re.M)
     out = {}
     for s in sections:
@@ -101,7 +112,7 @@ def interest_bands() -> dict[str, set[str]]:
 
 def confidence_values() -> set[str]:
     """SEVERITY's canonical divisor table."""
-    text = SEVERITY.read_text()
+    text = SEVERITY.read_text(encoding="utf-8")
     block = text.split("canonical values.")[-1]
     rows = re.findall(r"^\|\s*[^|]+\|\s*(\d+\.\d+)\s*\|", block, re.M)
     if not rows:
@@ -139,7 +150,7 @@ EXAMPLE = re.compile(
 
 def check_examples(conf: set[str]) -> int:
     n = 0
-    for a, b, c, d, claimed in EXAMPLE.findall(INTEREST.read_text()):
+    for a, b, c, d, claimed in EXAMPLE.findall(INTEREST.read_text(encoding="utf-8")):
         n += 1
         actual = (float(a) * float(b) * float(c)) / float(d)
         # the page reports to two significant figures
@@ -172,7 +183,7 @@ class Repo:
         self.git("config", "commit.gpgsign", "false")
 
     def git(self, *args: str) -> subprocess.CompletedProcess:
-        return subprocess.run(("git", *args), cwd=self.d,
+        return subprocess.run(("git", *args), cwd=self.d, env=GIT_ENV,
                               capture_output=True, text=True)
 
     def out(self, *args: str) -> str:
@@ -180,7 +191,7 @@ class Repo:
         return (r.stdout + r.stderr).strip()
 
     def commit(self, name: str, body: str, msg: str) -> None:
-        (self.d / name).write_text(body)
+        (self.d / name).write_text(body, encoding="utf-8")
         self.git("add", "-A")
         self.git("commit", "-qm", msg)
 
@@ -200,7 +211,7 @@ def verdict_of(cell: str) -> str:
 def exit_table() -> list[tuple[range, str]]:
     """Each row as (the codes it claims, the verdict word)."""
     rows = []
-    for spec, cell in EXIT_ROW.findall(BISECTION.read_text()):
+    for spec, cell in EXIT_ROW.findall(BISECTION.read_text(encoding="utf-8")):
         codes = [int(c) for c in CODE.findall(spec)]
         if not codes:
             continue
@@ -281,7 +292,7 @@ def check_exit_table(tmp: pathlib.Path) -> int:
 
 def check_execute_bit(tmp: pathlib.Path) -> int:
     """The page's advice rests on a script without +x exiting 126."""
-    claimed = re.search(r"the shell returns (\d+)", BISECTION.read_text())
+    claimed = re.search(r"the shell returns (\d+)", BISECTION.read_text(encoding="utf-8"))
     if not claimed:
         fail("bisect", "bisection.md no longer states the shell's status for a "
                        "script without its execute bit — the checker has stopped "
@@ -290,7 +301,8 @@ def check_execute_bit(tmp: pathlib.Path) -> int:
     script = tmp / "noexec.sh"
     script.write_text("#!/bin/sh\nexit 0\n")
     script.chmod(0o644)
-    rc = subprocess.run(["/bin/sh", "-c", str(script)], capture_output=True).returncode
+    rc = subprocess.run(["/bin/sh", "-c", shlex.quote(str(script))], env=GIT_ENV,
+                        capture_output=True).returncode
     if rc != int(claimed.group(1)):
         fail("bisect", f"a script without its execute bit exits {rc}, "
                        f"the page states {claimed.group(1)}")
@@ -304,7 +316,7 @@ PCT = re.compile(r"([\d.]+)%")
 
 def check_flake_table() -> int:
     """The false-good table is a binomial tail: P(fewer than K of N fail)."""
-    text = BISECTION.read_text()
+    text = BISECTION.read_text(encoding="utf-8")
     rate = re.search(r"At `p = ([\d.]+)`", text)
     header = re.search(r"^\|\s*K \(threshold\)\s*\|([^\n]*)\|\s*$", text, re.M)
     if not (rate and header):
@@ -343,7 +355,7 @@ def check_pickaxe(tmp: pathlib.Path) -> int:
     repo.commit("g.txt", "alpha beta alpha\n", "second")
     repo.commit("g.txt", "alpha\n", "drop")
 
-    text = EXTRACTION.read_text()
+    text = EXTRACTION.read_text(encoding="utf-8")
     if "--reverse" not in text or '-S"<test name>"' not in text:
         fail("pickaxe", "extraction.md no longer shows the `--reverse ... -S` recipe — "
                         "the checker has stopped checking anything")
@@ -403,7 +415,7 @@ def main() -> int:
             stat = check_shortstat(tmp)
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
-        version = subprocess.run(["git", "--version"], capture_output=True,
+        version = subprocess.run(["git", "--version"], env=GIT_ENV, capture_output=True,
                                  text=True).stdout.strip()
         ran = f", {codes + bits + pick + stat} git behaviours re-run against {version}"
     else:
