@@ -69,7 +69,7 @@ tables and the extraction command for each raw input live in `quality-debt`'s
 | `confidence_of_fix` | the divisor, below | 1.0 · 0.6 · 0.3 · 0.2 |
 
 **`confidence_of_fix` — canonical values.** Any other rubric is a loosening
-(`_quality/OPERATIONAL.md` §1) and is invalid.
+(`_quality/VALUES.md` § Rule precedence) and is invalid.
 
 | State | Value |
 |-------|-------|
@@ -115,7 +115,7 @@ Attached to a finding, independent of severity.
 
 The third label is `HYPOTHESIS`, defined once as the residual class of that name
 (`_quality/CONTRACT.md` § Residuals): believed, could not reach its floor,
-carries the one command that would settle it. `HYPOTHESIS` findings never block and are never counted. They are listed last, under their own
+carries the observation or safe check that would settle it. `HYPOTHESIS` findings never block and are never counted. They are listed last, under their own
 heading, so a reader can stop reading before them.
 
 ## Verdict labels

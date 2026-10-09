@@ -69,7 +69,7 @@ skips evidence grading because it is fast" is not a valid tightening.
 
 | Situation | Resolution |
 |---|---|
-| The finding is real but cannot reach its floor | §1 — ship it as a `HYPOTHESIS` with the command that would settle it. Do not downgrade and ship it as a finding |
+| The finding is real but cannot reach its floor | §1 — ship it as a `HYPOTHESIS` with the observation or safe check that would settle it. Do not downgrade and ship it as a finding |
 | Fixing it yourself would be faster than writing the directive | §3 — the speed is real and the independence is what you were paid for |
 | A gate would block a release nobody can currently unblock | §6 — the threshold is the human's. Present the evidence and the cost of both choices |
 | The metric disagrees with everyone's experience | §5 — check the extraction first, then trust the number, and record the disagreement |

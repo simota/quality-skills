@@ -1,6 +1,6 @@
-- **For findings emitted or adjudicated, record the outcome**: `real` · `refuted` ·
-  `accepted` · `moot` · `open`. Refutation needs checked evidence; disagreement stays `open`.
-  When reporting `real / (real + refuted)`, include all five counts and scope/source/method;
-  a zero denominator is undefined. The rate alone says nothing about open work, missed
-  defects or overall quality, and one is not suspicious by itself (`_quality/OUTCOMES.md`).
-  A run with no findings owes no precision report and must not manufacture findings
+- **For findings emitted or adjudicated, record the outcome**: `real` · `refuted` · `accepted` ·
+  `moot` · `open`. Refutation needs checked evidence; disagreement stays `open`. Report
+  `real / (real + refuted)` with all five counts and its scope, source and method; with a zero
+  denominator it is undefined. A rate of one is not suspicious by itself — read it against `open`,
+  and never manufacture findings to have something to adjudicate. A run with no findings owes no
+  precision report (`_quality/OUTCOMES.md`)

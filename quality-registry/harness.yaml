@@ -22,8 +22,8 @@ platform_dirs: [.git, .github, .claude, skills, docs]   # named by the platform,
 
 limits:
   skill_md_lines: 152         # derived, not chosen: 90 for the skill's own words plus
-                              # the 53 lines of delivered contract every file in this
-                              # set now carries, the last 15 of them the sixth axis:
+                              # the 57 lines of delivered contract every file in this
+                              # set now carries, the last 14 of them the sixth axis:
                               # what the run says at the end. The raises before it
                               # (120 -> 128 -> 136) were the
                               # same move for a smaller block; the blocks have
@@ -33,7 +33,7 @@ limits:
   description_chars: 200      # the listing truncates past this
   playbook_lines: 300
   playbooks_per_skill: 8
-  shared_file_lines: 160     # HANDOFF is a catalogue of seven payload schemas;
+  shared_file_lines: 160     # HANDOFF is a catalogue of six payload schemas and an envelope;
                              # compression removed a table it duplicated, not the schemas
   shared_lines_total: 1020   # raised by the sixth axis: REPORT.md arrived and
                               # every set landed at 97-99% of the old figure at once,
@@ -51,7 +51,7 @@ limits:
                                 # pages above the measurement rather than at twice it:
                                 # a limit of 7600 against a corpus of 3721 was never going
                                 # to fire, and a budget that cannot fire is not a budget.
-                                # Raising it is the last resort (VALUES.md §3).
+                                # Raising it is the last resort (VALUES.md §4).
 
 
 listing:

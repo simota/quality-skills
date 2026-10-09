@@ -30,21 +30,28 @@ Each finding reaches exactly one, and the one it reaches is written next to it.
 | `open` | Never adjudicated. It is not a neutral state — it is the review's cost with nobody assigned to it |
 
 `refuted` is settled by the same standard the set applies everywhere else:
-somebody opened the cited line. **A finding waved away is `open`, not
-`refuted`** — disagreement is not adjudication.
+checked evidence — somebody opened the cited line, ran the path, or traced the
+precondition. **A finding waved away is `open`, not `refuted`** — disagreement
+is not adjudication.
 
-## The rate, and the direction people get wrong
+## The rate, and what it cannot say
 
-Precision is `real / (real + refuted)`. Report it with the count, never alone:
-three out of four is not a rate.
+Precision is `real / (real + refuted)`. Report it with **all five counts** and
+the scope, source and method it was taken over, never alone: three out of four
+is not a rate. With no `real` and no `refuted` the rate is undefined, not zero
+and not one. A run that emitted no findings owes no precision report, and
+**never manufactures findings to have something to adjudicate**.
 
-- **A low rate** means findings are being produced faster than they are being
-  checked. Expected, and it is what the number exists to surface
-- **A rate of one — no `refuted` findings at all — is the more common defect.**
-  It almost never means the review was perfect. It means findings were phrased
-  so they could not be refuted, or nobody adjudicated them and `open` was
-  quietly read as agreement. **An unchallengeable review is worth less than an
-  imprecise one**, because nothing it says can be checked
+The rate speaks only about the findings that were settled. It says nothing
+about open work, about defects nobody found, or about quality overall.
+
+- **A low rate** means many settled findings were wrong. Read it with the
+  method: findings stated faster than they were checked look like this
+- **A rate of one is not suspicious by itself — read it against `open`.** With
+  most findings still `open`, or phrased so that nothing could refute them, it
+  measures nothing: `open` was quietly read as agreement. **An unchallengeable
+  review is worth less than an imprecise one**, because nothing it says can be
+  checked
 
 The same asymmetry applies to a gate: an override with no recorded outcome is a
 decision that can never be shown to have been wrong.

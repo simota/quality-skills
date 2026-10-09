@@ -80,7 +80,7 @@ are for follow-up work, not for deferred safety.
 [✓] no BLOCK findings           — quality-review, 0 BLOCK / 3 FOLLOW-UP (Q-REV-041..043)
 [✓] new behaviour tested        — quality-test, oracle: AC-114, RED evidence attached
 [✗] suite pass rate ≥ 0.98      — quality-metrics, 0.94 over last 20 runs (2 quarantined, 1 expired)
-[–] mutation score              — not measured; tier T2 does not require it
+[–] mutation score              — not applicable; tier R2 does not require it
 ```
 
 `[–]` for not-applicable and `[?]` for not-measured are different states and must render

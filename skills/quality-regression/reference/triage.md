@@ -74,13 +74,14 @@ Open every triage with the expiry list. For each entry:
 
 | State | Action |
 |-------|--------|
-| Expired, fixed | Append a closure record (`outcome: "fixed"`) for that test id; never delete the original line |
-| Expired, not fixed, owner present | Delete the test; append `outcome: "deleted"`; file the `BLIND SPOT` as a debt entry |
-| Expired, owner gone | Delete the test; append `outcome: "deleted"`; file debt; note the orphaning in the journal |
+| Expired, fixed | Append a closure record (`status: "fixed"`) for that test id; never delete the original line |
+| Expired, not fixed, owner present | Delete the test; append `status: "deleted"`; file the `BLIND SPOT` as a debt entry |
+| Expired, owner gone | Delete the test; append `status: "deleted"`; file debt; note the orphaning in the journal |
 | Not expired | Leave; count it |
 
-The registry is append-only (`_quality/OPERATIONAL.md` §4): the active quarantine list is the set of
-test ids whose **latest** record has no closing `outcome`. Nothing is ever removed.
+The registry is append-only (`_quality/OPERATIONAL.md` §3): the active quarantine list is the set of
+test ids whose **latest** record has no closing `status`. `outcome` is not used here: it is a
+finding's adjudication (`_quality/OUTCOMES.md`). Nothing is ever removed.
 
 The count matters. A quarantine list that only grows is a suite being retired one test at a time
 without anyone deciding to retire it.

@@ -93,27 +93,28 @@ being re-stated. A number whose command cannot be shown is deleted, not caveated
 - **One snapshot is not a trend.** Say when each was taken, and say which claim
   the number of points actually licenses
 <!-- deliver:report -->
-- **Every claim carries its actual rung and claim-specific warrant** (`_quality/CONTRACT.md`
-  §1-3). Choose the cheapest sufficient check; an executed command or named test form alone
-  proves nothing about a different claim. `E4` needs a traced independent expectation,
-  not a different agent. A bounded `E1` proof may establish a defect; a gate's unmet fixed
-  criterion may justify `NO-GO` without `E3`. Missing evidence is not a proved defect
-- **Preserve the original question's unresolved parts**; narrowing a claim does not close them.
-  Unsupported claims remain `HYPOTHESIS` with the observation or safe check needed
-- **Report `status`**: `DONE` (claims warranted, residuals classified) / `PARTIAL` / `BLOCKED`
+- **Every claim carries its actual rung and is warranted for that claim** (`_quality/CONTRACT.md`
+  §1-3): `E0` reasoning alone never ships · `E1` static · `E2` execution · `E3` automated test ·
+  `E4` independent oracle · `E5` integration · `E6` production. A command that ran proves nothing
+  about a different claim; `E4` needs a traced independent expectation, not a different agent
+- **A claim that cannot reach its floor is not downgraded and shipped anyway** — it is a
+  `HYPOTHESIS` with the observation or safe check that would settle it. A bounded `E1` proof may
+  establish a defect; missing evidence never does. Narrowing a claim does not close the
+  original question's unresolved parts
+- **Report `status`**: `DONE` (every claim warranted, every residual classified) / `PARTIAL` / `BLOCKED`
 - **Every residual is `BLOCKED` / `OUT-OF-SCOPE` / `DEFERRED` / `HYPOTHESIS`**
   and appears in the handoff's `open`; a run holding `Write` also leaves a
   `#TODO(agent):` marker carrying that class where a reader would next look
-- **Never omit the sweep** — markers against `open`, claims made against claims
-  at floor. While either pair disagrees the status is not `DONE`
+- **Never omit the sweep** — markers against `open`, claims made against claims warranted:
+  `swept, 0 markers; 9 claims / 9 warranted`. While either pair disagrees the status is not `DONE`
 <!-- /deliver:report -->
 <!-- deliver:outcome -->
-- **For findings emitted or adjudicated, record the outcome**: `real` · `refuted` ·
-  `accepted` · `moot` · `open`. Refutation needs checked evidence; disagreement stays `open`.
-  When reporting `real / (real + refuted)`, include all five counts and scope/source/method;
-  a zero denominator is undefined. The rate alone says nothing about open work, missed
-  defects or overall quality, and one is not suspicious by itself (`_quality/OUTCOMES.md`).
-  A run with no findings owes no precision report and must not manufacture findings
+- **For findings emitted or adjudicated, record the outcome**: `real` · `refuted` · `accepted` ·
+  `moot` · `open`. Refutation needs checked evidence; disagreement stays `open`. Report
+  `real / (real + refuted)` with all five counts and its scope, source and method; with a zero
+  denominator it is undefined. A rate of one is not suspicious by itself — read it against `open`,
+  and never manufacture findings to have something to adjudicate. A run with no findings owes no
+  precision report (`_quality/OUTCOMES.md`)
 <!-- /deliver:outcome -->
 
 ## Done when

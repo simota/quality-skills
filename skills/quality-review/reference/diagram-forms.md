@@ -18,7 +18,7 @@ kind requires, and the gap on its own line.
 
 ```
 claim                          carries   floor   
-"the handler leaks on retry"   E1        E2      ← under floor, ships as HYPOTHESIS
+"the handler leaks on retry"   E1        E2      ← no path shown; ships as HYPOTHESIS
 "the migration is reversible"  E3        E3      ok
 "this is slower than before"   E0        E2      ← reasoning alone; never ships
 ```
@@ -60,6 +60,7 @@ review  ──▶ approve ──▶ merge
                  │           │
                  │           └─ CI first ran here
                  └─ approved against a green that predates the last push
+```
 
 ## Mermaid, when it is a graph
 
@@ -93,4 +94,4 @@ untraced edges as a sentence is, and harder to argue with, which is the danger.
 
 They do not carry evidence. A map shows where a finding is, not that anyone
 looked — the grade beside the finding says that, and a beautifully drawn
-`asserted` is still `asserted`.
+`E0` is still `E0`.
