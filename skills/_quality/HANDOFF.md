@@ -38,30 +38,33 @@ EVIDENCE:   E<n> — <command / file:line / measurement>
 FAILURE:    <input or state → wrong output>
 IF WRONG:   <the observation that would refute this>
 ROUTE:      fix-directive | quality-test | quality-debt | none
+OUTCOME:    real | refuted | accepted | moot | open      # _quality/OUTCOMES.md
 ```
 
-`ID` is stable across runs so a finding can be tracked to closure rather than rediscovered.
+`ID` is stable across runs so a finding can be tracked to closure rather than rediscovered;
+`<skill>` is the skill's short name in capitals (`Q-REV-041`, `Q-REG-007`, `Q-DEBT-014`).
 
 ## 2. Fix Directive (any quality skill → the implementer)
 
-Quality skills describe the fix; they do not apply it (`_quality/OPERATIONAL.md` §2).
+Quality skills describe the fix; they do not apply it (`_quality/OPERATIONAL.md` §1).
 
 ```
 FIX <ID>
+REF:      <commit sha>
 WHERE:    file:line
 WHAT:     <the behavioural change required, not the code>
 WHY NOT:  <the tempting wrong fix, and why it is wrong>
 PROOF:    <the test or measurement that must pass afterwards, named>
 ```
 
-`WHY NOT` exists because most quality findings have an obvious cheap fix that suppresses the
-symptom — a try/except, a retry, a widened type, a raised timeout. Naming it up front is what
-stops it.
+`WHY NOT` exists because most findings have an obvious cheap fix that suppresses the symptom — a
+try/except, a retry, a widened type, a raised timeout. Naming it up front is what stops it.
 
 ## 3. Coverage Gap (`quality-review` / `quality-regression` → `quality-test`)
 
 ```
 GAP <ID>
+REF:        <commit sha>
 BEHAVIOUR:  <what is unverified, stated as an observable>
 ORACLE:     spec | golden | property | reference-impl | production-capture
 WHY E3 FAILS: <why a same-context unit test would not catch this>
@@ -98,45 +101,52 @@ quarantine count). Every producer supplies the same fields, `source` included.
 Appended to `.agents/quality/metrics.jsonl`, one object per line:
 
 ```json
-{"date":"YYYY-MM-DD","ref":"<sha>","metric":"<name>","value":0,"unit":"<unit>","source":"<exact command>","scope":"<paths>"}
+{"date":"YYYY-MM-DD","ref":"<sha>","metric":"<name>","value":0,"unit":"<unit>","source":"<exact command>","scope":"<paths>","tool":"<name@version>"}
 ```
 
-`source` is the exact command that produced `value`. A snapshot whose command cannot be re-run is
-not a snapshot; it is a memory.
+`source` is the exact command that produced `value`; `tool` is required wherever the value depends
+on the tool — complexity, mutation, coverage. A snapshot whose command cannot be re-run is not a
+snapshot; it is a memory.
 
 ## 6. Gate Verdict (`quality-gate` → the release process)
 
 ```
 VERDICT:    GO | GO-WITH-CONDITIONS | NO-GO
+REASON:     unmet-criterion | insufficient-evidence      # NO-GO only
+REF:        <commit sha under decision>
 SCOPE:      <what is being decided: PR, release tag, deploy>
-BASIS:      <which of the five skills contributed, and their headline>
+CRITERIA:   <each criterion evaluated: its evidence, rung and ref>
+BASIS:      <which of the five skills contributed, which did not run, and their headline>
 UNMET:      <gate criteria not satisfied, each with the finding ID>
 CONDITIONS: <for GO-WITH-CONDITIONS: what must be true, by when, owned by whom>
 NOT COVERED:<what this verdict says nothing about>
 ```
 
-`NOT COVERED` is required. A verdict read as "everything is fine" when it only examined the diff
-is how gates get blamed for the incident they were never looking at.
+`NOT COVERED` is required: a verdict read as "everything is fine" is how gates get blamed for the
+incident they never looked at.
 
 ## 7. AUTORUN envelope
 
-When a skill runs under AUTORUN (`_quality/OPERATIONAL.md` §7), the payload is returned inside a
+When a skill runs under AUTORUN (`_quality/OPERATIONAL.md` §5), the payload is returned inside a
 fenced JSON block so the caller can parse it without reading prose:
 
 ```json
 {
   "status": "_STEP_COMPLETE",
+  "report_status": "DONE | PARTIAL | BLOCKED",
   "skill": "quality-review",
   "ref": "<commit sha>",
   "payload_type": "Finding | FixDirective | CoverageGap | DebtEntry | MetricSnapshot | GateVerdict",
   "payload": [ { } ],
   "persisted_to": ".agents/quality/findings.jsonl",
-  "not_covered": "<what this run did not examine>"
+  "not_covered": "<what this run did not examine>",
+  "open": [ {"class": "BLOCKED | OUT-OF-SCOPE | DEFERRED | HYPOTHESIS", "action": "", "where": ""} ]
 }
 ```
 
-`not_covered` is required on every envelope, not only on gate verdicts. A caller that cannot see
-the scope of what it received will over-read it.
+`open` is the residual list (`_quality/CONTRACT.md` §8) and `report_status` the run's status (§7
+there); `_STEP_COMPLETE` carries `DONE` or `PARTIAL`, `BLOCKED` is `_STEP_FAILED`. `not_covered` is
+required on every envelope: a caller blind to the scope of what it received will over-read it.
 
 Failure is returned in the same shape with `"status": "_STEP_FAILED"` and a `reason` field. A
 skill that cannot complete never returns `_STEP_COMPLETE` with an empty payload — that is
@@ -144,16 +154,7 @@ indistinguishable from "found nothing", which is a different and much more reass
 
 ## 8. Ordering
 
-The pack's default chain, when a full pass is requested:
-
-```
-quality-metrics (baseline)
-      ↓
-quality-review ─┬→ quality-test (gaps)      ─┐
-                └→ quality-debt (pre-existing)│
-quality-regression (observed failures) ───────┤
-                                              ↓
-                                        quality-gate (verdict)
-```
-
-Gate runs last and only last. Running the gate first produces a verdict with nothing under it.
+A full pass runs `quality-metrics` (baseline) first; then `quality-review`, which hands gaps to
+`quality-test` and pre-existing rot to `quality-debt`, alongside `quality-regression` for observed
+failures; `quality-gate` decides last. Invoked first, its intake acquires the missing or stale
+evidence before it decides — never a verdict with nothing under it.

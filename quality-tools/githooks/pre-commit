@@ -1,6 +1,24 @@
 #!/bin/sh
 # Budgets enforced by a mechanism rather than by remembering.
 # Install with: make hooks
+#
+# What is checked is the index — what this commit will contain — not the working
+# tree: a link broken in the staged file and fixed only on disk would otherwise
+# pass. Runs the same set as `make check`, so the hook and CI cannot disagree.
 set -e
-python3 "$(git rev-parse --show-toplevel)/quality-tools/validate.py"
-python3 "$(git rev-parse --show-toplevel)/quality-tools/figures_check.py"
+tmp=$(mktemp -d "${TMPDIR:-/tmp}/quality-pre-commit.XXXXXX")
+trap 'rm -rf "$tmp"' EXIT
+trap 'exit 1' HUP INT TERM
+
+# Before the GIT_* variables go: under `commit -a` or `commit <paths>`,
+# GIT_INDEX_FILE names the temporary index that is the commit. checkout-index
+# writes symlinks as symlinks, which the skills' links depend on.
+git checkout-index -a --prefix="$tmp/"
+
+# git exports GIT_DIR, GIT_INDEX_FILE and others to hooks. The checks must see
+# only the exported tree; inherited, these point every git they run at this repo.
+for var in $(env | sed -n 's/^\(GIT_[A-Za-z0-9_]*\)=.*/\1/p'); do
+	unset "$var"
+done
+
+make -s -C "$tmp" check

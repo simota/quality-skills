@@ -10,8 +10,6 @@ a legible warrant.
 **Read when:** deciding whether a finding may be reported · choosing what to run before a gate
 verdict · judging whether a green suite proves anything · grading a metric you did not measure.
 
----
-
 ## 1. The ladder
 
 | Level | Evidence | Produced by | Independent of the author's assumptions? |
@@ -20,7 +18,7 @@ verdict · judging whether a green suite proves anything · grading a metric you
 | `E1` | **Static** — types, lint, SAST, dependency rules | tooling | Partially: an external rule, but only over syntax. |
 | `E2` | **Execution** — build, run, reproduce, smoke | runtime | Partially: only over paths actually taken. |
 | `E3` | **Automated test** — unit, integration, contract | test suite | **Only if the oracle is independent** (§3). |
-| `E4` | **Independent test** — property, metamorphic, mutation, differential, fuzz | derived oracle | Yes, by construction. |
+| `E4` | **Independent test** — property, metamorphic, mutation, differential, fuzz | derived oracle | Only when the expectation is **traced** to a source outside the implementation (§3). The test form alone is not enough. |
 | `E5` | **Integration** — preview env, canary, policy check | real surface | Yes. |
 | `E6` | **Production** — SLO, trace, incident, user outcome | reality | Yes; the only rung on real input distribution. |
 
@@ -31,16 +29,20 @@ code**. E0 and E3 can share the same misunderstanding; E4 and above cannot.
 
 | Output | Floor | Rationale |
 |--------|-------|-----------|
-| A reported defect | `E2` | If you cannot show it happening, you are describing a worry. |
+| A reported defect | `E2`, or a bounded `E1` proof with the path and input shown | If you cannot show it happening or prove the path to it, you are describing a worry. |
 | A reported **absence** (missing guard, rollback, timeout, validation) | `E1` **plus a named reachable input** | There is no execution to show — the defect is that nothing runs. The reachability path is what replaces the execution: name the input that reaches the unguarded state, or the finding is `E0` and does not ship. |
-| A blocking gate verdict | `E3` | Blocking a release on a hunch destroys the gate's credibility faster than any bug. |
+| A blocking gate verdict | `E3` for a defect it rests on; an unmet criterion fixed before evaluation, cited with its evidence | Blocking a release on a hunch destroys the gate's credibility faster than any bug. Missing evidence is `NO-GO` for insufficient evidence, never a proved defect. |
 | A performance or cost claim | `E2` with a number | "Feels slow" is not a finding; a measurement with units is. |
 | A metric in a report | `E1` | Every number names its extraction command. Un-sourced numbers are deleted, not caveated. |
 | A refactor-safety claim | `E4` | Behaviour-preservation is exactly the claim a same-author test cannot make. |
-| A style / readability note | `E0` allowed | Labelled `nit`, never blocking, never counted in defect density. |
+| A style / readability note | `E0` allowed | Labelled `NIT`, never blocking, never counted in defect density. |
 
-A finding that cannot reach its floor is **not** downgraded and shipped anyway. It is emitted as a
-`HYPOTHESIS` with the one command that would settle it — that is the useful form.
+A claim is **warranted** when its evidence reaches the floor *and is evidence for that claim*: a
+command that ran, or a test form that was named, proves nothing about a different claim. Choose
+the cheapest check that would be sufficient. A finding that cannot reach its floor is **not**
+downgraded and shipped anyway. It is emitted as a `HYPOTHESIS` with the observation or safe check
+that would settle it — that is the useful form. **Narrowing a claim until it can be warranted
+does not close the original question**: the parts left unanswered stay residuals (§8).
 
 ## 3. Independence — the failure this pack exists to catch
 
@@ -67,7 +69,8 @@ claim** a characterization suite is evidence for. It never carries the first one
 
 **AI-written code + AI-written test in one turn is a single observation, not two.** When both come
 from the same generation, the pair sits at `E0`+. Break the loop by deriving the oracle from the
-spec before reading the implementation, or by having a different pass author the test.
+spec before reading the implementation. A different agent or pass is not independence unless the
+expectation it writes is traced to one of the sources above.
 
 ## 4. Reporting shape
 
@@ -101,13 +104,12 @@ readers to skim, and a skimmed report is a report that did not happen.
 
 | Status | Condition |
 |---|---|
-| `DONE` | Every claim at or above its floor (§2), every residual classified, zero unclassified leftovers |
+| `DONE` | Every claim warranted (§2), every residual classified, zero unclassified leftovers |
 | `PARTIAL` | Everything else that produced work — a single unreachable floor lands here |
 | `BLOCKED` | Could not proceed. Say what was tried and what stopped it |
 
-Falling short is reported as falling short. **A report that reaches `DONE` by
-lowering a floor is the exact failure this pack exists to catch**, arriving from
-the inside.
+Falling short is reported as falling short. **A report that reaches `DONE` by lowering a floor
+is the exact failure this pack exists to catch**, arriving from the inside.
 
 ## 8. Residuals
 
@@ -119,10 +121,10 @@ with the place a reader would next look.
 | `BLOCKED` | Wanted, attempted, prevented |
 | `OUT-OF-SCOPE` | Found during the work, outside what was agreed. Named, not pursued |
 | `DEFERRED` | In scope, deliberately postponed, with the condition to resume named |
-| `HYPOTHESIS` | Believed, could not reach its floor. Carries the one command that would settle it |
+| `HYPOTHESIS` | Believed, could not reach its floor. Carries the observation or safe check that would settle it |
 
-`HYPOTHESIS` is the useful form of a claim that did not make it (§2). It is not
-a downgraded finding, and it never blocks.
+`HYPOTHESIS` is the useful form of a claim that did not make it (§2), never a downgraded
+finding; it never blocks.
 
 A skill holding `Write` puts a `#TODO(agent): <class> — <action>` marker where a
 reader would next look. A skill that does not writes the entry into `open`
@@ -135,9 +137,9 @@ Before reporting, run both halves and state both results:
 
 1. **Markers introduced by this run** — every one appears in `open` with a
    matching class
-2. **Floors** — every claim made, against every claim that reached its floor
+2. **Warrants** — every claim made, against every claim warranted (§2)
 
-Report it in one line: `swept, 1 marker / 1 in open; 9 claims / 9 at floor`.
+Report it in one line: `swept, 1 marker / 1 in open; 9 claims / 9 warranted`.
 **While either pair fails to match, the status is not `DONE`.**
 
 ## 10. Comments — the code says what, a comment says why

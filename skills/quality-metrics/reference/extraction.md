@@ -6,7 +6,7 @@ Read when: producing a number rather than quoting one.
 Source: git, gh, pytest, jest, vitest, cargo, go test — every command below is one of theirs, run against whatever is installed.
 Verified: 2026-08-21 — the pickaxe and `--shortstat` claims are re-run by `make figures`; the per-ecosystem tables are not checked.
 
-Read during `MEASURE`. Every snapshot records the command **as run**, including flags and scope,
+Read during `EXTRACT`. Every snapshot records the command **as run**, including flags and scope,
 so it can be re-run against a later commit (`_quality/HANDOFF.md` §5).
 
 Verify the tool exists before reporting. A metric that could not be measured is reported as

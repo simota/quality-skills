@@ -42,8 +42,8 @@ thing, and say what happens if the answer never comes.
 
 1. **The verdict, one line.** The status and the answer — ship or not, how many findings at or
    above the floor, the number that matters. A reader who stops here has the result
-2. **The evidence, one line.** The sweep (`_quality/CONTRACT.md`), which already carries the
-   counts: `swept, 0 markers; 9 claims / 9 at floor`
+2. **The evidence, one line.** The sweep (`_quality/CONTRACT.md` §9), which already carries the
+   counts
 3. **What is unresolved** — one line per residual needing a human decision. `BLOCKED` and
    `HYPOTHESIS` always; `DEFERRED` and `OUT-OF-SCOPE` sit in the payload and appear here only if
    the reader would act on them today

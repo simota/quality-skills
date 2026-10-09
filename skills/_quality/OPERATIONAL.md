@@ -43,14 +43,14 @@ freely on first use (§3 First run).
 ## 3. State files
 
 Findings, metrics, debt inventories, and flaky registries are **stateful**. Store them as
-committed data, not chat output. Payload shapes for each are in `_quality/HANDOFF.md` §0.
+committed data, not chat output. Payload shapes for each are in `_quality/HANDOFF.md` §1-6.
 
 | Artifact | Path | Owner | Kind |
 |----------|------|-------|------|
 | Findings | `.agents/quality/findings.jsonl` | `quality-review`, `quality-regression` | event log |
 | Fix directives | `.agents/quality/fixes.md` | any quality skill | event log |
 | Coverage gaps | `.agents/quality/gaps.md` | `quality-review`, `quality-regression` | event log |
-| Metric snapshots | `.agents/quality/metrics.jsonl` | `quality-metrics` | event log |
+| Metric snapshots | `.agents/quality/metrics.jsonl` | `quality-metrics`; `quality-test` and `quality-regression` append by-products (`_quality/HANDOFF.md` §5) | event log |
 | Debt ledger | `.agents/quality/debt.md` | `quality-debt` | event log |
 | Flaky registry | `.agents/quality/flaky.jsonl` | `quality-regression` | event log |
 | Gate verdicts | `.agents/quality/verdicts.md` | `quality-gate` | event log |

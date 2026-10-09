@@ -19,9 +19,11 @@ Each skill owns one question and answers it with evidence that names its source.
 ships. `E1` static · `E2` execution · `E3` automated test · `E4` independent
 oracle · `E5` integration · `E6` production. What rises is not effort but
 **distance from the hypothesis that produced the code** — `E0` and `E3` can
-share the same misunderstanding; `E4` and above cannot. A claim that cannot
-reach its floor is not downgraded and shipped anyway: it becomes a `HYPOTHESIS`
-carrying the one command that would settle it.
+share the same misunderstanding; `E4` and above cannot — and only when the
+expectation is traced to a source outside the implementation, never because a
+different agent wrote it. A claim that cannot reach its floor is not downgraded
+and shipped anyway: it becomes a `HYPOTHESIS` carrying the observation or safe
+check that would settle it.
 
 **Independence is the property that makes any of it worth having.** The reviewer
 does not write the fix; the author's test is not the oracle; the gate does not
@@ -31,15 +33,16 @@ result — a same-author test passes exactly as convincingly as an independent o
 **A finding is graded on the day it is written and never afterwards, so
 precision drifts unmeasured.** The findings that were wrong cost the author an
 argument, a re-read, sometimes a change that made the code worse — and none of
-that cost lands near the review that produced them. So every finding is
+that cost lands near the review that produced them. So every finding emitted is
 adjudicated once its fate is known: `real` · `refuted` · `accepted` · `moot` ·
-`open`, with precision reported as `real / (real + refuted)` and its count.
+`open`, with precision reported as `real / (real + refuted)` alongside all five
+counts and the method it was taken over.
 
-**A rate of one is the more common defect.** No refuted findings almost never
-means the review was perfect; it means the findings were phrased so they could
-not be refuted, or nobody adjudicated them and `open` was read as agreement. An
-unchallengeable review is worth less than an imprecise one
-([`_quality/OUTCOMES.md`](skills/_quality/OUTCOMES.md)).
+**A rate is read against what was left `open`.** A rate of one is not
+suspicious by itself; a rate of one with most findings still `open`, or phrased
+so nothing could refute them, measures nothing. An unchallengeable review is
+worth less than an imprecise one, and the fix is never to manufacture findings
+to adjudicate ([`_quality/OUTCOMES.md`](skills/_quality/OUTCOMES.md)).
 
 ## How it is put together
 
@@ -57,9 +60,13 @@ never name a neighbour. If they did, adding a seventh skill would mean editing
 the other six.
 
 **Contracts are delivered, not referenced.** A rule kept in `skills/_quality/` is read
-on a minority of launches, so the operative part is copied verbatim into every
-`SKILL.md` between `<!-- deliver:… -->` markers. `make render` writes it back
-and a rule fails on drift.
+on a minority of launches, so its operative part is summarised once in
+`quality-registry/delivered/` and copied verbatim into every `SKILL.md` between
+`<!-- deliver:… -->` markers. `make render` writes it back and a rule fails on
+drift. **A delivered block restates its contract and never moves ahead of it**:
+the contract changes first, in the same commit. A block that says what the
+contract does not is a `SKILL.md` loosening a rule above it, which
+`_quality/VALUES.md` § Rule precedence forbids.
 
 **Knowledge splits by whether it rots.** `playbooks/` holds judgement and is
 budgeted. `reference/` holds what goes stale, carries no line budget, and states
@@ -111,7 +118,8 @@ follows the link and finds the file, which is what makes this fail quietly.
 |---|---|
 | [`skills/_quality/CONTRACT.md`](skills/_quality/CONTRACT.md) | The rungs, the floor per output, independence, status, residuals, the sweep |
 | [`skills/_quality/SEVERITY.md`](skills/_quality/SEVERITY.md) | Severity bands, blocking, debt priority, flaky classes, confidence |
-| [`skills/_quality/HANDOFF.md`](skills/_quality/HANDOFF.md) | The seven payloads that cross a skill edge, and the receiver's checks |
+| [`skills/_quality/HANDOFF.md`](skills/_quality/HANDOFF.md) | The six payloads that cross a skill edge, the AUTORUN envelope, and freshness |
+| [`skills/_quality/OUTCOMES.md`](skills/_quality/OUTCOMES.md) | The five outcomes a finding can reach, and how precision is reported |
 | [`skills/_quality/SIZING.md`](skills/_quality/SIZING.md) | How much ceremony a request is worth; when a dialogue is mandatory; the brief |
 | [`skills/_quality/VALUES.md`](skills/_quality/VALUES.md) | The order when two goods conflict, rule precedence, and the escape hatch |
 | [`skills/_quality/OPERATIONAL.md`](skills/_quality/OPERATIONAL.md) | Read-only defaults, the journal, state files, language, AUTORUN |
@@ -125,7 +133,7 @@ quality-skills/
 ├── README.md
 ├── Makefile
 ├── quality-registry/             # budgets, boundaries, routes, delivered blocks
-├── quality-tools/                # validate · test_validate · render · pre-commit
+├── quality-tools/                # validate · tests · figures · render · engine · refute · hook
 └── skills/                       # everything the CLI reads
     ├── _quality/                 # contracts in force on every run
     └── quality-<facet>/          # a SKILL.md is what makes this a skill, and

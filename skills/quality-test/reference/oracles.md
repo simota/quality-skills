@@ -53,7 +53,8 @@ A relation that must hold for **all** inputs. Use when examples run out before t
 | Oracle bound | `0 <= score(x) <= 1` | scoring, probability |
 
 Property tests find the input you would never have written down. They are `E4`
-(`_quality/CONTRACT.md` §1) because the expectation is derived from the requirement, not the code.
+(`_quality/CONTRACT.md` §1) when the property is traced to the requirement, not read off the code —
+the test form alone does not make it independent.
 
 ## 3. Metamorphic oracle
 

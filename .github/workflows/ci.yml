@@ -18,10 +18,18 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install pyyaml
+      # The same set as `make check` and the pre-commit hook, one step per tool
+      # so a failure names which.
       - name: Static rules
         run: python3 quality-tools/validate.py
       - name: Every rule still fires
         run: python3 quality-tools/test_validate.py
+      - name: Acquisition ownership
+        run: python3 quality-tools/test_acquisition_routes.py
+      - name: Figures re-derived
+        run: python3 quality-tools/figures_check.py
+      - name: No delivery drift
+        run: python3 quality-tools/render.py --check
       - name: Delivered blocks are current
         run: |
           python3 quality-tools/render.py

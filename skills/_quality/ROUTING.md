@@ -71,5 +71,6 @@ Explicitly out of scope — say so and stop, rather than half-doing it:
 
 The skill that writes a fix does not grade the fix. If `quality-test` writes a test to close a
 `quality-review` finding, the verdict on whether the finding is closed comes from `quality-review`
-re-running against the new state, or from `quality-gate` — never from `quality-test` asserting its
-own success. This is the same principle as `_quality/CONTRACT.md` §3, applied at skill scope.
+re-running against the new state — never from `quality-test` asserting its own success, and never
+from `quality-gate`, which consumes that grade rather than producing it. This is the same principle
+as `_quality/CONTRACT.md` §3, applied at skill scope.

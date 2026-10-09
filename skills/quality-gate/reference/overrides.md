@@ -42,7 +42,7 @@ Every field is required. The two that people try to omit are the two that matter
 | rollback unverified | deploy to one instance/region first; a monitored window with a named watcher |
 | suite reliability below `floors.suite_pass_rate` | the specific affected suites run manually and recorded green before deploy |
 | migration not reversible | a backup taken and its **restore exercised**, not merely taken |
-| review not performed | post-merge review scheduled with a date, and the change is flagged off until then |
+| review unobtainable after acquisition (no reviewer can be reached in time) | post-merge review scheduled with a date, and the change is flagged off until then |
 
 A control is compensating only if it addresses **the same failure** as the criterion. "We'll watch
 the dashboard" compensates for a detection gap, not for a correctness gap.
@@ -62,7 +62,7 @@ Every override expires; the default is 14 days. At expiry, exactly two outcomes:
 2. It is not — the change is reverted, or a **new** override is written with a new approver and a new date.
 
 An override renewed three times is not an exception; it is a criterion the project has decided not
-to meet. Say so plainly and take it to `design`: either the criterion is wrong, or the project has
+to meet. Say so plainly and take it to criteria design (`criteria.md`): either the criterion is wrong, or the project has
 a standing gap that deserves to be visible rather than renewed quietly.
 
 ## The rate is the diagnostic

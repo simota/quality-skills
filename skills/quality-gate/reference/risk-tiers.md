@@ -16,8 +16,8 @@ Read during `SCOPE`. Tier is determined by the **surface the change touches** an
 Walk the list top-down and take the **first** tier whose description matches. A change touching
 several surfaces takes the highest.
 
-This file is the single source for both the tier surfaces and the required inputs; the table in
-`playbooks/verdicts.md` lists surfaces only and defers here for inputs.
+This file is the single source for both the tier surfaces and the required inputs;
+`playbooks/verdicts.md` names the tiers and defers here for both.
 
 | Tier | Matches when the change touches… |
 |------|----------------------------------|

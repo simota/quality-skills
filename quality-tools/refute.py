@@ -13,7 +13,7 @@ to default to refuted when uncertain — a claim that cannot survive a hostile
 reading is exactly what this exists to catch, and the cost of a false refutation
 is one argument while the cost of a false pass is a shipped defect.
 
-**Independence is counted by source, not by voice** (`DESIGN.md` §5.4b). Two
+**Independence is counted by source, not by voice.** Two
 verdicts from one engine are one verdict. The pool is therefore `runs_on` minus
 whichever engine is running, and the count is printed with every result: with
 three engines declared, a claim gets at most **two** independent readings.
@@ -25,6 +25,14 @@ majority to appeal to, and inventing one would turn a disagreement into a verdic
 
 What counts as a refutation in this domain is `refutation` in harness.yaml, not
 here: the tool is the same in every set, and the lens is not.
+
+Exit codes, the same with and without `--json`:
+
+    0  every claim was read by at least one refuter
+    1  could not start: no lens declared, or `--running` is not a known engine
+    2  usage error (argparse)
+    3  nothing was checked: the claims file is empty, or a claim is UNCHECKED
+       because no refuter answered. Never read as a pass.
 """
 from __future__ import annotations
 
@@ -98,7 +106,9 @@ def verdict(votes: dict[str, dict]) -> str:
     """Stated, not inferred. A split stays a split."""
     if not votes:
         return "UNCHECKED"
-    said = [v["refuted"] for v in votes.values()]
+    # `is True`: anything but a real boolean true is not a refutation, and a
+    # non-empty string such as "false" must not count as one.
+    said = [v["refuted"] is True for v in votes.values()]
     if all(said):
         return "REFUTED"
     if not any(said):
@@ -141,9 +151,11 @@ def main() -> int:
                         "independent_readings": len(votes),
                         "votes": votes, "unreachable": silent})
 
+    # A run that checked nothing must not exit like one that checked everything.
+    unchecked = 3 if not results or any(r["verdict"] == "UNCHECKED" for r in results) else 0
     if a.json:
         print(json.dumps(results, ensure_ascii=False, indent=2))
-        return 0
+        return unchecked
 
     for r in results:
         print(f"\n[{r['verdict']}] {r['id']}   "
@@ -157,7 +169,7 @@ def main() -> int:
     print(f"\n{kinds.count('REFUTED')} refuted · {kinds.count('CONTESTED')} contested · "
           f"{kinds.count('STANDS')} unrefuted · {kinds.count('UNCHECKED')} unchecked")
     print("Unrefuted means nothing was found, not that nothing is there.")
-    return 0
+    return unchecked
 
 
 if __name__ == "__main__":

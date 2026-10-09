@@ -18,8 +18,9 @@ Phases: `SCOPE → ACQUIRE → EVALUATE → DECIDE → RECORD`.
 
 - **Fix the scope precisely**: this diff, this release tag, this deploy to this
   environment. A verdict whose scope is vague is read as covering everything
-- **Acquire the inputs by the two named routes, never by analysing the change
-  yourself.** The moment this skill re-derives evidence, it is grading its own work
+- **Acquire the inputs, never by analysing the change yourself**: read the current
+  payloads, and invoke the owner `registry/capabilities.yaml` names under this skill's
+  `not:` for anything missing or stale. Re-deriving evidence is grading your own work
 - **Name which skills contributed and which did not run.** An absent input is
   part of the verdict, not a gap in it
 <!-- deliver:sizing -->
@@ -46,7 +47,7 @@ Phases: `SCOPE → ACQUIRE → EVALUATE → DECIDE → RECORD`.
 
 | Situation | How to proceed |
 |---|---|
-| Rendering any verdict | [verdicts](playbooks/verdicts.md) — the three outcomes, how inputs are acquired, and how deep the gate goes per risk tier |
+| Rendering any verdict | [verdicts](playbooks/verdicts.md) — the three verdicts, how inputs are acquired, and how deep the gate goes per risk tier |
 | Designing or auditing criteria | [criteria](reference/criteria.md) — every criterion names the decision it changes |
 | Encoding a criterion in CI | [ci-gates](reference/ci-gates.md) |
 | Someone wants past a gate | [overrides](reference/overrides.md) |
@@ -90,34 +91,37 @@ Phases: `SCOPE → ACQUIRE → EVALUATE → DECIDE → RECORD`.
 
 ## Verify with
 
-A blocking verdict rests on `E3` or better; a pass rests on the rungs its
-criteria demand, each named in the record. **Blocking a release on a hunch
-destroys the gate's credibility faster than any bug does.**
+A blocking verdict rests on an unmet criterion fixed before evaluation, cited
+with its evidence, or on `E3` or better for the defect it names; a pass rests on
+the rungs its criteria demand, each named in the record. Missing evidence is a
+`NO-GO` for insufficient evidence, never a proved defect. **Blocking a release
+on a hunch destroys the gate's credibility faster than any bug does.**
 
 - **Every verdict is reproducible from what it recorded**: the criteria, the
   evidence and its ref, the contributors, and what was not covered
 <!-- deliver:report -->
-- **Every claim carries its actual rung and claim-specific warrant** (`_quality/CONTRACT.md`
-  §1-3). Choose the cheapest sufficient check; an executed command or named test form alone
-  proves nothing about a different claim. `E4` needs a traced independent expectation,
-  not a different agent. A bounded `E1` proof may establish a defect; a gate's unmet fixed
-  criterion may justify `NO-GO` without `E3`. Missing evidence is not a proved defect
-- **Preserve the original question's unresolved parts**; narrowing a claim does not close them.
-  Unsupported claims remain `HYPOTHESIS` with the observation or safe check needed
-- **Report `status`**: `DONE` (claims warranted, residuals classified) / `PARTIAL` / `BLOCKED`
+- **Every claim carries its actual rung and is warranted for that claim** (`_quality/CONTRACT.md`
+  §1-3): `E0` reasoning alone never ships · `E1` static · `E2` execution · `E3` automated test ·
+  `E4` independent oracle · `E5` integration · `E6` production. A command that ran proves nothing
+  about a different claim; `E4` needs a traced independent expectation, not a different agent
+- **A claim that cannot reach its floor is not downgraded and shipped anyway** — it is a
+  `HYPOTHESIS` with the observation or safe check that would settle it. A bounded `E1` proof may
+  establish a defect; missing evidence never does. Narrowing a claim does not close the
+  original question's unresolved parts
+- **Report `status`**: `DONE` (every claim warranted, every residual classified) / `PARTIAL` / `BLOCKED`
 - **Every residual is `BLOCKED` / `OUT-OF-SCOPE` / `DEFERRED` / `HYPOTHESIS`**
   and appears in the handoff's `open`; a run holding `Write` also leaves a
   `#TODO(agent):` marker carrying that class where a reader would next look
-- **Never omit the sweep** — markers against `open`, claims made against claims
-  at floor. While either pair disagrees the status is not `DONE`
+- **Never omit the sweep** — markers against `open`, claims made against claims warranted:
+  `swept, 0 markers; 9 claims / 9 warranted`. While either pair disagrees the status is not `DONE`
 <!-- /deliver:report -->
 <!-- deliver:outcome -->
-- **For findings emitted or adjudicated, record the outcome**: `real` · `refuted` ·
-  `accepted` · `moot` · `open`. Refutation needs checked evidence; disagreement stays `open`.
-  When reporting `real / (real + refuted)`, include all five counts and scope/source/method;
-  a zero denominator is undefined. The rate alone says nothing about open work, missed
-  defects or overall quality, and one is not suspicious by itself (`_quality/OUTCOMES.md`).
-  A run with no findings owes no precision report and must not manufacture findings
+- **For findings emitted or adjudicated, record the outcome**: `real` · `refuted` · `accepted` ·
+  `moot` · `open`. Refutation needs checked evidence; disagreement stays `open`. Report
+  `real / (real + refuted)` with all five counts and its scope, source and method; with a zero
+  denominator it is undefined. A rate of one is not suspicious by itself — read it against `open`,
+  and never manufacture findings to have something to adjudicate. A run with no findings owes no
+  precision report (`_quality/OUTCOMES.md`)
 <!-- /deliver:outcome -->
 
 ## Done when
