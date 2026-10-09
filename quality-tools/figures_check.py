@@ -259,7 +259,9 @@ def observed(repo: Repo, good: str, bad: str, code: int) -> str:
             # every commit skipped: nothing is left to test, which is what a
             # predicate that always says "untestable" should produce
             return "skip"
-        if "first bad commit" in text:
+        # git 2.43 prints "is the first bad commit"; later versions quote the
+        # term: "is the first 'bad' commit".
+        if re.search(r"is the first '?bad'? commit", text):
             return "bad"
         return f"unrecognised (rc={r.returncode})"
     finally:
