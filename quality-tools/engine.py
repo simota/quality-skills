@@ -96,20 +96,15 @@ def codex_ready(schema, where: str = "schema") -> None:
     required one that also admits null. Sent anyway, the request fails inside
     codex with no verdict; refused here, it says why.
     """
+    well_formed(schema, where)              # a direct caller gets the same refusal run() gives
     if not isinstance(schema, dict):
-        return
+        return                              # true or false: nothing for codex to object to
     if _is_object(schema):
         if schema.get("additionalProperties", False) is not False:
             raise EngineError(f"{where} admits undeclared keys (additionalProperties: "
                               f"{schema['additionalProperties']!r}); codex requires every "
                               "object closed")
-        props, required = schema.get("properties") or {}, schema.get("required") or []
-        # A malformed schema is reported, not left to crash set() with a TypeError.
-        if not isinstance(props, dict):
-            raise EngineError(f"{where}: properties must be an object, not {props!r}")
-        if not (isinstance(required, list) and all(isinstance(r, str) for r in required)):
-            raise EngineError(f"{where}: required must be a list of names, not {required!r}")
-        optional = sorted(set(props) - set(required))
+        optional = sorted(set(schema.get("properties", {})) - set(schema.get("required", [])))
         if optional:
             raise EngineError(f"{where} properties {optional} are not in `required`; codex "
                               "requires every property listed — make an optional one "
@@ -151,6 +146,63 @@ CHECKED = {"type", "enum", "const", "required", "properties", "additionalPropert
            "items", "prefixItems", "anyOf", "oneOf", "allOf"}
 ANNOTATIONS = {"title", "description", "default", "examples", "$schema", "$id",
                "$comment", "format", "deprecated", "readOnly", "writeOnly"}
+# The meta-schema's shape for each annotation; `default` may be anything. With
+# these, every keyword well_formed() admits has its shape checked.
+ANNOTATION_SHAPES = {"title": str, "description": str, "$comment": str, "format": str,
+                     "$schema": str, "$id": str, "examples": list,
+                     "deprecated": bool, "readOnly": bool, "writeOnly": bool}
+
+
+def well_formed(schema, where: str = "schema") -> None:
+    """Raise unless every keyword in `schema` has the shape it must have.
+
+    Run once, before anything reads the schema, so that nothing downstream
+    meets a malformed keyword half-way through: a value present but of the
+    wrong kind — `required: 0`, `properties: []` — is an error even when it
+    is empty or falsy, never read as if it were absent.
+    """
+    if isinstance(schema, bool):
+        return
+    if not isinstance(schema, dict):
+        raise EngineError(f"{where} is {type(schema).__name__}, not a schema")
+    unknown = sorted(set(schema) - CHECKED - ANNOTATIONS)
+    if unknown:
+        raise EngineError(f"{where} uses {unknown}, which this does not check")
+    for key, shape in ANNOTATION_SHAPES.items():
+        if key in schema and not isinstance(schema[key], shape):
+            raise EngineError(f"{where}: {key} must be a {shape.__name__}, not {schema[key]!r}")
+    if "type" in schema:
+        kinds = schema["type"] if isinstance(schema["type"], list) else [schema["type"]]
+        if (not kinds or len(set(map(repr, kinds))) != len(kinds)
+                or not all(isinstance(k, str) and k in JSON_TYPES for k in kinds)):
+            raise EngineError(f"{where}: type {schema['type']!r} is not a JSON type or a list of them")
+    # An empty enum admits no value at all, so no engine could ever answer it.
+    if "enum" in schema and not (isinstance(schema["enum"], list) and schema["enum"]):
+        raise EngineError(f"{where}: enum must be a non-empty list, not {schema['enum']!r}")
+    if "required" in schema and not (isinstance(schema["required"], list)
+                                     and all(isinstance(r, str) for r in schema["required"])
+                                     and len(set(schema["required"])) == len(schema["required"])):
+        raise EngineError(f"{where}: required must be a list of distinct names, "
+                          f"not {schema['required']!r}")
+    if "properties" in schema:
+        if not isinstance(schema["properties"], dict):
+            raise EngineError(f"{where}: properties must be an object, not {schema['properties']!r}")
+        for name, spec in schema["properties"].items():
+            well_formed(spec, f"{where}.{name}")
+    if "additionalProperties" in schema:
+        well_formed(schema["additionalProperties"], f"{where}.additionalProperties")
+    if "items" in schema:
+        if isinstance(schema["items"], list):
+            raise EngineError(f"{where}: items as a list is the old tuple form; use prefixItems")
+        well_formed(schema["items"], f"{where}.items")
+    for key in SUBSCHEMA_LISTS:
+        if key in schema:
+            # JSON Schema requires these non-empty; read empty, anyOf and oneOf
+            # would constrain nothing instead of being refused.
+            if not (isinstance(schema[key], list) and schema[key]):
+                raise EngineError(f"{where}: {key} must be a non-empty list, not {schema[key]!r}")
+            for i, sub in enumerate(schema[key]):
+                well_formed(sub, f"{where}.{key}[{i}]")
 
 
 def conforms(engine: str, got, schema: dict) -> dict:
@@ -241,13 +293,13 @@ def mismatch(value, schema, where: str) -> str | None:
             return f"{where}={value!r} matches {hits} of its oneOf, not exactly one"
 
     if isinstance(value, dict):
-        required = schema.get("required") or []
+        required = schema.get("required", [])
         if not isinstance(required, list):
             raise EngineError(f"schema at {where}: required is not a list")
         missing = [k for k in required if k not in value]
         if missing:
             return f"{where} is missing {missing}"
-        props = schema.get("properties") or {}
+        props = schema.get("properties", {})
         if not isinstance(props, dict):
             raise EngineError(f"schema at {where}: properties is not an object")
         for k, spec in props.items():
@@ -286,6 +338,7 @@ def run(engine: str, prompt: str, schema: dict) -> dict:
     """
     if not isinstance(schema, dict):
         raise EngineError(f"the schema must be an object, not {type(schema).__name__}")
+    well_formed(schema)
     sent = strict(schema)
     if engine == "codex":
         codex_ready(sent)
