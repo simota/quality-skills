@@ -3,8 +3,8 @@
 
 Purpose: Repairing each cause class at the cause, not at the symptom.
 Read when: the class is known and the repair has to hold.
-Source: none — nothing outside this page can move what it states.
-Verified: 2026-08-21 — no automated check.
+Source: go test — its `-race` flag; the rest depends on nothing outside this page.
+Verified: 2026-10-10 — no automated check.
 
 Read during `REPAIR`. Each class has one correct repair and one tempting wrong one.
 The wrong one is listed first, by name, because it is what gets reached for under time pressure.
@@ -41,15 +41,19 @@ exchange for less information.
 | Symptom | Cause | Repair |
 |---------|-------|--------|
 | fails near midnight or month end | date-boundary logic | inject the clock; add explicit boundary cases |
-| fails in one timezone | implicit local time | pin TZ in the runner; store and compare in UTC |
+| fails in one timezone | implicit local time | store and compare in UTC; run the boundary tests under at least two explicit TZs. Pinning TZ is not the repair — it hides the bug the failing zone found |
 | fails ~1 in N, no pattern | a real race | find it — this is a product defect, not a test defect |
 | fails waiting for async work | polling by wall-clock | await the condition or the completion signal |
 | fails only under load | contention | reproduce at CI's parallelism; fix the contention |
 
 For "a real race", the test is currently your **only** detector. Do not delete or retry it.
-Instrument, force the interleaving, and fix the product. A property test on the invariant — request one from
-`quality-test` as a Coverage Gap with `ORACLE: property` — usually reproduces it faster than the
-original test did.
+Instrument, **force the interleaving** — a barrier or a controllable scheduler at the suspected
+point — and fix the product. Next best is a tool that watches or explores schedules for you:
+`go test -race` flags unsynchronised access on the runs it sees, loom (Rust) exhausts the
+interleavings of a model, a linearizability checker judges a recorded history. A property test on
+the invariant does not control interleavings, so on its own it finds a race only by luck; it pays
+when it runs under one of those — request it from `quality-test` as a Coverage Gap with
+`ORACLE: property`, and say which.
 
 ## `FLAKY-ENV` — machine, network, or fixture
 
@@ -61,7 +65,7 @@ original test did.
 - Real network call → stub it; keep exactly one contract test that does hit the boundary, in a non-blocking suite.
 - Depends on CPU count / worker count → make the assertion independent of parallelism.
 - Depends on a fixture file, a port, a locale, an image version → pin it in the runner config and assert the precondition at setup, so the failure says *what* is missing.
-- Container clock skew → use a monotonic source for durations.
+- Wall clock jumps (NTP step, VM resume) → use a monotonic source for durations. It fixes jumps on one host, not skew between hosts: never compare timestamps taken on different machines.
 
 ## `STALE` — behaviour changed on purpose
 

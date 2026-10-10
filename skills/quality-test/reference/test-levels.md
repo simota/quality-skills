@@ -37,7 +37,7 @@ unit tests here") is not a reason.
 - **E2E is not "more realistic", it is more informative and less specific.** A red e2e says something is wrong. It rarely says what. Budget for the diagnosis, not just the run.
 - **Every mock is a claim about a collaborator.** The claim is unverified unless a contract or integration test checks it. A unit-test suite over a fully mocked boundary tests your beliefs about the boundary.
 - **In-memory substitutes for databases lie about the interesting parts**: transactions, isolation, constraint enforcement, collation, JSON semantics. Use the real engine for anything that depends on those.
-- **E2E count grows quadratically with flake surface.** Ten e2e tests at 99% reliability each fail a clean pipeline ~10% of the time.
+- **Every e2e test adds flake surface.** With `n` tests each passing at rate `r`, a clean pipeline goes red with probability 1 − rⁿ: ten at 99% fail it ~10% of the time, fifty ~40%.
 
 ## The shape
 

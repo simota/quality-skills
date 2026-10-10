@@ -31,7 +31,7 @@ protection.
 |-------|-----------|-----|
 | **Shared mutable fixture** | setup builds a record that tests modify | build per test, explicitly |
 | **Order dependence** | passes alone, fails in suite (or vice versa) | see `_quality/SEVERITY.md` `FLAKY-ORDER` |
-| **Real clock / timezone / locale** | `new Date()`, `time.Now()`, no TZ pin | inject the clock; pin TZ and locale in the runner |
+| **Real clock / timezone / locale** | `new Date()`, `time.Now()`, implicit local zone | inject the clock; store and compare in UTC; run time-boundary tests under ≥2 explicit TZs. Pin TZ and locale only for tests not about time — never as the repair, which hides the bug |
 | **`sleep`** | any fixed wait | await the condition, or use a fake timer |
 | **Real network** | a hostname in a unit test | stub the boundary; keep one contract test that doesn't |
 | **Shared DB across parallel workers** | intermittent unique-constraint failures | per-worker schema or transactional rollback |
@@ -42,7 +42,7 @@ protection.
 | Smell | Detection | Fix |
 |-------|-----------|-----|
 | **Testing privates** | test imports an underscore-prefixed symbol | test through the public surface, or the code is dead |
-| **Mock pyramid** | more than ~3 mocks to construct one test | wrong level (`test-levels.md`), not more mocks |
+| **Mock pyramid** | more than two mocks to construct one test | wrong level (`test-levels.md`), not more mocks |
 | **Duplicate coverage** | 12 tests differing only in a value in the same branch | one parameterized test with the boundaries |
 | **Test with logic** | `if`/loops in the test deciding what to assert | one test per branch; the test should be readable top to bottom |
 | **Unreadable failure** | failure message needs the source open to interpret | assert on named values; add a message |

@@ -3,8 +3,8 @@
 
 Purpose: Property and relation shapes, and what each one fits.
 Read when: the expected value is a rule rather than an example.
-Source: none — nothing outside this page can move what it states.
-Verified: 2026-08-21 — no automated check.
+Source: jest, vitest — the snapshot-update flags are theirs; the rest depends on nothing outside this page.
+Verified: 2026-10-10 — no automated check; the flags confirmed by running jest and vitest.
 
 The oracle problem: to test, you must already know the right answer. Where you get it decides
 whether the test is evidence or ceremony.
@@ -28,7 +28,7 @@ This is the dominant failure of AI-assisted testing and of tests written after a
 Expected value quoted from an AC, ticket, RFC, API contract, or standard.
 
 ```
-// AC-114: "orders over 10,000 JPY ship free"
+// AC-114: "orders of 10,000 JPY or more ship free"
 expect(shippingFee({ subtotal: 10_000 })).toBe(0)   // boundary is IN, per AC wording
 expect(shippingFee({ subtotal: 9_999 })).toBe(500)
 ```
@@ -77,7 +77,9 @@ that make it safe:
 
 - The initial capture must be reviewed by a human against intent, once, deliberately.
 - A changed golden in a diff is a behaviour change and must be reviewed as one.
-- `--update-snapshots` never runs in CI.
+- The update flag never runs in CI — jest `-u`/`--updateSnapshot`, vitest `-u`/`--update`
+  (Playwright's is `--update-snapshots`). Run jest with `--ci`, which fails on a missing snapshot
+  instead of writing one.
 - Goldens are small and readable. A 4,000-line snapshot is never reviewed and therefore never an oracle.
 
 ## 5. Reference-implementation oracle
