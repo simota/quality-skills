@@ -66,7 +66,10 @@ def strict(schema):
     Returns a new schema; the caller's is not touched. An object that leaves
     `additionalProperties` out is closed here. One that opens it — `true`, or a
     schema for the extra keys — is refused: codex rejects any object that is not
-    closed, and quietly closing it would change what the caller asked for.
+    closed, and quietly closing it would change what the caller asked for. So is
+    an object with a property missing from `required`: codex requires every
+    property listed, and an optional field is spelled as a required one that
+    also admits `null`.
     """
     if not isinstance(schema, dict):
         return copy.deepcopy(schema)
@@ -90,6 +93,11 @@ def strict(schema):
                               "codex requires every object closed")
         out["additionalProperties"] = False
         out.setdefault("properties", {})
+        optional = sorted(set(out["properties"]) - set(out.get("required") or []))
+        if optional:
+            raise EngineError(f"object properties {optional} are not in `required`; codex "
+                              "requires every property listed — make an optional one "
+                              "required and nullable")
     return out
 
 

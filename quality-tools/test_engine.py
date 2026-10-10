@@ -147,8 +147,8 @@ class Mismatch(unittest.TestCase):
 
 class Strict(unittest.TestCase):
     def test_closes_nested_objects_without_mutating(self):
-        schema = {"type": "object", "properties": {
-            "a": {"type": "object", "properties": {"b": {"type": "string"}}},
+        schema = {"type": "object", "required": ["a", "c", "d"], "properties": {
+            "a": {"type": "object", "required": ["b"], "properties": {"b": {"type": "string"}}},
             "c": {"type": "array", "items": {"type": "object"}},
             "d": {"anyOf": [{"type": "object"}, {"type": "null"}]}}}
         before = copy.deepcopy(schema)
@@ -179,6 +179,17 @@ class Strict(unittest.TestCase):
                 with self.assertRaises(engine.EngineError):
                     engine.strict({"type": "object", "properties": {
                         "a": {"type": "object", "additionalProperties": rest}}})
+
+    def test_refuses_an_optional_property(self):
+        # codex requires every property in `required`; optional is nullable.
+        with self.assertRaises(engine.EngineError):
+            engine.strict({"type": "object", "properties": {"a": {"type": "string"}}})
+        with self.assertRaises(engine.EngineError):
+            engine.strict({"type": "object", "required": ["a"], "properties": {
+                "a": {"type": "object", "properties": {"b": {"type": "string"}}}}})
+        out = engine.strict({"type": "object", "required": ["a"], "properties": {
+            "a": {"type": ["string", "null"]}}})
+        self.assertEqual(out["required"], ["a"])
 
     def test_keeps_an_explicit_false(self):
         out = engine.strict({"type": "object", "additionalProperties": False})
