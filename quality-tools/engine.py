@@ -61,15 +61,12 @@ VALUE_KEYWORDS = ("default", "const", "examples", "enum")
 
 
 def strict(schema):
-    """Every object closed, which is what codex requires and agy tolerates.
+    """Every object closed unless it says otherwise. Returns a new schema.
 
-    Returns a new schema; the caller's is not touched. An object that leaves
-    `additionalProperties` out is closed here. One that opens it — `true`, or a
-    schema for the extra keys — is refused: codex rejects any object that is not
-    closed, and quietly closing it would change what the caller asked for. So is
-    an object with a property missing from `required`: codex requires every
-    property listed, and an optional field is spelled as a required one that
-    also admits `null`.
+    An object that leaves `additionalProperties` out is closed here, so an
+    engine cannot add a key nobody asked for. One that sets it — `true`, or a
+    schema for the extra keys — is kept as written: that is the caller's call,
+    and claude and agy honour it. codex does not; `codex_ready` says so.
     """
     if not isinstance(schema, dict):
         return copy.deepcopy(schema)
@@ -85,20 +82,49 @@ def strict(schema):
             out[k] = strict(v)
         else:
             out[k] = copy.deepcopy(v)
-    kind = out.get("type")
-    if kind == "object" or (isinstance(kind, list) and "object" in kind):
-        if out.get("additionalProperties", False) is not False:
-            raise EngineError("an object schema admits undeclared keys "
-                              f"(additionalProperties: {out['additionalProperties']!r}); "
-                              "codex requires every object closed")
-        out["additionalProperties"] = False
+    if _is_object(out):
+        out.setdefault("additionalProperties", False)
         out.setdefault("properties", {})
-        optional = sorted(set(out["properties"]) - set(out.get("required") or []))
+    return out
+
+
+def codex_ready(schema, where: str = "schema") -> None:
+    """Raise unless codex can take `schema`; the other engines are not bound by it.
+
+    codex answers through OpenAI structured outputs, which require every object
+    closed and every property listed in `required` — an optional field is a
+    required one that also admits null. Sent anyway, the request fails inside
+    codex with no verdict; refused here, it says why.
+    """
+    if not isinstance(schema, dict):
+        return
+    if _is_object(schema):
+        if schema.get("additionalProperties", False) is not False:
+            raise EngineError(f"{where} admits undeclared keys (additionalProperties: "
+                              f"{schema['additionalProperties']!r}); codex requires every "
+                              "object closed")
+        optional = sorted(set(schema.get("properties") or {})
+                          - set(schema.get("required") or []))
         if optional:
-            raise EngineError(f"object properties {optional} are not in `required`; codex "
+            raise EngineError(f"{where} properties {optional} are not in `required`; codex "
                               "requires every property listed — make an optional one "
                               "required and nullable")
-    return out
+    for k, v in schema.items():
+        if k in VALUE_KEYWORDS:
+            continue
+        if k == "properties" and isinstance(v, dict):
+            for name, spec in v.items():
+                codex_ready(spec, f"{where}.{name}")
+        elif k in SUBSCHEMA_LISTS and isinstance(v, list):
+            for i, s in enumerate(v):
+                codex_ready(s, f"{where}.{k}[{i}]")
+        elif isinstance(v, dict):
+            codex_ready(v, f"{where}.{k}")
+
+
+def _is_object(schema: dict) -> bool:
+    kind = schema.get("type")
+    return kind == "object" or (isinstance(kind, list) and "object" in kind)
 
 
 # bool is a subclass of int in Python, so integer/number exclude it explicitly.
@@ -254,6 +280,8 @@ def run(engine: str, prompt: str, schema: dict) -> dict:
     could not add would pass.
     """
     sent = strict(schema)
+    if engine == "codex":
+        codex_ready(sent)
     return conforms(engine, _ask(engine, prompt, sent), sent)
 
 

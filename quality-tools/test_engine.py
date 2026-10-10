@@ -170,26 +170,30 @@ class Strict(unittest.TestCase):
         self.assertEqual(out["examples"], [val])
         self.assertEqual(out["enum"], [val])
 
-    def test_refuses_an_open_object(self):
-        # codex rejects any object not closed; sending one fails every run.
+    def test_keeps_an_explicit_open_object(self):
+        # The caller's call: claude and agy honour it. codex_ready is codex's.
         for rest in (True, {"type": "string"}):
             with self.subTest(additionalProperties=rest):
-                with self.assertRaises(engine.EngineError):
-                    engine.strict({"type": "object", "additionalProperties": rest})
-                with self.assertRaises(engine.EngineError):
-                    engine.strict({"type": "object", "properties": {
-                        "a": {"type": "object", "additionalProperties": rest}}})
+                out = engine.strict({"type": "object", "additionalProperties": rest})
+                self.assertEqual(out["additionalProperties"], rest)
 
-    def test_refuses_an_optional_property(self):
-        # codex requires every property in `required`; optional is nullable.
-        with self.assertRaises(engine.EngineError):
-            engine.strict({"type": "object", "properties": {"a": {"type": "string"}}})
-        with self.assertRaises(engine.EngineError):
-            engine.strict({"type": "object", "required": ["a"], "properties": {
-                "a": {"type": "object", "properties": {"b": {"type": "string"}}}}})
-        out = engine.strict({"type": "object", "required": ["a"], "properties": {
-            "a": {"type": ["string", "null"]}}})
-        self.assertEqual(out["required"], ["a"])
+    def test_codex_ready_refuses_what_codex_cannot_take(self):
+        for schema in (
+            {"type": "object", "additionalProperties": True},
+            {"type": "object", "additionalProperties": {"type": "string"}},
+            {"type": "object", "properties": {"a": {"type": "string"}}},
+            {"type": "object", "required": ["a"], "additionalProperties": False,
+             "properties": {"a": {"type": "object", "additionalProperties": False,
+                                  "properties": {"b": {"type": "string"}}}}},
+        ):
+            with self.subTest(schema=schema):
+                with self.assertRaises(engine.EngineError):
+                    engine.codex_ready(engine.strict(schema))
+
+    def test_codex_ready_accepts_required_and_nullable(self):
+        engine.codex_ready(engine.strict({"type": "object", "required": ["a"],
+                                          "properties": {"a": {"type": ["string", "null"]}}}))
+        engine.codex_ready(engine.strict(OK))
 
     def test_keeps_an_explicit_false(self):
         out = engine.strict({"type": "object", "additionalProperties": False})
@@ -244,6 +248,14 @@ class Run(Fakes):
         fake(self.bin, "agy", "time.sleep(30)")
         with mock.patch.object(engine, "TIMEOUT", 1):
             self.assertIn("did not answer within", self.refused("agy"))
+
+    def test_codex_only_constraints_bind_codex_only(self):
+        optional = {"type": "object", "properties": {"ok": {"type": "boolean"}}}
+        fake(self.bin, "codex", 'answer({"ok": True})')
+        fake(self.bin, "claude", 'answer({"structured_output": {"ok": True}})')
+        with self.assertRaises(engine.EngineError):
+            engine.run("codex", "p", optional)
+        self.assertEqual(engine.run("claude", "p", optional), {"ok": True})
 
     def test_unknown_engine(self):
         self.assertIn("is not one of", self.refused("gpt"))
