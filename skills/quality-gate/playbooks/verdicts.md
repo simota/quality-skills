@@ -26,6 +26,11 @@ Invoke only the owner of what is missing or stale, as named under `quality-gate`
 The floors those values are compared against are not evidence to acquire: they are this skill's
 own, in `gate.yml`.
 
+**Operational evidence has no skill owner.** A rollback exercised, a preview environment, a
+migration's reversibility, a dry run, an undo plan — the change owner produces these, and records
+the link or run log in `.agents/quality/verdicts.md`. Ask for it; never produce it yourself. Still
+missing after the owner was asked is `NO-GO (insufficient evidence)`.
+
 **`NO-GO (insufficient evidence)` is for evidence that cannot be obtained** — the suite will not
 run, the environment is unavailable, a human check has no owner. It is never the answer to
 "nobody has run `quality-review` yet"; run it.
@@ -40,7 +45,7 @@ of `.agents/quality/gate.yml`. A criterion whose floor is unrecorded is unevalua
 |---------|-------|----------|
 | `GO` | every criterion for this tier is met, on evidence | the evidence, cited |
 | `GO-WITH-CONDITIONS` | ship now; specified follow-up is owed | each condition with owner + date |
-| `NO-GO` | a criterion is unmet and shipping is not justified | the criterion, the finding ID, and the smallest change that clears it |
+| `NO-GO` | a criterion is unmet and shipping is not justified | the criterion, the finding or criterion ID, and the smallest change that clears it |
 
 `NO-GO` carries one of two reasons, and the record names which. **`NO-GO (insufficient
 evidence)`** is frequently the honest one: evidence still unobtainable **after** acquisition — the

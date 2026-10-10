@@ -126,9 +126,9 @@ with the place a reader would next look.
 `HYPOTHESIS` is the useful form of a claim that did not make it (§2), never a downgraded
 finding; it never blocks.
 
-A skill holding `Write` puts a `#TODO(agent): <class> — <action>` marker where a
-reader would next look. A skill that does not writes the entry into `open`
-alone and names where the marker belongs. **The report closes and is gone; the
+Where a skill's own write scope reaches the place a reader would next look, it puts a
+`#TODO(agent): <class> — <action>` marker there. Holding `Write` is not that scope: a skill whose
+scope does not reach it writes the entry into `open` alone and names where the marker belongs. **The report closes and is gone; the
 marker stays.**
 
 ## 9. The completion sweep — never omitted

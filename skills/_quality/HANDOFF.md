@@ -79,24 +79,24 @@ current behaviour, which closes the ticket and catches nothing (`_quality/CONTRA
 Appended to `.agents/quality/debt.md`:
 
 ```
-| ID | Location | Type | Cost today | Interest | Confidence of fix | Deliberate? | Status | First seen |
+| ID | Recorded | Location | Type | Cost today | Interest | Confidence of fix | Deliberate? | Status | Condition | First seen |
 ```
 
-This is the **only** ledger shape; `quality-debt`'s taxonomy describes how to fill
-each column and does not redefine them.
+This is the **only** ledger shape; `quality-debt`'s taxonomy describes how to fill each column.
 
 `Cost today` is what it costs *now* — reading time, workaround count, incident count — not a
 guess at future pain. Future pain is what `interest` in `_quality/SEVERITY.md` §4 computes.
 
-`Status` is `open` · `repaid` · `wont-fix`. The ledger is append-only, so status changes by adding
-a row with the same `ID`, a later date, and the new status; current state is the latest row per
-`ID`. `First seen` is copied forward unchanged — its age is data.
+`Status` is `open` · `repaid` · `wont-fix`. Append-only: a change is a new row with the same `ID`, a
+later `Recorded` date and the new status; current state is the latest `Recorded` per `ID`. `First
+seen` is copied forward unchanged — its age is data. `Condition` is required on `wont-fix` and on
+an `open` entry deliberately not repaid now: the observation that reopens the decision. `Interest`
+is `unscored` for debt with no file for the formula to read (`quality-debt`'s taxonomy).
 
 ## 5. Metric Snapshot (`quality-metrics`, `quality-test`, `quality-regression` → `quality-gate`, `quality-debt`)
 
-`quality-metrics` owns the file and the trend reading; `quality-test` and `quality-regression` may
-append snapshots for metrics they produce as a by-product (coverage, mutation score, pass rate,
-quarantine count). Every producer supplies the same fields, `source` included.
+`quality-metrics` owns the file and the trend; `quality-test` and `quality-regression` may append
+by-product snapshots (coverage, mutation score, pass rate, quarantine count), with the same fields.
 
 Appended to `.agents/quality/metrics.jsonl`, one object per line:
 
@@ -117,7 +117,7 @@ REF:        <commit sha under decision>
 SCOPE:      <what is being decided: PR, release tag, deploy>
 CRITERIA:   <each criterion evaluated: its evidence, rung and ref>
 BASIS:      <which of the five skills contributed, which did not run, and their headline>
-UNMET:      <gate criteria not satisfied, each with the finding ID>
+UNMET:      <gate criteria not satisfied, each with its finding or criterion ID>
 CONDITIONS: <for GO-WITH-CONDITIONS: what must be true, by when, owned by whom>
 NOT COVERED:<what this verdict says nothing about>
 ```

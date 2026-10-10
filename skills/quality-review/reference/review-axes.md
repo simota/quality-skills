@@ -36,7 +36,7 @@ Read during `AXES`. Ordered by yield, not by category tidiness.
 | Pattern | What to look for |
 |---------|------------------|
 | Empty and singular | zero rows, one row, exactly-at-limit; the code was written for "several" |
-| Null / undefined | a new field on an existing record is absent on old rows — always |
+| Null / undefined | a new field on an existing record is absent on old rows, unless a backfill or default is shown |
 | Unbounded growth | an array, cache, map, or log line inside a loop with no ceiling |
 | Missing timeout | any network, subprocess, lock, or queue wait without one |
 | Partial write | multi-step mutation with no transaction, no rollback, no idempotency key |
@@ -70,8 +70,8 @@ Independent of the three axes, and frequently the highest-severity finding in a 
 - Does the change alter behaviour for existing data or existing callers, without saying so?
 - Is a migration required and absent?
 
-An unmentioned behaviour change is at minimum `MEDIUM` regardless of how correct it is, because
-nobody downstream is expecting it.
+An unmentioned behaviour change is at minimum `LOW`, and `MEDIUM` when existing callers or data
+observe it, regardless of how correct it is — nobody downstream is expecting it.
 
 ## Framework-specific hot spots
 
@@ -81,6 +81,6 @@ nobody downstream is expecting it.
 | Node / server | unhandled rejection, missing `await` on a mutation, per-process cache treated as per-request |
 | SQL / ORM | N+1 introduced by a new field access, missing index on a new filter column, transaction scope |
 | Python | mutable default argument, broad `except`, generator consumed twice |
-| Go | error shadowed by `:=`, goroutine leak, loop-variable capture, ignored `err` |
+| Go | error shadowed by `:=`, goroutine leak, loop-variable capture (only where `go.mod` declares a Go version below 1.22), ignored `err` |
 | Rust | `unwrap` on a path reachable from input, lock held across `await` |
 | Any typed language | a widened type (`any`, `interface{}`, `Object`) added to make an error disappear |

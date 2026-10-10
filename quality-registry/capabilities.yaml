@@ -18,7 +18,7 @@ quality-review:
       go: quality-debt
     - what: "whether the findings are enough to stop a release"
       go: quality-gate
-  signals: [correct, robust, clear, findings, evidence, unchecked]
+  signals: [diff, pull request, correct, robust, clear, findings, evidence, unchecked]
 
 quality-test:
   class: full                 # tests and test infrastructure only
@@ -54,7 +54,7 @@ quality-debt:
   class: doc-write            # a ledger and a plan. Never the repayment itself
   does: [inventory, interest-scoring, blast-radius, repayment-order, deferral-rationale]
   not:
-    - what: "producing the numbers the score rests on"
+    - what: "a measured series or trend the ranking would read"
       go: quality-metrics
     - what: "a defect introduced by the change under review"
       go: quality-review

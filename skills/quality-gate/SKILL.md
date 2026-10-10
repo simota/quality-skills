@@ -57,7 +57,7 @@ Phases: `SCOPE → ACQUIRE → EVALUATE → DECIDE → RECORD`.
 | The evidence is stale | Evidence produced against a different ref is absent evidence. Say so rather than reusing it |
 | Conditions are attached to a pass | Each needs an owner and a date. Without both it is a pass with wishful thinking attached |
 | A claim here would be expensive to get wrong | [refute](refute.py) — put it to the engines that did not make it, asked to break it rather than to agree. Unrefuted is n engines finding nothing, never proof |
-| An override is granted | It is a finding adjudicated as `accepted`, with a name and a reason, and it is recorded like one. An override with no recorded outcome can never be shown to have been wrong |
+| An override is granted | Record it as if adjudicated `accepted` — who decided, and on what grounds. An override with no recorded outcome can never be shown to have been wrong |
 <!-- deliver:values -->
 - Ties break by `_quality/VALUES.md`, read top to bottom: honesty over speed ·
   mechanism over intent · **independence over throughput** · subtraction over
@@ -72,19 +72,23 @@ Phases: `SCOPE → ACQUIRE → EVALUATE → DECIDE → RECORD`.
 - Always: emit `NOT COVERED` with every verdict. A verdict read as "everything
   is fine" when only the diff was examined is how gates get blamed for the
   incident they were never looking at
-- Always: judge blocking by the shared rule — introduced and at or above the
-  middle band blocks; pre-existing routes to debt
-- Always: verify the rollback exists before approving anything irreversible
+- Always: judge blocking by `_quality/SEVERITY.md` §3 exactly — introduced and
+  `MEDIUM` or above, or any `CRITICAL` reachable from the changed surface, blocks;
+  every other pre-existing finding routes to debt
+- Always: verify the rollback was exercised before approving `R3`; at `R4`, where
+  none can exist, the dry run and the written undo plan stand in for it
 - Always: scale gate depth to the risk tier
-- Always: get permission first before stopping a time-critical release — deliver
-  the unmet criterion and the smallest change that would clear it, and let the
-  owner decide — before adding a criterion that blocks work in flight, or before
-  relaxing an existing one, even temporarily
+- Always: issue the verdict, time pressure or not, with the unmet criterion and
+  the smallest change that would clear it. Shipping anyway is the owner's
+  override (`reference/overrides.md`, unavailable at `R4`), never a softer verdict
+- Always: get the owner's approval before adding a criterion that blocks work in
+  flight, or before relaxing or removing one, even temporarily
 - Never: approve on evidence that was not run. "The tests probably pass" is not an input
 - Never: issue a verdict without `NOT COVERED`
 - Never: re-derive the evidence yourself
-- Never: keep a check that has never blocked anything and could not. Remove it —
-  a gate kept for reassurance teaches people that gates are decorative
+- Never: keep quiet about a check that has never blocked anything and could not.
+  Propose its removal with the audit evidence — a gate kept for reassurance
+  teaches people that gates are decorative
 - Never: edit outside `.agents/quality/` and the CI and gate configuration —
   the verdict log and the criteria set are this skill's, source and tests are
   not. Holding `Edit` is not permission to make the evidence pass

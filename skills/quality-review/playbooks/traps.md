@@ -7,4 +7,4 @@
 - **"It's the same pattern as the file next door"** is not a defence if the neighbour is also wrong, and not a defect if the neighbour is right. Check which, rather than treating consistency as either.
 - **Config and constant changes carry production severity.** A timeout, a retry count, a feature flag default, or a pool size is a one-line diff with `CRITICAL` reach; review depth must follow blast radius, not line count.
 - **A `try/except` added in the same commit as the bug fix usually hides the second bug.** Ask what exception was actually being thrown, and whether it is now invisible.
-- **Renames hide edits.** A file shown as renamed may carry logic changes the diff view collapses; re-diff with rename detection off when the change touches a risky surface.
+- **Renames hide edits.** Keep rename detection **on** (`git diff -M`, or `-M30%` for a heavily edited file) and read the similarity index: anything under 100% carries edits. A rename the tool did not detect shows as a whole-file delete and add, which is where an edit disappears.

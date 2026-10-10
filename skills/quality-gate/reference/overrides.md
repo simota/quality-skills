@@ -41,7 +41,7 @@ Every field is required. The two that people try to omit are the two that matter
 | no test for the new behaviour | ship behind a flag, off by default; manual verification recorded; test owed within N days |
 | rollback unverified | deploy to one instance/region first; a monitored window with a named watcher |
 | suite reliability below `floors.suite_pass_rate` | the specific affected suites run manually and recorded green before deploy |
-| migration not reversible | a backup taken and its **restore exercised**, not merely taken |
+| an `R3` migration whose down-step is unverified | a backup taken and its **restore exercised**, not merely taken |
 | review unobtainable after acquisition (no reviewer can be reached in time) | post-merge review scheduled with a date, and the change is flagged off until then |
 
 A control is compensating only if it addresses **the same failure** as the criterion. "We'll watch

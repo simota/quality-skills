@@ -41,14 +41,14 @@ this to be safe* — then find where that is enforced. If the answer is "nowhere
 
 ## How to grade an absence finding
 
-Absence findings are easy to over-emit — every system is missing something. Grade by
-**reachability**, not by principle:
+Absence findings are easy to over-emit — every system is missing something. Severity is the
+consequence's band (`_quality/SEVERITY.md` §2); **reachability can only lower it**, never raise it:
 
 | Reachable by | Severity |
 |--------------|----------|
-| ordinary user input, today | `HIGH`+ |
-| unusual but legitimate input, or a dependency being slow | `MEDIUM` |
-| only under a state the system prevents elsewhere (show where) | `LOW` |
+| ordinary user input, today | the band of its consequence |
+| unusual but legitimate input, or a dependency being slow | that band, at most `MEDIUM` |
+| only under a state the system prevents elsewhere | not a defect — cite the guard; at most a `NIT` defence-in-depth note |
 | only in a scenario you cannot construct | not a finding — drop it |
 
 "There is no validation here" with no reachable bad input is `E0` and does not ship
