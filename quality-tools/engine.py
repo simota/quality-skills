@@ -63,9 +63,10 @@ VALUE_KEYWORDS = ("default", "const", "examples", "enum")
 def strict(schema):
     """Every object closed, which is what codex requires and agy tolerates.
 
-    Returns a new schema; the caller's is not touched. An object's own
-    `additionalProperties` is kept when it says anything: only its absence
-    becomes `false`.
+    Returns a new schema; the caller's is not touched. An object that leaves
+    `additionalProperties` out is closed here. One that opens it — `true`, or a
+    schema for the extra keys — is refused: codex rejects any object that is not
+    closed, and quietly closing it would change what the caller asked for.
     """
     if not isinstance(schema, dict):
         return copy.deepcopy(schema)
@@ -83,7 +84,11 @@ def strict(schema):
             out[k] = copy.deepcopy(v)
     kind = out.get("type")
     if kind == "object" or (isinstance(kind, list) and "object" in kind):
-        out.setdefault("additionalProperties", False)
+        if out.get("additionalProperties", False) is not False:
+            raise EngineError("an object schema admits undeclared keys "
+                              f"(additionalProperties: {out['additionalProperties']!r}); "
+                              "codex requires every object closed")
+        out["additionalProperties"] = False
         out.setdefault("properties", {})
     return out
 

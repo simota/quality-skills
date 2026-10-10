@@ -170,10 +170,19 @@ class Strict(unittest.TestCase):
         self.assertEqual(out["examples"], [val])
         self.assertEqual(out["enum"], [val])
 
-    def test_keeps_an_additional_properties_schema(self):
-        rest = {"type": "string"}
-        out = engine.strict({"type": "object", "additionalProperties": rest})
-        self.assertEqual(out["additionalProperties"], rest)
+    def test_refuses_an_open_object(self):
+        # codex rejects any object not closed; sending one fails every run.
+        for rest in (True, {"type": "string"}):
+            with self.subTest(additionalProperties=rest):
+                with self.assertRaises(engine.EngineError):
+                    engine.strict({"type": "object", "additionalProperties": rest})
+                with self.assertRaises(engine.EngineError):
+                    engine.strict({"type": "object", "properties": {
+                        "a": {"type": "object", "additionalProperties": rest}}})
+
+    def test_keeps_an_explicit_false(self):
+        out = engine.strict({"type": "object", "additionalProperties": False})
+        self.assertIs(out["additionalProperties"], False)
 
 
 class Run(Fakes):
