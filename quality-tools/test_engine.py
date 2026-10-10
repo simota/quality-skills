@@ -147,8 +147,8 @@ class Mismatch(unittest.TestCase):
 
 class Strict(unittest.TestCase):
     def test_closes_nested_objects_without_mutating(self):
-        schema = {"type": "object", "properties": {
-            "a": {"type": "object", "properties": {"b": {"type": "string"}}},
+        schema = {"type": "object", "required": ["a", "c", "d"], "properties": {
+            "a": {"type": "object", "required": ["b"], "properties": {"b": {"type": "string"}}},
             "c": {"type": "array", "items": {"type": "object"}},
             "d": {"anyOf": [{"type": "object"}, {"type": "null"}]}}}
         before = copy.deepcopy(schema)
@@ -170,15 +170,36 @@ class Strict(unittest.TestCase):
         self.assertEqual(out["examples"], [val])
         self.assertEqual(out["enum"], [val])
 
-    def test_refuses_an_open_object(self):
-        # codex rejects any object not closed; sending one fails every run.
+    def test_keeps_an_explicit_open_object(self):
+        # The caller's call: claude and agy honour it. codex_ready is codex's.
         for rest in (True, {"type": "string"}):
             with self.subTest(additionalProperties=rest):
+                out = engine.strict({"type": "object", "additionalProperties": rest})
+                self.assertEqual(out["additionalProperties"], rest)
+
+    def test_codex_ready_refuses_what_codex_cannot_take(self):
+        for schema in (
+            {"type": "object", "additionalProperties": True},
+            {"type": "object", "additionalProperties": {"type": "string"}},
+            {"type": "object", "properties": {"a": {"type": "string"}}},
+            {"type": "object", "required": ["a"], "additionalProperties": False,
+             "properties": {"a": {"type": "object", "additionalProperties": False,
+                                  "properties": {"b": {"type": "string"}}}}},
+        ):
+            with self.subTest(schema=schema):
                 with self.assertRaises(engine.EngineError):
-                    engine.strict({"type": "object", "additionalProperties": rest})
+                    engine.codex_ready(engine.strict(schema))
+
+    def test_codex_ready_malformed_is_an_engine_error(self):
+        for bad in ({"required": 1}, {"required": [["a"]]}, {"properties": ["a"]}):
+            with self.subTest(bad=bad):
                 with self.assertRaises(engine.EngineError):
-                    engine.strict({"type": "object", "properties": {
-                        "a": {"type": "object", "additionalProperties": rest}}})
+                    engine.codex_ready({"type": "object", "additionalProperties": False, **bad})
+
+    def test_codex_ready_accepts_required_and_nullable(self):
+        engine.codex_ready(engine.strict({"type": "object", "required": ["a"],
+                                          "properties": {"a": {"type": ["string", "null"]}}}))
+        engine.codex_ready(engine.strict(OK))
 
     def test_keeps_an_explicit_false(self):
         out = engine.strict({"type": "object", "additionalProperties": False})
@@ -234,6 +255,14 @@ class Run(Fakes):
         with mock.patch.object(engine, "TIMEOUT", 1):
             self.assertIn("did not answer within", self.refused("agy"))
 
+    def test_codex_only_constraints_bind_codex_only(self):
+        optional = {"type": "object", "properties": {"ok": {"type": "boolean"}}}
+        fake(self.bin, "codex", 'answer({"ok": True})')
+        fake(self.bin, "claude", 'answer({"structured_output": {"ok": True}})')
+        with self.assertRaises(engine.EngineError):
+            engine.run("codex", "p", optional)
+        self.assertEqual(engine.run("claude", "p", optional), {"ok": True})
+
     def test_unknown_engine(self):
         self.assertIn("is not one of", self.refused("gpt"))
 
@@ -268,6 +297,16 @@ class Main(Fakes):
         self.assertEqual(self.main("codex", "--running", "codex", *self.files()), 1)
         self.assertEqual(self.main("--running", "gpt", *self.files()), 1)
         self.assertEqual(self.main("agy", "--running", "claude", *self.files()), 1)
+
+    def test_bad_input_files_are_usage_errors(self):
+        fake(self.bin, "codex", 'answer({"ok": True})')
+        args = self.files()
+        (self.bin / "schema.json").write_text("{bad", encoding="utf-8")
+        self.assertEqual(self.main("--running", "claude", *args), 2)    # not JSON
+        missing = ["--prompt-file", str(self.bin / "nope.txt"), *args[2:]]
+        self.assertEqual(self.main("--running", "claude", *missing), 2)  # no such file
+        (self.bin / "schema.json").write_text("[1]", encoding="utf-8")
+        self.assertEqual(self.main("--running", "claude", *args), 1)    # not an object
 
     def test_selftest_reports_and_does_not_fail(self):
         self.assertEqual(self.main("--selftest"), 0)
