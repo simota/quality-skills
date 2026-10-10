@@ -165,13 +165,17 @@ def well_formed(schema, where: str = "schema") -> None:
         raise EngineError(f"{where} uses {unknown}, which this does not check")
     if "type" in schema:
         kinds = schema["type"] if isinstance(schema["type"], list) else [schema["type"]]
-        if not kinds or not all(isinstance(k, str) and k in JSON_TYPES for k in kinds):
+        if (not kinds or len(set(map(repr, kinds))) != len(kinds)
+                or not all(isinstance(k, str) and k in JSON_TYPES for k in kinds)):
             raise EngineError(f"{where}: type {schema['type']!r} is not a JSON type or a list of them")
-    if "enum" in schema and not isinstance(schema["enum"], list):
-        raise EngineError(f"{where}: enum must be a list, not {schema['enum']!r}")
+    # An empty enum admits no value at all, so no engine could ever answer it.
+    if "enum" in schema and not (isinstance(schema["enum"], list) and schema["enum"]):
+        raise EngineError(f"{where}: enum must be a non-empty list, not {schema['enum']!r}")
     if "required" in schema and not (isinstance(schema["required"], list)
-                                     and all(isinstance(r, str) for r in schema["required"])):
-        raise EngineError(f"{where}: required must be a list of names, not {schema['required']!r}")
+                                     and all(isinstance(r, str) for r in schema["required"])
+                                     and len(set(schema["required"])) == len(schema["required"])):
+        raise EngineError(f"{where}: required must be a list of distinct names, "
+                          f"not {schema['required']!r}")
     if "properties" in schema:
         if not isinstance(schema["properties"], dict):
             raise EngineError(f"{where}: properties must be an object, not {schema['properties']!r}")
@@ -185,8 +189,10 @@ def well_formed(schema, where: str = "schema") -> None:
         well_formed(schema["items"], f"{where}.items")
     for key in SUBSCHEMA_LISTS:
         if key in schema:
-            if not isinstance(schema[key], list):
-                raise EngineError(f"{where}: {key} must be a list, not {schema[key]!r}")
+            # JSON Schema requires these non-empty; read empty, anyOf and oneOf
+            # would constrain nothing instead of being refused.
+            if not (isinstance(schema[key], list) and schema[key]):
+                raise EngineError(f"{where}: {key} must be a non-empty list, not {schema[key]!r}")
             for i, sub in enumerate(schema[key]):
                 well_formed(sub, f"{where}.{key}[{i}]")
 

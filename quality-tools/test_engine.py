@@ -200,7 +200,10 @@ class Strict(unittest.TestCase):
         # Present but wrong is an error even when empty: never read as absent.
         for bad in ({"required": 0}, {"required": {}}, {"properties": []},
                     {"enum": {}}, {"anyOf": {}}, {"items": []}, {"type": ""},
-                    {"type": []}, {"properties": {"a": 0}}, {"pattern": "x"}):
+                    {"type": []}, {"properties": {"a": 0}}, {"pattern": "x"},
+                    {"anyOf": []}, {"oneOf": []}, {"allOf": []}, {"prefixItems": []},
+                    {"enum": []}, {"required": ["a", "a"]},
+                    {"type": ["string", "string"]}):
             with self.subTest(bad=bad):
                 with self.assertRaises(engine.EngineError):
                     engine.well_formed({"type": "object", **bad})
