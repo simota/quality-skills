@@ -190,6 +190,12 @@ class Strict(unittest.TestCase):
                 with self.assertRaises(engine.EngineError):
                     engine.codex_ready(engine.strict(schema))
 
+    def test_codex_ready_malformed_is_an_engine_error(self):
+        for bad in ({"required": 1}, {"required": [["a"]]}, {"properties": ["a"]}):
+            with self.subTest(bad=bad):
+                with self.assertRaises(engine.EngineError):
+                    engine.codex_ready({"type": "object", "additionalProperties": False, **bad})
+
     def test_codex_ready_accepts_required_and_nullable(self):
         engine.codex_ready(engine.strict({"type": "object", "required": ["a"],
                                           "properties": {"a": {"type": ["string", "null"]}}}))
@@ -291,6 +297,16 @@ class Main(Fakes):
         self.assertEqual(self.main("codex", "--running", "codex", *self.files()), 1)
         self.assertEqual(self.main("--running", "gpt", *self.files()), 1)
         self.assertEqual(self.main("agy", "--running", "claude", *self.files()), 1)
+
+    def test_bad_input_files_are_usage_errors(self):
+        fake(self.bin, "codex", 'answer({"ok": True})')
+        args = self.files()
+        (self.bin / "schema.json").write_text("{bad", encoding="utf-8")
+        self.assertEqual(self.main("--running", "claude", *args), 2)    # not JSON
+        missing = ["--prompt-file", str(self.bin / "nope.txt"), *args[2:]]
+        self.assertEqual(self.main("--running", "claude", *missing), 2)  # no such file
+        (self.bin / "schema.json").write_text("[1]", encoding="utf-8")
+        self.assertEqual(self.main("--running", "claude", *args), 1)    # not an object
 
     def test_selftest_reports_and_does_not_fail(self):
         self.assertEqual(self.main("--selftest"), 0)

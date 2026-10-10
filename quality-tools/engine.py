@@ -103,8 +103,13 @@ def codex_ready(schema, where: str = "schema") -> None:
             raise EngineError(f"{where} admits undeclared keys (additionalProperties: "
                               f"{schema['additionalProperties']!r}); codex requires every "
                               "object closed")
-        optional = sorted(set(schema.get("properties") or {})
-                          - set(schema.get("required") or []))
+        props, required = schema.get("properties") or {}, schema.get("required") or []
+        # A malformed schema is reported, not left to crash set() with a TypeError.
+        if not isinstance(props, dict):
+            raise EngineError(f"{where}: properties must be an object, not {props!r}")
+        if not (isinstance(required, list) and all(isinstance(r, str) for r in required)):
+            raise EngineError(f"{where}: required must be a list of names, not {required!r}")
+        optional = sorted(set(props) - set(required))
         if optional:
             raise EngineError(f"{where} properties {optional} are not in `required`; codex "
                               "requires every property listed — make an optional one "
@@ -279,6 +284,8 @@ def run(engine: str, prompt: str, schema: dict) -> dict:
     not to the caller's open one, or an undeclared key the engine was told it
     could not add would pass.
     """
+    if not isinstance(schema, dict):
+        raise EngineError(f"the schema must be an object, not {type(schema).__name__}")
     sent = strict(schema)
     if engine == "codex":
         codex_ready(sent)
@@ -418,13 +425,18 @@ def main() -> int:
         print("need --prompt-file and --schema", file=sys.stderr)
         return 2
     try:
+        prompt = pathlib.Path(a.prompt_file).read_text(encoding="utf-8")
+        schema = json.loads(pathlib.Path(a.schema).read_text(encoding="utf-8"))
+    except (OSError, ValueError, RecursionError) as e:
+        # Bad input is a usage error with a message, never a traceback.
+        print(f"cannot read the prompt or schema: {e}", file=sys.stderr)
+        return 2
+    try:
         engine = a.engine or other_than(a.running)
         if a.running and engine == a.running:
             raise EngineError(f"{engine} is the engine running this; "
                               "a verdict from it is not a check")
-        got = run(engine,
-                  pathlib.Path(a.prompt_file).read_text(encoding="utf-8"),
-                  json.loads(pathlib.Path(a.schema).read_text(encoding="utf-8")))
+        got = run(engine, prompt, schema)
     except EngineError as e:
         print(f"{a.engine or 'checker'}: {e}", file=sys.stderr)
         return 1
