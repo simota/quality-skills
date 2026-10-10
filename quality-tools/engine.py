@@ -96,9 +96,9 @@ def codex_ready(schema, where: str = "schema") -> None:
     required one that also admits null. Sent anyway, the request fails inside
     codex with no verdict; refused here, it says why.
     """
-    if not isinstance(schema, dict):
-        return
     well_formed(schema, where)              # a direct caller gets the same refusal run() gives
+    if not isinstance(schema, dict):
+        return                              # true or false: nothing for codex to object to
     if _is_object(schema):
         if schema.get("additionalProperties", False) is not False:
             raise EngineError(f"{where} admits undeclared keys (additionalProperties: "
@@ -146,6 +146,11 @@ CHECKED = {"type", "enum", "const", "required", "properties", "additionalPropert
            "items", "prefixItems", "anyOf", "oneOf", "allOf"}
 ANNOTATIONS = {"title", "description", "default", "examples", "$schema", "$id",
                "$comment", "format", "deprecated", "readOnly", "writeOnly"}
+# The meta-schema's shape for each annotation; `default` may be anything. With
+# these, every keyword well_formed() admits has its shape checked.
+ANNOTATION_SHAPES = {"title": str, "description": str, "$comment": str, "format": str,
+                     "$schema": str, "$id": str, "examples": list,
+                     "deprecated": bool, "readOnly": bool, "writeOnly": bool}
 
 
 def well_formed(schema, where: str = "schema") -> None:
@@ -163,6 +168,9 @@ def well_formed(schema, where: str = "schema") -> None:
     unknown = sorted(set(schema) - CHECKED - ANNOTATIONS)
     if unknown:
         raise EngineError(f"{where} uses {unknown}, which this does not check")
+    for key, shape in ANNOTATION_SHAPES.items():
+        if key in schema and not isinstance(schema[key], shape):
+            raise EngineError(f"{where}: {key} must be a {shape.__name__}, not {schema[key]!r}")
     if "type" in schema:
         kinds = schema["type"] if isinstance(schema["type"], list) else [schema["type"]]
         if (not kinds or len(set(map(repr, kinds))) != len(kinds)

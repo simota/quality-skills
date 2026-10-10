@@ -203,18 +203,28 @@ class Strict(unittest.TestCase):
                     {"type": []}, {"properties": {"a": 0}}, {"pattern": "x"},
                     {"anyOf": []}, {"oneOf": []}, {"allOf": []}, {"prefixItems": []},
                     {"enum": []}, {"required": ["a", "a"]},
-                    {"type": ["string", "string"]}):
+                    {"type": ["string", "string"]}, {"description": 0},
+                    {"title": None}, {"examples": 0}, {"deprecated": "false"},
+                    {"readOnly": 1}, {"$schema": 1}):
             with self.subTest(bad=bad):
                 with self.assertRaises(engine.EngineError):
                     engine.well_formed({"type": "object", **bad})
                 with self.assertRaises(engine.EngineError):
                     engine.codex_ready({"type": "object", "additionalProperties": False, **bad})
 
+    def test_codex_ready_refuses_a_non_schema(self):
+        for bad in (0, [], "x", None):
+            with self.subTest(bad=bad):
+                with self.assertRaises(engine.EngineError):
+                    engine.codex_ready(bad)
+        engine.codex_ready(True)                # a boolean schema is a schema
+
     def test_well_formed_accepts_the_shapes_in_use(self):
         engine.well_formed(OK)
         engine.well_formed({"type": "object", "required": [], "properties": {},
                             "additionalProperties": {"type": "string"},
-                            "anyOf": [True, {"type": "null"}], "description": "x"})
+                            "anyOf": [True, {"type": "null"}], "description": "x",
+                            "examples": [{}], "deprecated": False, "default": 0})
 
     def test_codex_ready_accepts_required_and_nullable(self):
         engine.codex_ready(engine.strict({"type": "object", "required": ["a"],
