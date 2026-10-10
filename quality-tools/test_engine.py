@@ -196,6 +196,23 @@ class Strict(unittest.TestCase):
                 with self.assertRaises(engine.EngineError):
                     engine.codex_ready({"type": "object", "additionalProperties": False, **bad})
 
+    def test_well_formed_refuses_falsy_malformed_values(self):
+        # Present but wrong is an error even when empty: never read as absent.
+        for bad in ({"required": 0}, {"required": {}}, {"properties": []},
+                    {"enum": {}}, {"anyOf": {}}, {"items": []}, {"type": ""},
+                    {"type": []}, {"properties": {"a": 0}}, {"pattern": "x"}):
+            with self.subTest(bad=bad):
+                with self.assertRaises(engine.EngineError):
+                    engine.well_formed({"type": "object", **bad})
+                with self.assertRaises(engine.EngineError):
+                    engine.codex_ready({"type": "object", "additionalProperties": False, **bad})
+
+    def test_well_formed_accepts_the_shapes_in_use(self):
+        engine.well_formed(OK)
+        engine.well_formed({"type": "object", "required": [], "properties": {},
+                            "additionalProperties": {"type": "string"},
+                            "anyOf": [True, {"type": "null"}], "description": "x"})
+
     def test_codex_ready_accepts_required_and_nullable(self):
         engine.codex_ready(engine.strict({"type": "object", "required": ["a"],
                                           "properties": {"a": {"type": ["string", "null"]}}}))
@@ -254,6 +271,12 @@ class Run(Fakes):
         fake(self.bin, "agy", "time.sleep(30)")
         with mock.patch.object(engine, "TIMEOUT", 1):
             self.assertIn("did not answer within", self.refused("agy"))
+
+    def test_malformed_schema_is_refused_for_every_engine(self):
+        fake(self.bin, "claude", 'answer({"structured_output": {"ok": True}})')
+        with self.assertRaises(engine.EngineError):
+            engine.run("claude", "p", {"type": "object", "required": 0,
+                                        "properties": {"ok": {"type": "boolean"}}})
 
     def test_codex_only_constraints_bind_codex_only(self):
         optional = {"type": "object", "properties": {"ok": {"type": "boolean"}}}
