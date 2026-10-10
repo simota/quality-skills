@@ -154,9 +154,12 @@ not read them as references into this repo.
 ## Working on it
 
 ```sh
-make check      # what CI runs: the rules, then proof the rules still fire
+make check      # what CI and the hook run: the rules, proof each still fires, the
+                # tools' unit tests, the routes, the figures, and delivery drift
 make render     # after editing anything in quality-registry/delivered/
-make hooks      # run the rules on every commit
+make hooks      # run make check on what each commit and merge will contain
+
+# Python 3.9 or later; pyyaml is the one dependency
 ```
 
 ## Installing

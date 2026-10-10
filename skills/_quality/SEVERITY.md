@@ -32,8 +32,9 @@ Assign the **highest band whose full description is true.**
 | `NIT` | naming, formatting, personal preference | Never blocking. Never counted in defect metrics. |
 
 **Do not inflate.** A report where everything is `HIGH` conveys exactly as much as one where
-everything is `LOW`. If more than a third of findings land in the top two bands, re-grade before
-emitting — the bands are being used as emphasis rather than as classification.
+everything is `LOW`. If more than a third of findings land in the top two bands, re-check each
+against its band's full description before emitting, and keep every band that still holds: the
+test is the description, never the proportion, and lowering a true band is its own failure.
 
 ## 3. Blocking decision
 
@@ -73,8 +74,8 @@ tables and the extraction command for each raw input live in `quality-debt`'s
 
 | State | Value |
 |-------|-------|
-| characterization tests exist and are trusted | 1.0 |
-| tests exist but their oracle is the implementation | 0.6 |
+| characterization tests exist and were shown to fail under an injected defect | 1.0 |
+| tests exist but were never shown to fail, or assert what the code does with no other source | 0.6 |
 | no tests; behaviour is pure, with no state or I/O | 0.6 |
 | no tests; stateful, I/O, or concurrent | 0.3 |
 | no tests and behaviour is unspecified anywhere | 0.2 |

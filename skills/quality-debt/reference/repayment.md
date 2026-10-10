@@ -72,13 +72,14 @@ and is re-litigated from scratch.
 
 ```
 ENTRY:      Q-DEBT-014 — src/legacy/reportBuilder.ts
-DECISION:   not now
+DECISION:   not now        # ledger: Status open, this UNLESS as its Condition
 BECAUSE:    0 commits in 90d; 1 importer; blocks nothing
 UNLESS:     the reporting feature is revived, or this file is touched twice in one quarter
 REVIEW:     next ledger review (quarterly)
 ```
 
-`UNLESS` is the load-bearing line. "Won't fix" without a condition is a decision that cannot be
+`UNLESS` is the load-bearing line, and it is what the ledger's `Condition` column holds
+(`_quality/HANDOFF.md` §4). `wont-fix` without a condition is a decision that cannot be
 revisited on evidence, which means it will be revisited on mood.
 
 ## When a rewrite is actually right

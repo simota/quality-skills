@@ -36,8 +36,14 @@ Count commits, not changed-file lines. The `--name-only | grep -c` form counts o
 per commit, so pointing it at a directory multiplies the count by the files each commit touched —
 and `grep -c` exits 1 on zero matches, which is a legitimate band (0 commits), not an error.
 
-Exclude sweeps that destroy the signal — mass formatting, renames, license headers — by hash or
-by message pattern, and **record which you excluded**.
+Exclude sweeps that destroy the signal — mass formatting, license headers — and **record which you
+excluded**. `rev-list --count` cannot drop hashes, so list them instead:
+
+```sh
+git log --since="90 days ago" --format=%H --follow -- <file> | grep -vxFf excluded-hashes.txt | wc -l
+```
+
+`--follow` carries the count across a rename; without it a renamed file starts again at zero.
 
 | Commits / 90d | Value |
 |---------------|-------|
@@ -57,9 +63,10 @@ context). Note the direction: you want **importers of** the target, not the targ
 dependencies.
 
 ```sh
-# rough, per ecosystem — count importers
-grep -rln "from '.*<module>'" src/ | wc -l      # JS/TS
-grep -rln "import .*<module>" --include='*.py' . | wc -l
+# rough, per ecosystem — DIRECT importers only; transitive needs a graph tool
+# (madge for JS/TS, pydeps for Python), or the Go form below
+grep -rlE "(from|require\(|import\()\s*['\"][^'\"]*<module>['\"]" src/ | wc -l     # JS/TS
+grep -rlE "^\s*(from\s+<module>(\.|\s)|import\s+.*\b<module>\b)" --include='*.py' . | wc -l
 
 # Go — transitive importers. `go list -deps` points the other way (it lists what a
 # package depends ON), so it cannot answer this question.
@@ -73,9 +80,11 @@ go list -json ./... | jq -s --arg m '<module/package>' \
 | 0–1 (leaf) | 0.5 |
 | 2–5 | 1.0 |
 | 6–20 | 2.0 |
-| 20+, or crosses a service boundary | 3.0 |
+| 21+, or crosses a service boundary | 3.0 |
 
-A public API or a shared type crosses boundaries you cannot grep. Say so and take the top value.
+A grep count is direct importers, a floor on the transitive figure the operand asks for: say so
+beside it. A public API or a shared type crosses boundaries you cannot grep. Say so and take the
+top value.
 
 ## Input 3 — comprehension_score
 
@@ -97,9 +106,9 @@ not a second arithmetic on top of it.
 | Estimate | Value |
 |----------|-------|
 | under 15 min | 0.5 |
-| 15–60 min | 1.0 |
+| 15 min to under 1 hour | 1.0 |
 | 1–4 hours | 2.0 |
-| "ask the one person who knows" | 3.0 |
+| over 4 hours, or "ask the one person who knows" | 3.0 |
 
 The last row is a bus-factor finding as much as a debt entry; note it as both.
 
@@ -141,8 +150,9 @@ interest = (0.1 × 0.5 × 2.0) / 0.3 ≈ 0.3
 
 Two orders of magnitude apart — and the low one is the file everyone complains about. That gap is
 the entire reason the ledger is ordered by measured inputs rather than by discussion. What the
-numbers license is the **order**: invoice.ts is repaid before reportBuilder.ts. They do not
-license "invoice.ts is 80× worse".
+numbers license is the **rank**: invoice.ts ranks above reportBuilder.ts. They do not license
+"invoice.ts is 80× worse", and they do not fix the order of work inside a module — that is
+`repayment.md`'s.
 
 ## Reporting the ranking
 

@@ -4,7 +4,7 @@
 Purpose: Partitions, boundaries, and error paths, applied per input.
 Read when: enumerating the cases a behaviour needs.
 Source: none — nothing outside this page can move what it states.
-Verified: 2026-08-21 — no automated check.
+Verified: 2026-10-10 — no automated check.
 
 Read during `CASES`. The goal is not many cases; it is the **fewest cases that would catch the
 defects this code can plausibly have**.
@@ -40,9 +40,9 @@ discount(age):
 ```
 
 Cases: one from each class (3, 10, 30, 70) plus boundaries (0, 5, 6, 17, 18, 64, 65) plus
-malformed (-1, 65.5, null). Twelve cases, not "a few ages".
+malformed (-1, 65.5, null). Fourteen cases, not "a few ages".
 
-**Boundaries are where the defects are.** Off-by-one lives at 5/6 and 64/65, never at 30.
+**Boundaries are where the defects are.** Off-by-one lives at 5/6, 17/18 and 64/65, never at 30.
 
 ## Error paths
 
@@ -72,9 +72,10 @@ For anything with state, test the **transition**, not the state:
 Deterministic tests for concurrency are hard, so most codebases have none, so most concurrency
 defects reach production. Reachable options, in order of value:
 
-1. **Property test on the invariant** — after N concurrent operations, the sum/count/balance must hold.
-2. **Forced interleaving** — inject a barrier or a controllable scheduler at the known-dangerous point.
-3. **Loop-and-assert** — run 1,000 iterations; flaky-by-design, so run it in a separate suite, never in the blocking gate.
+1. **Forced interleaving** — inject a barrier or a controllable scheduler at the known-dangerous point. Deterministic, so it can gate.
+2. **A tool that watches or explores schedules** — a race detector (Go's `-race`, ThreadSanitizer) flags unsynchronised access on the runs it sees; loom (Rust) exhausts the interleavings of a model; a linearizability checker judges a recorded history.
+3. **Property test on the invariant** — after N concurrent operations, the sum/count/balance must hold. It does not control interleavings, so alone it finds a race by luck; run it under 1 or 2.
+4. **Loop-and-assert** — run 1,000 iterations; flaky-by-design, so run it in a separate suite, never in the blocking gate.
 
 ## What not to test
 

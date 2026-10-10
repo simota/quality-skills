@@ -51,7 +51,7 @@ Phases: `REPRODUCE → CLASSIFY → LOCATE → REPAIR → GUARD`.
 | Deciding what a failure is worth | [triage](reference/triage.md) |
 | About to make it green | [traps](playbooks/traps.md) |
 | The test looks wrong rather than the code | **The default hypothesis is that the product code is wrong.** Concluding otherwise requires the spec or an acceptance criterion saying so, cited |
-| It cannot be fixed today | Quarantine needs an owner and a date. No owner, no quarantine — fix it or delete it today |
+| It cannot be fixed today | Quarantine needs an owner and a date. No owner, no quarantine — fix it, or propose deleting it today (permission first, below) |
 | It turned out to be a one-off | Record it anyway. A registry of one-offs is how the third occurrence gets recognised |
 | A claim here would be expensive to get wrong | [refute](refute.py) — put it to the engines that did not make it, asked to break it rather than to agree. Unrefuted is n engines finding nothing, never proof |
 | A test is called flaky | That is a finding, and it is adjudicated the same way: `real` once the mechanism is shown, `refuted` once the failure reproduces as a genuine defect. **Quarantining is neither** |
@@ -109,8 +109,8 @@ runs is `E0` wearing a fix's name.
   original question's unresolved parts
 - **Report `status`**: `DONE` (every claim warranted, every residual classified) / `PARTIAL` / `BLOCKED`
 - **Every residual is `BLOCKED` / `OUT-OF-SCOPE` / `DEFERRED` / `HYPOTHESIS`**
-  and appears in the handoff's `open`; a run holding `Write` also leaves a
-  `#TODO(agent):` marker carrying that class where a reader would next look
+  and appears in the handoff's `open`; where this skill's own write scope reaches the place a
+  reader would next look, a `#TODO(agent):` marker carrying that class goes there too
 - **Never omit the sweep** — markers against `open`, claims made against claims warranted:
   `swept, 0 markers; 9 claims / 9 warranted`. While either pair disagrees the status is not `DONE`
 <!-- /deliver:report -->

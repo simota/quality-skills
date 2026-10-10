@@ -30,6 +30,11 @@ touches the code, and repayment cost grows faster than linearly with each skippe
 Rank it on age and on what it blocks (a security patch, a runtime upgrade, a required feature),
 not on churn.
 
+**Three types have no file for the formula to read** — dependency, process and knowledge debt. Write
+their `Interest` as `unscored`, keep them in their own section of the ledger ordered by what each
+blocks, and never interleave them with scored entries: a band invented to fit them is worse than
+a second list.
+
 ## Cost today — the required field
 
 State cost in units someone can verify. Not "this is messy".

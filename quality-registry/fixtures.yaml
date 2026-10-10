@@ -8,6 +8,8 @@
   expect: quality-review
 - ask: "is this pull request correct and robust"
   expect: quality-review
+- ask: "look over this diff before I merge it"
+  expect: quality-review
 - ask: "this behaviour has no oracle, write the test"
   expect: quality-test
 - ask: "enumerate the boundary and edge cases for this input"

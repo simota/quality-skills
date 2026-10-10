@@ -16,10 +16,15 @@ Interest model — `_quality/SEVERITY.md` §4 against `quality-debt/reference/in
 
 Bisection — `quality-regression/reference/bisection.md`, against the installed git:
 
-* every row of the exit-code table, by running a bisect whose predicate returns
-  that code and reading what git did with it
+* every row of the exit-code table, by running a bisect whose predicate passes
+  on the good side and returns that code on the bad side, and reading what git
+  did with it — including which commit it then blamed
+* the first-step guard row, by a predicate that returns the code everywhere,
+  good revision included: the only case in which git aborts on 126 or 127
 * that a script without its execute bit exits 126, which the page's advice rests on
 * the false-good table, recomputed as a binomial tail
+* the compounding example: the step count as ⌈log2 range⌉, and each
+  `1 − (1 − q)^b` the page works out
 
 Extraction — `quality-metrics/reference/extraction.md`, against the installed git:
 
@@ -52,7 +57,9 @@ failures: list[str] = []
 # repository. Every git here sees only its own tree, and no user or system config
 # can change what it prints.
 GIT_ENV = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
-GIT_ENV.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull,
+# LC_ALL: the strings matched below are translated in a gettext build of git.
+GIT_ENV.update(LC_ALL="C", LANGUAGE="",
+               GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull,
                GIT_AUTHOR_NAME="check", GIT_AUTHOR_EMAIL="check@example.invalid",
                GIT_COMMITTER_NAME="check", GIT_COMMITTER_EMAIL="check@example.invalid")
 
@@ -200,6 +207,11 @@ EXIT_ROW = re.compile(r"^\|\s*(`\d+`[^|]*)\|\s*([^|]+?)\s*\|", re.M)
 CODE = re.compile(r"`(\d+)`")
 VERDICT = re.compile(r"[a-z]+")
 CEILING = 128          # the table's last row is open-ended; 128 stands for all of it
+# A row whose codes cell names the good revision is the first-step guard: git
+# re-runs the predicate there and aborts only when it returns the same code.
+# It qualifies another row rather than claiming codes of its own.
+GUARD = "good revision"
+BOUNDARY = 1           # the first commit the non-constant predicate calls bad
 
 
 def verdict_of(cell: str) -> str:
@@ -208,15 +220,18 @@ def verdict_of(cell: str) -> str:
     return m.group(0) if m else cell.strip()
 
 
-def exit_table() -> list[tuple[range, str]]:
-    """Each row as (the codes it claims, the verdict word)."""
-    rows = []
+def exit_table() -> tuple[list[tuple[range, str]], list[tuple[int, str]]]:
+    """The ordinary rows as (the codes they claim, the verdict word), and the
+    first-step guard rows as (code, verdict word)."""
+    rows, guards = [], []
     for spec, cell in EXIT_ROW.findall(BISECTION.read_text(encoding="utf-8")):
         codes = [int(c) for c in CODE.findall(spec)]
         if not codes:
             continue
         word = verdict_of(cell)
-        if "–" in spec and len(codes) == 2:                 # `1`–`124`
+        if GUARD in spec:
+            guards.extend((c, word) for c in codes)
+        elif "–" in spec and len(codes) == 2:               # `1`–`124`
             rows.append((range(codes[0], codes[1] + 1), word))
         elif "+" in spec:                                   # `128`+
             rows.append((range(codes[0], CEILING + 1), word))
@@ -226,7 +241,11 @@ def exit_table() -> list[tuple[range, str]]:
     if not rows:
         fail("bisect", "no exit-code table found in bisection.md — "
                        "the checker has stopped checking anything")
-    return rows
+    if not guards:
+        fail("bisect", "the exit table has no first-step guard row (codes on the "
+                       f"{GUARD!r}) — the execute-bit advice rests on it, and "
+                       "nothing would notice it going wrong")
+    return rows, guards
 
 
 def check_table_covers(rows: list[tuple[range, str]]) -> None:
@@ -247,21 +266,35 @@ def check_table_covers(rows: list[tuple[range, str]]) -> None:
                        f"a predicate can return, starting at {missing[0]}")
 
 
-def observed(repo: Repo, good: str, bad: str, code: int) -> str:
-    """What git actually did with a predicate that exits `code`."""
+def observed(repo: Repo, good: str, bad: str, code: int, everywhere: bool) -> str:
+    """What git actually did with a predicate that exits `code`.
+
+    By default the predicate passes on the good side and returns `code` from
+    commit BOUNDARY on, which is what a real one does. A predicate that returns
+    the same code everywhere cannot tell 126 read as bad from 126 aborted: it
+    fails on the good revision too, which is exactly the case git's first-step
+    guard aborts on. `everywhere` runs that case, for the guard row only.
+    """
+    script = (f"exit {code}" if everywhere else
+              f'[ "$(cat f.txt)" -ge {BOUNDARY} ] && exit {code}; exit 0')
     repo.git("bisect", "start", bad, good)
     try:
-        r = repo.git("bisect", "run", "sh", "-c", f"exit {code}")
+        r = repo.git("bisect", "run", "sh", "-c", script)
         text = r.stdout + r.stderr
         if "bogus exit code" in text or "is < 0 or >= 128" in text:
             return "abort"
         if "cannot bisect more" in text:
-            # every commit skipped: nothing is left to test, which is what a
-            # predicate that always says "untestable" should produce
+            # every bad-side commit skipped: nothing is left to test, which is
+            # what a predicate that says "untestable" there should produce
             return "skip"
         # git 2.43 prints "is the first bad commit"; later versions quote the
         # term: "is the first 'bad' commit".
-        if re.search(r"is the first '?bad'? commit", text):
+        m = re.search(r"(\w+) is the first '?bad'? commit", text)
+        if m:
+            subject = repo.out("log", "-1", "--format=%s", m.group(1))
+            want = f"c{BOUNDARY}"
+            if not everywhere and subject != want:
+                return f"bad, but blamed {subject} rather than {want}"
             return "bad"
         return f"unrecognised (rc={r.returncode})"
     finally:
@@ -276,7 +309,7 @@ def check_exit_table(tmp: pathlib.Path) -> int:
     good = repo.out("rev-list", "--max-parents=0", "HEAD")
     bad = repo.out("rev-parse", "HEAD")
 
-    rows = exit_table()
+    rows, guards = exit_table()
     check_table_covers(rows)
     n = 0
     for codes, want in rows:
@@ -285,10 +318,17 @@ def check_exit_table(tmp: pathlib.Path) -> int:
             if code == 0:
                 continue      # "good" everywhere is not a bisect, it is an error
             n += 1
-            got = observed(repo, good, bad, code)
+            got = observed(repo, good, bad, code, everywhere=False)
             if got != want:
-                fail("bisect", f"a predicate exiting {code} is read as {got!r}, "
-                               f"but the exit table says {want!r}")
+                fail("bisect", f"a predicate exiting {code} on the bad side only is "
+                               f"read as {got!r}, but the exit table says {want!r}")
+    for code, want in guards:
+        n += 1
+        got = observed(repo, good, bad, code, everywhere=True)
+        if got != want:
+            fail("bisect", f"a predicate exiting {code} on every revision, the good "
+                           f"one included, is read as {got!r}, but the guard row "
+                           f"says {want!r}")
     return n
 
 
@@ -345,6 +385,32 @@ def check_flake_table() -> int:
     if checked == 0:
         fail("false-good", "no cell was recomputed — the checker has stopped checking anything")
     return checked
+
+
+STEPS = re.compile(r"⌈log2 (\d+)⌉ = (\d+)")
+COMPOUND = re.compile(r"1 − \(1 − ([\d.]+)\)\^(\d+) ≈ ([\d.]+)%")
+
+
+def check_compounding() -> int:
+    """The table is per tested commit; the page compounds it over a bisect."""
+    text = BISECTION.read_text(encoding="utf-8")
+    steps, worked = STEPS.findall(text), COMPOUND.findall(text)
+    if not steps or not worked:
+        fail("compounding", "no `⌈log2 R⌉ = b` or no `1 − (1 − q)^b ≈ x%` in "
+                            "bisection.md — the checker has stopped checking anything")
+        return 0
+    for r, b in steps:
+        if math.ceil(math.log2(int(r))) != int(b):
+            fail("compounding", f"⌈log2 {r}⌉ is {math.ceil(math.log2(int(r)))}, not {b}")
+    for q, b, claimed in worked:
+        actual = (1 - (1 - float(q)) ** int(b)) * 100
+        digits = len(claimed.replace(".", "").lstrip("0")) or 1
+        if float(f"%.{digits}g" % actual) != float(claimed):
+            fail("compounding", f"1 − (1 − {q})^{b} = {actual:.2f}%, not {claimed}%")
+        if steps and int(b) != int(steps[0][1]):
+            fail("compounding", f"the example compounds over {b} steps; the page "
+                                f"derives {steps[0][1]}")
+    return len(steps) + len(worked)
 
 
 def check_pickaxe(tmp: pathlib.Path) -> int:
@@ -406,7 +472,7 @@ def main() -> int:
     check_formula()
     operands = check_bands()
     examples = check_examples(confidence_values())
-    cells = check_flake_table()
+    cells = check_flake_table() + check_compounding()
 
     if shutil.which("git"):
         tmp = pathlib.Path(tempfile.mkdtemp(prefix="quality-figures-"))
@@ -429,7 +495,7 @@ def main() -> int:
         return 1
     print(f"figures green - formula agrees across 2 files, {operands} band scales "
           f"matched, {examples} worked examples recomputed, {cells} false-good "
-          f"cells recomputed{ran}")
+          f"figures recomputed{ran}")
     return 0
 
 

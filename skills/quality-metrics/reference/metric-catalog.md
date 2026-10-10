@@ -48,7 +48,7 @@ into being wrong without anyone noticing.
 | Deploy frequency | deploys ÷ time | whether batch size is the bottleneck | needs deploy data, not merge data |
 | Lead time for change | commit → production | where the pipeline stalls | commit → merge is a different metric; label it honestly |
 | **Change failure rate** | deploys needing remediation ÷ deploys | whether to invest in verification or in recovery | pairs with deploy frequency, always |
-| MTTR | incident start → resolved | whether to invest in rollback capability | gamed by closing early; pair with reopen rate |
+| MTTR | failure in production → service restored (DORA: time to restore service, now failed deployment recovery time) | whether to invest in rollback capability | restored, not ticket resolved — a fix can land days after a rollback restored service; gamed by declaring restoration early, so pair with reopen rate |
 
 ## Code-structure metrics
 

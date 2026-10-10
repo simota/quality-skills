@@ -41,15 +41,19 @@ recorded there is unevaluable — design it first (`criteria.md`) rather than in
 | Suite pass rate ≥ `floors.suite_pass_rate` | | | ● | ● | ● |
 | Mutation score on touched module ≥ `floors.mutation_score[<module>]` | | | | ● | ● |
 | Integration or preview-environment evidence | | | | ● | ● |
-| Rollback verified (exercised, not asserted) | | | | ● | ● |
+| Rollback verified (exercised, not asserted) | | | | ● | |
 | Migration reversibility or forward-fix stated | | | | ● | ● |
 | Named human approver | | | | | ● |
 | Dry run against production-like data | | | | | ● |
-| Explicit undo plan, written before execution | | | | | ● |
+| Explicit undo or compensation plan, written before execution | | | | | ● |
+
+`R4` has no rollback row because, by definition, no rollback exists: the dry run and the written
+undo or compensation plan (a restore exercised, the reversal procedure for the external
+commitment) are what stand in for it. Demanding a rollback there blocks every `R4` change for ever.
 
 ## Traps in assignment
 
-- **A one-line config change can be `R3`.** A timeout, a retry count, a pool size, or a feature-flag default has production blast radius and a two-character diff. Tier follows surface, not line count.
+- **A one-line config change can be `R3`.** A timeout, a retry count, a pool size, or a feature-flag default takes the tier of the surface it governs — `R2` by default in the table above, `R3` when it governs an `R3` surface. It has production blast radius and a two-character diff. Tier follows surface, not line count.
 - **"Just a refactor" is `R1` only if coverage is shown to exist.** Without it, a behaviour-preserving claim is unverifiable and the change is `R2` at minimum.
 - **A dependency bump is `R2`**, and `R3` if the dependency touches auth, crypto, serialization, or the database driver. The diff is one line; the behaviour change is unbounded.
 - **Urgency does not lower the tier.** It shortens the time available, which is an argument for a smaller change — not for a smaller gate. Say this plainly when it comes up; it is the most common pressure on a gate and the one that most damages it when it succeeds.

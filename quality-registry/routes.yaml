@@ -45,6 +45,11 @@ review-to-zero:
   pattern: loop
   when: "close every blocking finding before this lands"
   chain: [quality-review, quality-test]
+  # Nothing in the chain applies a fix (OPERATIONAL.md §1): between cycles the
+  # implementer acts on the fix directives, outside the pack. Without that step
+  # the loop cannot converge, so it waits for it rather than re-reviewing.
+  between: "the implementer applies the fix directives; a cycle with no new commit stops the loop"
   oracle: "no blocking finding remains, and one full pass adds none"
   checker: other-engine          # resolved at run time to one that is not running this
   max_cycles: 4
+  on_limit: "stop; the remaining BLOCK findings are reported, and the status is PARTIAL"

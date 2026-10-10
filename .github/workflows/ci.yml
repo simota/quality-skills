@@ -12,18 +12,31 @@ jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # 3.9 is the floor the tools actually run on (Path.readlink, list[str] at
+    # runtime); 3.8 fails. The floor is tested so it stays a fact, not a guess.
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.12", "3.14"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      # Pinned by commit: a tag can be moved, a SHA cannot.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: "3.11"
-      - run: pip install pyyaml
+          python-version: ${{ matrix.python-version }}
+      - run: pip install pyyaml==6.0.3
       # The same set as `make check` and the pre-commit hook, one step per tool
       # so a failure names which.
       - name: Static rules
         run: python3 quality-tools/validate.py
       - name: Every rule still fires
         run: python3 quality-tools/test_validate.py
+      - name: Engine checks against fake engines
+        run: python3 quality-tools/test_engine.py
+      - name: Refute verdicts and exit codes
+        run: python3 quality-tools/test_refute.py
+      - name: Render is all or nothing
+        run: python3 quality-tools/test_render.py
       - name: Acquisition ownership
         run: python3 quality-tools/test_acquisition_routes.py
       - name: Figures re-derived

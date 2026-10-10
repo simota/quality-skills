@@ -1,6 +1,6 @@
 ---
 name: quality-review
-description: "Grading the findings a review produces: the evidence under each, severity kept separate from blocking, and what a diff leaves unchecked — correct, robust, clear. Use for a pull request."
+description: "Reviewing a diff for defects: findings on what is correct, robust and clear, the evidence under each, severity kept apart from blocking, and what it leaves unchecked. Use for a pull request."
 allowed-tools: Read, Grep, Glob, Bash, Write
 ---
 <!-- quality:contract -->
@@ -87,7 +87,8 @@ Phases: `INTENT → SCOPE → AXES → ABSENCE → GRADE → EMIT`.
   code failing to say what it does, and it costs every later reader
 - Never: apply the fix and then approve it
 - Never: rubber-stamp generated code because it reads fluently
-- Never: let more than a third of findings land in the top two bands. Re-grade first
+- Never: emit with more than a third of findings in the top two bands unchecked —
+  re-check each against its band's full description, and keep every band that holds
 - Never: write outside `.agents/quality/` — the findings log, the gaps list,
   `.agents/quality/fixes.md` and this skill's journal are the whole of what it
   owns. Holding `Write` is not permission to touch source, tests or CI config
@@ -113,8 +114,8 @@ Reasoning alone is `E0` and never ships as a finding.
   original question's unresolved parts
 - **Report `status`**: `DONE` (every claim warranted, every residual classified) / `PARTIAL` / `BLOCKED`
 - **Every residual is `BLOCKED` / `OUT-OF-SCOPE` / `DEFERRED` / `HYPOTHESIS`**
-  and appears in the handoff's `open`; a run holding `Write` also leaves a
-  `#TODO(agent):` marker carrying that class where a reader would next look
+  and appears in the handoff's `open`; where this skill's own write scope reaches the place a
+  reader would next look, a `#TODO(agent):` marker carrying that class goes there too
 - **Never omit the sweep** — markers against `open`, claims made against claims warranted:
   `swept, 0 markers; 9 claims / 9 warranted`. While either pair disagrees the status is not `DONE`
 <!-- /deliver:report -->

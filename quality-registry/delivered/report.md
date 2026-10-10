@@ -8,7 +8,7 @@
   original question's unresolved parts
 - **Report `status`**: `DONE` (every claim warranted, every residual classified) / `PARTIAL` / `BLOCKED`
 - **Every residual is `BLOCKED` / `OUT-OF-SCOPE` / `DEFERRED` / `HYPOTHESIS`**
-  and appears in the handoff's `open`; a run holding `Write` also leaves a
-  `#TODO(agent):` marker carrying that class where a reader would next look
+  and appears in the handoff's `open`; where this skill's own write scope reaches the place a
+  reader would next look, a `#TODO(agent):` marker carrying that class goes there too
 - **Never omit the sweep** — markers against `open`, claims made against claims warranted:
   `swept, 0 markers; 9 claims / 9 warranted`. While either pair disagrees the status is not `DONE`

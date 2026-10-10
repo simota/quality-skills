@@ -16,8 +16,9 @@ Phases: `INTAKE → MEASURE → SCORE → SEQUENCE → EMIT`.
 ## Before starting
 
 - **Get the numbers before the ranking.** Touch frequency comes from git, blast
-  radius from imports, incidents from the tracker. An input that cannot be
-  measured is stated as unmeasured and the ranking is presented as partial
+  radius from imports; incidents from the tracker go in `Cost today`, not the
+  score. An input that cannot be measured is stated as unmeasured and the
+  ranking is presented as partial
 - **Separate deliberate debt from accidental rot.** Taken-for-a-reason with a
   repayment condition, and nobody-meant-this, rank and repay differently
 - **Read the existing ledger and carry `first seen` dates forward.** The age of
@@ -87,10 +88,11 @@ Phases: `INTAKE → MEASURE → SCORE → SEQUENCE → EMIT`.
 
 ## Verify with
 
-Every interest input is `E1` at minimum — it names where the number came from
-(`git log`, an import graph, the incident tracker). An input that is felt rather
-than measured is stated as unmeasured, and the ranking says it is partial —
-`comprehension_score`, the one estimated operand, is flagged rather than partial.
+`touch_score` and `blast_score` are `E1` at minimum — each names the command it
+came from (`git log`, an import graph). `comprehension_score` is the one estimate
+(`E0`), allowed only because `_quality/SEVERITY.md` §4 defines it so: it is flagged
+`ESTIMATED`, never partial. Any other input that is felt rather than measured is
+stated as unmeasured, and the ranking says it is partial.
 
 - **A ranking whose inputs are unmeasured is an opinion with a sort order.**
   Say which entries rest on complete data and which do not
@@ -105,8 +107,8 @@ than measured is stated as unmeasured, and the ranking says it is partial —
   original question's unresolved parts
 - **Report `status`**: `DONE` (every claim warranted, every residual classified) / `PARTIAL` / `BLOCKED`
 - **Every residual is `BLOCKED` / `OUT-OF-SCOPE` / `DEFERRED` / `HYPOTHESIS`**
-  and appears in the handoff's `open`; a run holding `Write` also leaves a
-  `#TODO(agent):` marker carrying that class where a reader would next look
+  and appears in the handoff's `open`; where this skill's own write scope reaches the place a
+  reader would next look, a `#TODO(agent):` marker carrying that class goes there too
 - **Never omit the sweep** — markers against `open`, claims made against claims warranted:
   `swept, 0 markers; 9 claims / 9 warranted`. While either pair disagrees the status is not `DONE`
 <!-- /deliver:report -->

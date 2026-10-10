@@ -5,7 +5,16 @@
 # What is checked is the index — what this commit will contain — not the working
 # tree: a link broken in the staged file and fixed only on disk would otherwise
 # pass. Runs the same set as `make check`, so the hook and CI cannot disagree.
+# Installed as pre-merge-commit too: a merge commit's content is checked the same.
 set -e
+
+# Nothing staged relative to HEAD (a message-only amend) changes nothing the
+# check could see. With no HEAD yet the diff fails, so a first commit still runs.
+# QUALITY_FORCE_CHECK=1 runs it regardless.
+if [ -z "${QUALITY_FORCE_CHECK:-}" ] && git diff --cached --quiet HEAD 2>/dev/null; then
+	exit 0
+fi
+
 tmp=$(mktemp -d "${TMPDIR:-/tmp}/quality-pre-commit.XXXXXX")
 trap 'rm -rf "$tmp"' EXIT
 trap 'exit 1' HUP INT TERM

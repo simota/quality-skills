@@ -7,7 +7,7 @@
 |-------------|--------------|----------|
 | Fails alone and in suite, every time | `REGRESSION` or `STALE` | deterministic — bisect it |
 | Passes alone, fails in suite | `FLAKY-ORDER` | shared state; random-order run confirms |
-| Fails at 09:00 JST, passes at 14:00 | `FLAKY-TIME` | timezone or date boundary |
+| Fails at 08:00 JST, passes at 14:00 | `FLAKY-TIME` | timezone or date boundary — 08:00 JST is still yesterday in UTC |
 | Fails on CI, passes locally | `FLAKY-ENV` | CPU count, parallelism, container clock, missing fixture |
 | Fails ~1 in 20, no pattern | `FLAKY-TIME` (race) | a real race — in the product, usually |
 | Fails right after an intentional behaviour change | `STALE` | the diff says so |
@@ -30,6 +30,8 @@ EXPIRES: YYYY-MM-DD   (default: 14 days)
 BLIND SPOT: <the behaviour now unverified, in one sentence>
 ```
 
-At expiry: fixed, or deleted with the blind spot filed as a `quality-debt` entry. There is no
-third option and no extension without a new owner. `BLIND SPOT` is what makes the deletion
-honest — a deleted quarantined test that leaves no debt entry is coverage that silently vanished.
+At expiry: fixed; deleted — with the owner's permission, and the blind spot filed as a
+`quality-debt` entry; or extended under a **new** owner. There is no fourth option, and the same
+owner again is not an extension. A `FLAKY-TIME` race is never deleted: the test is its only
+detector, so it is extended. `BLIND SPOT` is what makes a deletion honest — a deleted quarantined
+test that leaves no debt entry is coverage that silently vanished.

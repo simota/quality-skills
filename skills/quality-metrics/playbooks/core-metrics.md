@@ -26,7 +26,7 @@ optimization being fake:
 | line coverage | assertion-free tests | mutation score |
 | defect count (down) | not reporting defects | escape rate + detection channel volume |
 | velocity | smaller stories | change failure rate |
-| MTTR | closing incidents early | reopen rate |
+| MTTR | declaring restoration early, or timing ticket closure instead of restoration | reopen rate |
 | suite pass rate | skipping and quarantining | quarantine count + expiry breaches |
 | complexity (down) | splitting into many trivial units | cross-file coupling / call depth |
 | PR review time | rubber-stamping | escaped defects per reviewed PR |

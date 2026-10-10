@@ -18,12 +18,12 @@ Before a check is added, write its row:
 | Field | Example |
 |-------|---------|
 | Check | `mutation score (src/billing) ≥ 0.60` |
-| Command | `npx stryker run --mutate 'src/billing/**'` |
+| Command | `npx stryker run --mutate 'src/billing/**'` — Stryker reports 0–100, so this floor is `thresholds.break: 60` |
 | Red means | the suite cannot detect injected defects in billing |
 | Developer does | add a test with a named oracle for the surviving mutant listed in the report |
 | Runtime | ~4 min |
 | Blocking? | yes, `R3`+ only |
-| Removal condition | when billing is retired or the score holds above 0.8 for two quarters |
+| Removal condition | remove when billing is retired; demote to reporting if the score holds above 0.8 for two quarters |
 
 **"Developer does"** is the field that decides whether the check helps. A red with no obvious next
 action is noise, and noise is what gets bypassed.
@@ -75,12 +75,12 @@ than a long, bypassed one.
 
 ## Anti-patterns
 
-- **`continue-on-error: true` on a blocking check.** It reports green. It is not a gate; delete it or fix it.
+- **`continue-on-error: true` (GitHub) or `allow_failure: true` (GitLab) on a blocking check.** It reports green. It is not a gate; delete it or fix it.
 - **`--passWithNoTests`.** A pipeline that passes when the test command matched nothing has, at some point, been passing for months.
 - **Snapshot update flags in CI** (`-u`, `--update-snapshots`). The gate approves whatever happened.
 - **Retrying the whole test job on failure.** Hides flakiness and doubles the mean time to red. Retry at the test level, with the flake recorded to the registry (`quality-regression`).
 - **A gate that only runs on the default branch.** It finds the problem after the merge, which is after the decision.
-- **Required checks that do not run on all paths.** A path filter that excludes the changed file makes the check pass by not existing.
+- **Required checks that do not run on all paths** mislead both ways. A job skipped by an `if:` condition reports success and passes the gate by not running; a workflow skipped by a `paths` filter leaves its required check pending and blocks unrelated changes, which teaches people to bypass it. Gate on a job that always runs and decides inside itself what applies.
 
 ## Minimal gate config skeleton
 
@@ -90,7 +90,9 @@ than a long, bypassed one.
 # Thresholds referenced as "the project's floor" by criteria and by skill Removal conditions.
 # A floor that is not recorded here does not exist; do not invent one at evaluation time.
 floors:
-  suite_pass_rate: 0.98          # over the last 20 runs
+  suite_pass_rate: 0.95          # fraction of the last `suite_pass_window` default-branch runs
+                                 # whose suite passed with no retries; 0.95 = one red run in 20
+  suite_pass_window: 20
   mutation_score:
     src/billing: 0.60            # per-module; unlisted modules have no mutation floor
 
@@ -98,7 +100,7 @@ tiers:
   R2:
     criteria:
       - id: no-block-findings
-        command: "<quality-review invocation>"
+        command: "read .agents/quality/findings.jsonl at the ref: no current BLOCK"
         blocking: true
         red_means: "a defect introduced by this change, MEDIUM or above"
         next_step: "address the cited finding or argue it down with evidence"
