@@ -39,11 +39,21 @@ def sub(path: Path, old: str, new: str) -> None:
 
 # Each case mutates a copy, then expects that rule id in the output.
 CASES: dict[str, callable] = {}
+# Each quiet case mutates a copy in a way the rule must accept: a rule that
+# fires on the legitimate case is as wrong as one that never fires.
+QUIET: dict[str, callable] = {}
 
 
 def case(rule):
     def deco(fn):
         CASES[rule] = fn
+        return fn
+    return deco
+
+
+def quiet(rule):
+    def deco(fn):
+        QUIET[rule] = fn
         return fn
     return deco
 
@@ -139,6 +149,21 @@ def _(r): sub(r / f"{S}quality-review/SKILL.md", "allowed-tools: Read, Grep, Glo
 
 @case("V15-writes")
 def _(r): sub(r / "quality-registry/harness.yaml", "    writes: true", "    writes: false")
+
+
+@case("V15-multiedit")
+def _(r): sub(r / "quality-registry/harness.yaml", "permission_classes:\n",
+              "permission_classes:\n  nb:\n    tools: \"Read, NotebookEdit\"\n    writes: false\n")
+
+
+@case("V15-list")
+def _(r): sub(r / "quality-registry/harness.yaml", "permission_classes:\n",
+              "permission_classes:\n  listed:\n    tools: [Read, MultiEdit]\n    writes: false\n")
+
+
+@quiet("V15-list")
+def _(r): sub(r / "quality-registry/harness.yaml",
+              'tools: "Read, Grep, Glob, Bash, Write"', "tools: [Read, Grep, Glob, Bash, Write]")
 
 
 @case("V16")
@@ -372,10 +397,41 @@ def _(r):
 def _(r): sub(r / "quality-registry/harness.yaml", "source_authorities:", "unused_authorities:")
 
 
+@quiet("V24-owned-dirs")
+def _(r): sub(r / "README.md", "holds every\nthreshold;",
+              "holds every\nthreshold (`quality-registry`, read by `quality-tools`);")
+
+
+@case("V39-none-declared")
+def _(r): sub(r / "quality-registry/harness.yaml", "  route_stages_max:", "  unused_stages_max:")
+
+
 @case("V39")
 def _(r): sub(r / "quality-registry/routes.yaml", "chain: [quality-review, quality-test, quality-gate]",
               "chain: [quality-review, quality-test, quality-review, quality-test, "
               "quality-review, quality-test, quality-gate]")
+
+
+def hooks_cases() -> str | None:
+    """The hook report follows the installed bytes, for both hooks."""
+    with tempfile.TemporaryDirectory() as tmp:
+        copy = Path(tmp) / "repo"
+        shutil.copytree(ROOT, copy, symlinks=True,
+                        ignore=shutil.ignore_patterns(".git", "__pycache__"))
+        subprocess.run(["git", "init", "-q", str(copy)], check=True)
+        hooks = copy / ".git" / "hooks"
+        hooks.mkdir(exist_ok=True)
+        src = (copy / "quality-tools" / "githooks" / "pre-commit").read_bytes()
+        steps = [("off", lambda: None),
+                 ("stale", lambda: (hooks / "pre-commit").write_bytes(src)),
+                 ("on", lambda: (hooks / "pre-merge-commit").write_bytes(src)),
+                 ("stale", lambda: (hooks / "pre-merge-commit").write_bytes(src + b"#\n"))]
+        for want, step in steps:
+            step()
+            _, out = run(copy)
+            if f"hooks {want}" not in out:
+                return f"hooks state: expected {want!r}\n{out}"
+    return None
 
 
 def main() -> int:
@@ -401,6 +457,24 @@ def main() -> int:
     print(f"{len(CASES)} rules exercised, {len(bad)} silent")
     if bad:
         print("silent: " + ", ".join(bad))
+        return 1
+
+    noisy: list[str] = []
+    for rule, mutate in QUIET.items():
+        with tempfile.TemporaryDirectory() as tmp:
+            copy = Path(tmp) / "repo"
+            shutil.copytree(ROOT, copy, symlinks=True,
+                            ignore=shutil.ignore_patterns(".git", "__pycache__"))
+            mutate(copy)
+            rc, out = run(copy)
+            if rc != 0:
+                noisy.append(rule)
+                print(f"  {rule} fired on a legitimate case\n{out}")
+    if noisy:
+        print("noisy: " + ", ".join(noisy))
+        return 1
+    if (problem := hooks_cases()):
+        print(problem)
         return 1
 
     # Counting the cases that exist says nothing about the rules that do. A rule

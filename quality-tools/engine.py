@@ -33,6 +33,7 @@ Engine quirks, re-checked by `make engines` rather than dated:
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import pathlib
 import subprocess
@@ -54,35 +55,58 @@ class EngineError(RuntimeError):
 # Keywords whose value is a list of subschemas. Left unwalked, an object under
 # anyOf stays open and codex rejects the whole schema.
 SUBSCHEMA_LISTS = ("anyOf", "oneOf", "allOf", "prefixItems")
+# Keywords whose value is data, not a schema: a `default` that happens to look
+# like an object schema must reach the engine as written.
+VALUE_KEYWORDS = ("default", "const", "examples", "enum")
 
 
-def strict(schema: dict) -> dict:
-    """Every object closed, which is what codex requires and agy tolerates."""
+def strict(schema):
+    """Every object closed, which is what codex requires and agy tolerates.
+
+    Returns a new schema; the caller's is not touched. An object's own
+    `additionalProperties` is kept when it says anything: only its absence
+    becomes `false`.
+    """
     if not isinstance(schema, dict):
-        return schema
-    out = {k: strict(v) if isinstance(v, dict) else v for k, v in schema.items()}
-    for k in SUBSCHEMA_LISTS:
-        if isinstance(out.get(k), list):
-            out[k] = [strict(s) for s in out[k]]
+        return copy.deepcopy(schema)
+    out = {}
+    for k, v in schema.items():
+        if k in VALUE_KEYWORDS:
+            out[k] = copy.deepcopy(v)
+        elif k == "properties" and isinstance(v, dict):
+            out[k] = {name: strict(spec) for name, spec in v.items()}
+        elif k in SUBSCHEMA_LISTS and isinstance(v, list):
+            out[k] = [strict(s) for s in v]
+        elif isinstance(v, dict):
+            out[k] = strict(v)
+        else:
+            out[k] = copy.deepcopy(v)
     kind = out.get("type")
     if kind == "object" or (isinstance(kind, list) and "object" in kind):
-        out["additionalProperties"] = False
-        out["properties"] = {k: strict(v) for k, v in (out.get("properties") or {}).items()}
-    if isinstance(out.get("items"), dict):
-        out["items"] = strict(out["items"])
+        out.setdefault("additionalProperties", False)
+        out.setdefault("properties", {})
     return out
 
 
 # bool is a subclass of int in Python, so integer/number exclude it explicitly.
+# An integer is a value, not a spelling: JSON Schema counts 1.0 as one.
 JSON_TYPES = {
     "object": lambda v: isinstance(v, dict),
     "array": lambda v: isinstance(v, list),
     "string": lambda v: isinstance(v, str),
     "boolean": lambda v: isinstance(v, bool),
-    "integer": lambda v: isinstance(v, int) and not isinstance(v, bool),
+    "integer": lambda v: (isinstance(v, int) and not isinstance(v, bool))
+                         or (isinstance(v, float) and v.is_integer()),
     "number": lambda v: isinstance(v, (int, float)) and not isinstance(v, bool),
     "null": lambda v: v is None,
 }
+
+# Checked by mismatch(). Annotations change nothing about validity and pass;
+# any other keyword does, so meeting one is an error rather than a silent pass.
+CHECKED = {"type", "enum", "const", "required", "properties", "additionalProperties",
+           "items", "prefixItems", "anyOf", "oneOf", "allOf"}
+ANNOTATIONS = {"title", "description", "default", "examples", "$schema", "$id",
+               "$comment", "format", "deprecated", "readOnly", "writeOnly"}
 
 
 def conforms(engine: str, got, schema: dict) -> dict:
@@ -93,57 +117,131 @@ def conforms(engine: str, got, schema: dict) -> dict:
     """
     if not isinstance(got, dict):
         raise EngineError(f"{engine} answered {type(got).__name__}, not an object: {got!r}"[:400])
-    problem = mismatch(got, schema, "answer")
+    try:
+        problem = mismatch(got, schema, "answer")
+    except RecursionError:
+        raise EngineError(f"{engine} answered an object nested too deeply to check") from None
     if problem:
         raise EngineError(f"{engine}: {problem}"[:400])
     return got
 
 
+def same(a, b) -> bool:
+    """JSON equality: 1 equals 1.0, and true is not 1 (Python says it is)."""
+    if isinstance(a, bool) or isinstance(b, bool):
+        return isinstance(a, bool) and isinstance(b, bool) and a == b
+    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+        return a == b
+    if isinstance(a, list) and isinstance(b, list):
+        return len(a) == len(b) and all(same(x, y) for x, y in zip(a, b))
+    if isinstance(a, dict) and isinstance(b, dict):
+        return a.keys() == b.keys() and all(same(a[k], b[k]) for k in a)
+    return type(a) is type(b) and a == b
+
+
+def _subschemas(schema: dict, key: str, where: str) -> list:
+    subs = schema.get(key)
+    if subs is None:
+        return []
+    if not isinstance(subs, list):
+        raise EngineError(f"schema at {where}: {key} is {type(subs).__name__}, not a list")
+    return subs
+
+
 def mismatch(value, schema, where: str) -> str | None:
     """The first way `value` breaks `schema`, or None.
 
-    Covers the keywords these schemas use — type, enum, required, properties,
-    additionalProperties: false, items, anyOf/oneOf/allOf. Anything else is
-    not checked, and a schema leaning on it is not validated by this.
+    Checks type (integer accepts 1.0, never a boolean), enum and const (JSON
+    equality, so true is not 1), required, properties, additionalProperties
+    (false or a schema), items and prefixItems, anyOf, allOf, oneOf (exactly
+    one branch), and true/false as whole schemas. Annotations such as
+    description and default are ignored. Any other keyword, or one of these
+    malformed, raises EngineError: a schema this cannot check is not checked.
     """
-    if not isinstance(schema, dict):
+    if schema is True:
         return None
+    if schema is False:
+        return f"{where}={value!r} is not allowed here (schema false)"
+    if not isinstance(schema, dict):
+        raise EngineError(f"schema at {where} is {type(schema).__name__}, not a schema")
+    unknown = sorted(set(schema) - CHECKED - ANNOTATIONS)
+    if unknown:
+        raise EngineError(f"schema at {where} uses {unknown}, which this does not check")
+
     want = schema.get("type")
     if want is not None:
         kinds = want if isinstance(want, list) else [want]
-        if not any(JSON_TYPES.get(w, lambda v: True)(value) for w in kinds):
+        for w in kinds:
+            if w not in JSON_TYPES:
+                raise EngineError(f"schema at {where}: unknown type {w!r}")
+        if not any(JSON_TYPES[w](value) for w in kinds):
             return f"{where}={value!r} is not {want}"
-    if "enum" in schema and value not in schema["enum"]:
-        return f"{where}={value!r} is not one of {schema['enum']}"
-    for sub in schema.get("allOf") or []:
+    if "enum" in schema:
+        if not isinstance(schema["enum"], list):
+            raise EngineError(f"schema at {where}: enum is not a list")
+        if not any(same(value, e) for e in schema["enum"]):
+            return f"{where}={value!r} is not one of {schema['enum']}"
+    if "const" in schema and not same(value, schema["const"]):
+        return f"{where}={value!r} is not {schema['const']!r}"
+
+    for sub in _subschemas(schema, "allOf", where):
         if (problem := mismatch(value, sub, where)):
             return problem
-    for key in ("anyOf", "oneOf"):
-        subs = schema.get(key)
-        if subs and all(mismatch(value, s, where) for s in subs):
-            return f"{where}={value!r} matches none of its {key}"
+    any_of = _subschemas(schema, "anyOf", where)
+    if any_of and all(mismatch(value, s, where) for s in any_of):
+        return f"{where}={value!r} matches none of its anyOf"
+    one_of = _subschemas(schema, "oneOf", where)
+    if one_of:
+        hits = sum(1 for s in one_of if not mismatch(value, s, where))
+        if hits != 1:
+            return f"{where}={value!r} matches {hits} of its oneOf, not exactly one"
+
     if isinstance(value, dict):
-        missing = [k for k in schema.get("required") or [] if k not in value]
+        required = schema.get("required") or []
+        if not isinstance(required, list):
+            raise EngineError(f"schema at {where}: required is not a list")
+        missing = [k for k in required if k not in value]
         if missing:
             return f"{where} is missing {missing}"
         props = schema.get("properties") or {}
-        if schema.get("additionalProperties") is False:
-            extra = sorted(set(value) - set(props))
-            if extra:
-                return f"{where} carries undeclared {extra}"
+        if not isinstance(props, dict):
+            raise EngineError(f"schema at {where}: properties is not an object")
         for k, spec in props.items():
             if k in value and (problem := mismatch(value[k], spec, f"{where}.{k}")):
                 return problem
-    if isinstance(value, list) and isinstance(schema.get("items"), dict):
-        for i, item in enumerate(value):
-            if (problem := mismatch(item, schema["items"], f"{where}[{i}]")):
+        rest = schema.get("additionalProperties", True)
+        extra = sorted(set(value) - set(props))
+        if rest is False and extra:
+            return f"{where} carries undeclared {extra}"
+        if rest is not True:
+            for k in extra:
+                if (problem := mismatch(value[k], rest, f"{where}.{k}")):
+                    return problem
+
+    if isinstance(value, list):
+        prefix = _subschemas(schema, "prefixItems", where)
+        for i, (item, spec) in enumerate(zip(value, prefix)):
+            if (problem := mismatch(item, spec, f"{where}[{i}]")):
+                return problem
+        items = schema.get("items", True)
+        if isinstance(items, list):
+            raise EngineError(f"schema at {where}: items as a list is the old tuple "
+                              "form; use prefixItems")
+        for i, item in enumerate(value[len(prefix):], len(prefix)):
+            if (problem := mismatch(item, items, f"{where}[{i}]")):
                 return problem
     return None
 
 
 def run(engine: str, prompt: str, schema: dict) -> dict:
-    """Ask `engine` for one object matching `schema`. Raises rather than guessing."""
-    return conforms(engine, _ask(engine, prompt, schema), schema)
+    """Ask `engine` for one object matching `schema`. Raises rather than guessing.
+
+    The answer is held to the schema that was sent — closed objects included —
+    not to the caller's open one, or an undeclared key the engine was told it
+    could not add would pass.
+    """
+    sent = strict(schema)
+    return conforms(engine, _ask(engine, prompt, sent), sent)
 
 
 def _ask(engine: str, prompt: str, schema: dict):
@@ -154,19 +252,19 @@ def _ask(engine: str, prompt: str, schema: dict):
     with tempfile.TemporaryDirectory(prefix="quality-engine-") as tmp:
         d = pathlib.Path(tmp)
         s = d / "schema.json"
-        s.write_text(json.dumps(strict(schema)), encoding="utf-8")
+        s.write_text(json.dumps(schema), encoding="utf-8")
         if engine == "codex":
             out = d / "answer.json"
             argv = ["codex", "exec", "--output-schema", str(s), "-o", str(out),
                     "--sandbox", "read-only", "--skip-git-repo-check", prompt]
             r = _spawn(engine, argv)
-            body = out.read_text(encoding="utf-8") if out.exists() else ""
+            body = out.read_text(encoding="utf-8", errors="replace") if out.exists() else ""
             if not body.strip():
                 raise EngineError(f"codex wrote no answer.\n{_tail(r)}")
             return _parse(engine, body, r)
         if engine == "claude":
             argv = ["claude", "-p", prompt, "--output-format", "json",
-                    "--json-schema", json.dumps(strict(schema))]
+                    "--json-schema", json.dumps(schema)]
             r = _spawn(engine, argv)
             envelope = _parse(engine, r.stdout, r)
             body = envelope.get("structured_output")
@@ -187,7 +285,10 @@ def _ask(engine: str, prompt: str, schema: dict):
 
 def _spawn(engine: str, argv: list[str]) -> subprocess.CompletedProcess:
     try:
-        r = subprocess.run(argv, capture_output=True, text=True, timeout=TIMEOUT)
+        # One engine printing bad UTF-8 must not take down a run that asked
+        # several: decoded leniently, it fails as an unparseable answer instead.
+        r = subprocess.run(argv, capture_output=True, text=True, encoding="utf-8",
+                           errors="replace", timeout=TIMEOUT)
     except FileNotFoundError:
         raise EngineError(f"{engine} is not on PATH") from None
     except subprocess.TimeoutExpired:
@@ -199,19 +300,19 @@ def _spawn(engine: str, argv: list[str]) -> subprocess.CompletedProcess:
     return r
 
 
+def _loads(text: str):
+    """The parsed value, or None. Nesting deep enough to exhaust the stack is
+    just another answer that does not parse."""
+    try:
+        return json.loads(text)
+    except (ValueError, RecursionError):
+        return None
+
+
 def _parse(engine: str, body: str, r: subprocess.CompletedProcess) -> dict:
     stripped = body.strip()
-    try:
-        got = json.loads(stripped)
-        if isinstance(got, dict):
-            return got
-    except ValueError:
-        pass
-    for line in reversed(stripped.splitlines()):
-        try:
-            got = json.loads(line)
-        except ValueError:
-            continue
+    for candidate in [stripped, *reversed(stripped.splitlines())]:
+        got = _loads(candidate)
         if isinstance(got, dict):
             return got
     raise EngineError(f"{engine} printed nothing that parses as an object:\n{body[:400]}"

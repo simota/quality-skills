@@ -4,7 +4,7 @@
     python3 quality-tools/refute.py --running claude claims.json
 
 `claims.json` is a list of objects with `id`, `claim`, and optionally `evidence`
-and `where`. Every engine in `engines.runs_on` except the one running gets each
+and `where`; a single such object is read as a list of one. Every engine in `engines.runs_on` except the one running gets each
 claim and is asked to refute it. The verdicts come back structured.
 
 **Refuting is not reviewing.** Asked whether a claim is right, a model agrees;
@@ -30,7 +30,8 @@ Exit codes, the same with and without `--json`:
 
     0  every claim was read by at least one refuter
     1  could not start: no lens declared, or `--running` is not a known engine
-    2  usage error (argparse)
+    2  usage error: bad arguments, or a claims file that is not a JSON list of
+       objects each with a string `claim`
     3  nothing was checked: the claims file is empty, or a claim is UNCHECKED
        because no refuter answered. Never read as a pass.
 """
@@ -95,6 +96,27 @@ def ask(engine_name: str, claim: dict) -> dict:
     return engine.run(engine_name, prompt, SCHEMA)
 
 
+def load_claims(path: str) -> list[dict]:
+    """The claims, in the documented shape only. Raises ValueError saying why."""
+    try:
+        claims = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
+    except OSError as e:
+        raise ValueError(f"cannot read {path}: {e.strerror or e}") from None
+    except (ValueError, RecursionError) as e:
+        raise ValueError(f"{path} is not JSON: {e}") from None
+    if isinstance(claims, dict):
+        claims = [claims]                 # one claim needs no list around it
+    if not isinstance(claims, list):
+        raise ValueError(f"{path} holds {type(claims).__name__}; expected a list of "
+                         "{id, claim, [evidence], [where]}")
+    for i, c in enumerate(claims):
+        if not isinstance(c, dict):
+            raise ValueError(f"{path}[{i}] is {type(c).__name__}, not an object")
+        if not isinstance(c.get("claim"), str) or not c["claim"].strip():
+            raise ValueError(f"{path}[{i}] has no string `claim`")
+    return claims
+
+
 def refuters(running: str) -> list[str]:
     known = H.get("engines", {}).get("runs_on") or []
     if running not in known:
@@ -129,9 +151,11 @@ def main() -> int:
               "framing is a second opinion, not an adversary", file=sys.stderr)
         return 1
 
-    claims = json.loads(pathlib.Path(a.claims).read_text(encoding="utf-8"))
-    if isinstance(claims, dict):
-        claims = [claims]
+    try:
+        claims = load_claims(a.claims)
+    except ValueError as e:
+        print(f"refute: {e}", file=sys.stderr)
+        return 2
     try:
         pool = refuters(a.running)
     except engine.EngineError as e:

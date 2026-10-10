@@ -249,20 +249,30 @@ def v14_patterns():
             fail("V14", f"report-only route {name} is missing stops_at")
 
 
+def _tools(spec: dict) -> str:
+    """A class's tools as the frontmatter spells them, whether YAML gave a string or a list."""
+    tools = spec.get("tools", "")
+    return ", ".join(map(str, tools)) if isinstance(tools, list) else str(tools)
+
+
+# Every tool that changes a file. `\bEdit\b` alone does not match MultiEdit.
+WRITE_TOOLS_RE = re.compile(r"\b(Write|Edit|MultiEdit|NotebookEdit)\b")
+
+
 def v15_permission_class():
     classes = H["permission_classes"]
     # `writes` is a claim about the tools, so it is held to them.
     for cname, spec in classes.items():
-        grants = bool(re.search(r"\b(Write|Edit)\b", spec.get("tools", "")))
+        grants = bool(WRITE_TOOLS_RE.search(_tools(spec)))
         if "writes" in spec and spec["writes"] is not grants:
             fail("V15", f"class {cname} says writes: {spec['writes']} but its tools "
-                        f"{'do' if grants else 'do not'} grant Write or Edit")
+                        f"{'do' if grants else 'do not'} grant a writing tool")
     for d in SKILL_DIRS:
         declared = CAP.get(d.name, {}).get("class")
         if declared not in classes:
             fail("V15", f"{d.name} declares unknown class {declared!r}")
             continue
-        want = classes[declared]["tools"]
+        want = _tools(classes[declared])
         got = frontmatter(read(d / "SKILL.md")).get("allowed-tools", "")
         if got != want:
             fail("V15", f"{d.name} allowed-tools is {got!r}, class {declared} requires {want!r}")
@@ -433,9 +443,12 @@ def v24_rendered_tables():
             fail("V24", f"{ROUTING_FILE} does not list {name}")
         if name not in readme:
             fail("V24", f"README.md does not list {name}")
+    # The set's own non-skill directories (quality-tools, quality-registry) share
+    # the prefix; naming them is not naming a skill.
+    owned = {p.name for p in ROOT.iterdir() if p.is_dir() and p.name.startswith(PREFIX)}
     for doc, text in ((SKILLS_ROOT / ROUTING_FILE, routing), (ROOT / "README.md", readme)):
         for found in set(re.findall(rf"`({PREFIX}[a-z][a-z-]*[a-z])`", text)):
-            if found not in SKILLS:
+            if found not in SKILLS and found not in owned:
                 fail("V24", f"{doc.relative_to(ROOT)} names {found}, which does not exist")
 
 
@@ -850,10 +863,15 @@ def v38_enumerations_declared():
 
 def v39_route_stages():
     """A chain longer than the budget is a pipeline nobody will run to the end."""
+    most = LIM.get("route_stages_max")
+    if not isinstance(most, int):
+        fail("V39", "harness.yaml limits declares no route_stages_max; "
+                    "this rule is checking nothing")
+        return
     for name, r in ROUTES.items():
         n = len(r.get("chain") or [])
-        if n > LIM["route_stages_max"]:
-            fail("V39", f"route {name} chains {n} stages (max {LIM['route_stages_max']})")
+        if n > most:
+            fail("V39", f"route {name} chains {n} stages (max {most})")
 
 
 RULES = [v1_sizes, v2_description_terms, v3_roster, v4_playbook_orphans,
@@ -875,16 +893,30 @@ RULES = [v1_sizes, v2_description_terms, v3_roster, v4_playbook_orphans,
          v39_route_stages]
 
 
+HOOKS = ("pre-commit", "pre-merge-commit")
+
+
 def hooks_state() -> str:
-    """Asked of git: .git is a file in a worktree or submodule, not a directory."""
+    """Asked of git: .git is a file in a worktree or submodule, not a directory.
+
+    Installed is not enough: a copy older than quality-tools/githooks/pre-commit
+    runs yesterday's check, so anything but the same bytes is stale.
+    """
     try:
-        r = subprocess.run(["git", "rev-parse", "--git-path", "hooks/pre-commit"],
+        r = subprocess.run(["git", "rev-parse", *(a for h in HOOKS for a in ("--git-path", f"hooks/{h}"))],
                            cwd=ROOT, capture_output=True, text=True)
     except OSError:
         return "unknown (no git)"
-    if r.returncode != 0:
+    paths = r.stdout.split("\n")[:len(HOOKS)]
+    if r.returncode != 0 or len(paths) < len(HOOKS):
         return "unknown (not a git checkout)"
-    return "on" if (ROOT / r.stdout.strip()).exists() else "off — run: make hooks"
+    want = (ROOT / "quality-tools" / "githooks" / "pre-commit").read_bytes()
+    installed = [ROOT / p.strip() for p in paths]
+    if not any(p.exists() for p in installed):
+        return "off — run: make hooks"
+    if all(p.exists() and p.read_bytes() == want for p in installed):
+        return "on"
+    return "stale — run: make hooks"
 
 
 def main() -> int:

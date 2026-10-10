@@ -13,9 +13,14 @@ tree untouched — a half-rendered set is worse than a stale one.
 
 `--check` writes nothing and exits 1 if any file would change: the drift test,
 without needing git to diff the result.
+
+Exit codes: 0 rendered (or, with `--check`, nothing stale); 1 a file cannot be
+rendered, a delivered block is missing, no skill was found, or `--check` found
+drift; 2 an unknown argument.
 """
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -25,15 +30,27 @@ ROOT = Path(__file__).resolve().parent.parent
 H = yaml.safe_load((ROOT / "quality-registry" / "harness.yaml").read_text(encoding="utf-8"))
 PREFIX = H["prefix"]
 SKILLS_ROOT = ROOT / H["skills_dir"] if H.get("skills_dir") else ROOT
+USAGE = "usage: render.py [--check]"
 
 
-def render(path: Path, errors: list[str]) -> str | None:
+def delivered(errors: list[str]) -> dict[str, str]:
+    """Each delivered block's text, appending to errors for any that is missing."""
+    blocks = {}
+    for key in H["delivered"]:
+        path = ROOT / "quality-registry" / "delivered" / f"{key}.md"
+        try:
+            blocks[key] = path.read_text(encoding="utf-8").rstrip("\n")
+        except OSError as e:
+            errors.append(f"{path.relative_to(ROOT)}: {e.strerror or e}")
+    return blocks
+
+
+def render(path: Path, blocks: dict[str, str], errors: list[str]) -> str | None:
     """The rendered text, or None after appending why it cannot be rendered."""
     text = path.read_text(encoding="utf-8")
     where = path.parent.name
     for key, spec in H["delivered"].items():
-        block = (ROOT / "quality-registry" / "delivered" / f"{key}.md").read_text(
-            encoding="utf-8").rstrip("\n")
+        block = blocks[key]
         open_m, close_m = f"<!-- deliver:{key} -->", f"<!-- /deliver:{key} -->"
         payload = f"{open_m}\n{block}\n{close_m}"
         n_open, n_close = text.count(open_m), text.count(close_m)
@@ -49,30 +66,45 @@ def render(path: Path, errors: list[str]) -> str | None:
             _, tail = rest.split(close_m, 1)
             text = head + payload + tail
         else:
-            heading = f"## {spec['section']}\n"
-            if heading not in text:
+            # The whole heading line: a substring match would take `### Decide
+            # first` or `## Decide first, then` for `## Decide first`.
+            m = re.search(rf"^## {re.escape(spec['section'])}[ \t]*(?:\n|\Z)", text, re.M)
+            if not m:
                 errors.append(f"{where}/SKILL.md: no section {spec['section']!r} "
                               f"to deliver {key} into")
                 return None
-            head, rest = text.split(heading, 1)
+            head, rest = text[:m.end()], text[m.end():]
             # append at the end of that section, before the next heading
-            nxt = rest.find("\n## ")
-            body, tail = (rest[:nxt], rest[nxt:]) if nxt != -1 else (rest, "")
-            text = head + heading + body.rstrip("\n") + "\n" + payload + "\n" + tail
+            nxt = re.search(r"^## ", rest, re.M)
+            body, tail = (rest[:nxt.start()], "\n" + rest[nxt.start():]) if nxt else (rest, "")
+            text = head + body.rstrip("\n") + "\n" + payload + "\n" + tail
     return text
 
 
 def main() -> int:
+    args = sys.argv[1:]
+    if any(a in ("-h", "--help") for a in args):
+        print(USAGE)
+        return 0
+    if [a for a in args if a != "--check"]:
+        print(USAGE, file=sys.stderr)
+        return 2
+    check = "--check" in args
+    skills = [d for d in sorted(SKILLS_ROOT.glob(f"{PREFIX}*")) if (d / "SKILL.md").exists()]
+    if not skills:
+        # Zero files rendered reads as zero stale: a check of nothing must not pass.
+        print(f"render: no {PREFIX}*/SKILL.md under {SKILLS_ROOT}", file=sys.stderr)
+        return 1
     errors: list[str] = []
+    blocks = delivered(errors)
     rendered = {}
-    for d in sorted(SKILLS_ROOT.glob(f"{PREFIX}*")):
-        if (d / "SKILL.md").exists():
-            rendered[d] = render(d / "SKILL.md", errors)
+    if not errors:
+        for d in skills:
+            rendered[d] = render(d / "SKILL.md", blocks, errors)
     if errors:
         print("\n".join(f"  {e}" for e in errors), file=sys.stderr)
         print(f"render: {len(errors)} error(s), nothing written", file=sys.stderr)
         return 1
-    check = "--check" in sys.argv[1:]
     changed = []
     for d, text in rendered.items():
         if text != (d / "SKILL.md").read_text(encoding="utf-8"):
