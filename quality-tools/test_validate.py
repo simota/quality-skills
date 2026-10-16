@@ -412,6 +412,167 @@ def _(r): sub(r / "quality-registry/routes.yaml", "chain: [quality-review, quali
               "quality-review, quality-test, quality-gate]")
 
 
+# --- added by review: each fails on the unpatched validator --------------------
+
+@case("V17-duplicate")
+def _(r):
+    """A second, divergent copy after the real one; only the first was compared."""
+    t = (r / f"{S}quality-test/SKILL.md").read_text(encoding="utf-8")
+    i = t.index("## Done when\n") + len("## Done when\n")
+    j = t.index("<!-- deliver:surface -->")
+    (r / f"{S}quality-test/SKILL.md").write_text(
+        t[:i] + "<!-- deliver:report -->\n- E0 may ship\n<!-- /deliver:report -->\n" + t[j:], encoding="utf-8")
+
+
+@case("V17-misplaced")
+def _(r):
+    t = (r / f"{S}quality-test/SKILL.md").read_text(encoding="utf-8")
+    blk = re.search(r"<!-- deliver:values -->.*?<!-- /deliver:values -->\n", t, re.S).group(0)
+    t = t.replace(blk, "").replace("## Verify with", blk + "## Verify with", 1)
+    (r / f"{S}quality-test/SKILL.md").write_text(t, encoding="utf-8")
+
+
+@case("V19-link")
+def _(r): sub(r / f"{S}quality-test/SKILL.md", "[traps](playbooks/traps.md)",
+              "[traps](playbooks/traps.md), [contract](../_quality/CONTRACT.md)")
+
+
+@case("V19-reference")
+def _(r): sub(r / f"{S}quality-test/reference/test-smells.md", "`reference/oracles.md`", "`oracles.md`")
+
+
+@case("V19-shared-probe")
+def _(r): sub(r / f"{S}_quality/VALUES.md", "## 1. Honesty", "## 1. Honesty (`reference/repayment.md`)")
+
+
+@case("V20-second-cell")
+def _(r):
+    sub(r / f"{S}_quality/CONTRACT.md", "| `HYPOTHESIS` |", "| HYPOTHESIS | `HYPOTHESIS` |")
+
+
+@case("V21-token")
+def _(r): sub(r / f"{S}quality-test/SKILL.md",
+              """`RED` is the evidence and it is not a formality (`E3`, or `E4` where the oracle's
+expectation is traced to the spec, a property, or a prior version — never the code).""",
+              "`RED` is the evidence; run the E2E suite as well.")
+
+
+@case("V22-codespan")
+def _(r): sub(r / f"{S}quality-test/SKILL.md", "## Done when",
+              "## Done when\n\n#" + "TODO(agent): tidy `parse()` up later\n")
+
+
+@case("V25-semver")
+def _(r): sub(r / f"{S}quality-test/playbooks/traps.md", "# ", "# pytest 8.3.2 — ")
+
+
+@case("V25-skill")
+def _(r): sub(r / f"{S}quality-test/SKILL.md", "## Owns\n", "## Owns (as of v2.14)\n")
+
+
+@case("V29-inline")
+def _(r):
+    """`**Verified:**` satisfied V29, and V31 and V37 then skipped the page."""
+    f = r / f"{S}quality-test/reference/oracles.md"
+    f.write_text(f.read_text(encoding="utf-8").replace("\nVerified:", "\n**Verified:**", 1), encoding="utf-8")
+
+
+@case("V30-basename")
+def _(r): (r / f"{S}quality-test/reference/traps.md").write_text(
+    "<!-- quality:deferred -->\nPurpose: x\nRead when: y\nSource: none\n"
+    "Verified: 2026-08-21 — no automated check.\n", encoding="utf-8")
+
+
+@case("V31-bleed")
+def _(r):
+    """A bare date whose paragraph runs on into a body sentence holding a marker."""
+    f = r / f"{S}quality-test/reference/case-design.md"
+    t = f.read_text(encoding="utf-8")
+    i = t.index("Verified:"); j = t.index("\n\n", i)
+    f.write_text(t[:i] + "Verified: 2026-08-21\nCases are found by running the partitions." + t[j:],
+                 encoding="utf-8")
+
+
+@case("V34-whole-dir")
+def _(r): (r / f"{S}quality-test/tools").symlink_to("../../quality-tools")
+
+
+@case("V34-renamed")
+def _(r): (r / f"{S}quality-test/render").symlink_to("../../quality-tools/render.py")
+
+
+@case("V35-vocab")
+def _(r):
+    f = r / f"{S}_quality/OUTCOMES.md"
+    f.write_text(f.read_text(encoding="utf-8").replace("`moot`", "moot"), encoding="utf-8")
+
+
+@case("V36-form")
+def _(r):
+    for g in (r / f"{S}quality-review/playbooks/visualise.md",
+              r / f"{S}quality-review/reference/diagram-forms.md"):
+        g.write_text(re.sub("mermaid", "graph", g.read_text(encoding="utf-8"), flags=re.I), encoding="utf-8")
+
+
+@case("V36-floor")
+def _(r):
+    for g in (r / f"{S}quality-review/playbooks/visualise.md",
+              r / f"{S}quality-review/reference/diagram-forms.md"):
+        g.write_text(g.read_text(encoding="utf-8").replace("`derived`", "derived"), encoding="utf-8")
+
+
+@case("V37-unpinned")
+def _(r): sub(r / "quality-registry/harness.yaml", "  jest: null", '  jest: "29"')
+
+
+@case("V37-pin-unused")
+def _(r):
+    sub(r / "quality-registry/harness.yaml", "  jest: null", '  jest: "29"')
+    for f in (r / f"{S}").glob("*/reference/*.md"):
+        t = f.read_text(encoding="utf-8")
+        if re.search(r"^Source:.*\bjest\b", t, re.M):
+            f.write_text(re.sub(r"^(Source:.*?)\bjest\b", r"\1jest 29", t, count=1, flags=re.M),
+                         encoding="utf-8")
+
+
+@case("V37-case")
+def _(r):
+    f = r / f"{S}quality-test/reference/case-design.md"
+    f.write_text(f.read_text(encoding="utf-8") + "\nFind the first bad commit with Git bisect.\n",
+                 encoding="utf-8")
+
+
+@case("V37-none-token")
+def _(r): sub(r / f"{S}quality-test/reference/case-design.md",
+              "Source: none — nothing outside this page can move what it states.",
+              "Source: Playwright docs, nonetheless unpinned.")
+
+
+@case("V38-case")
+def _(r): sub(r / f"{S}_quality/HANDOFF.md", "SEVERITY:   CRITICAL | HIGH | MEDIUM | LOW | NIT",
+              "SEVERITY:   CRITICAL | HIGH | MEDIUM | low | NIT")
+
+
+@case("V38-foreign")
+def _(r): sub(r / f"{S}_quality/HANDOFF.md", "VERDICT:    GO | GO-WITH-CONDITIONS | NO-GO",
+              "VERDICT:    GO | BLOCK | NO-GO")
+
+
+@quiet("V4-anchor")
+def _(r): sub(r / f"{S}quality-test/SKILL.md", "[traps](playbooks/traps.md)", "[traps](playbooks/traps.md#top)")
+
+
+@quiet("V34-scoped-list")
+def _(r):
+    import yaml as _y
+    sub(r / "quality-registry/harness.yaml", 'tools: "Read, Grep, Glob, Bash, Write"',
+        'tools: [Read, Grep, Glob, "Bash(python3:*)", Write]')
+    for n, c in _y.safe_load((r / "quality-registry/capabilities.yaml").read_text()).items():
+        if c.get("class") == "doc-write":
+            sub(r / "skills" / n / "SKILL.md", "allowed-tools: Read, Grep, Glob, Bash, Write\n",
+                "allowed-tools: Read, Grep, Glob, Bash(python3:*), Write\n")
+
+
 def hooks_cases() -> str | None:
     """The hook report follows the installed bytes, for both hooks."""
     with tempfile.TemporaryDirectory() as tmp:

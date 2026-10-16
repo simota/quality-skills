@@ -59,7 +59,7 @@ interest = (touch_score × blast_score × comprehension_score) / confidence_of_f
 it to a band. Multiplying raw units directly is a category error: 18 commits × 9 importers × 90
 minutes is not a quantity, and it lands three orders of magnitude off the scale below. The band
 tables and the extraction command for each raw input live in `quality-debt`'s
-`reference/interest.md`, which scores them; this file fixes the scale they map onto, and
+interest reference, which scores them; this file fixes the scale they map onto, and
 `make figures` holds the two in agreement.
 
 | Operand | Raw measurement | Band scale |

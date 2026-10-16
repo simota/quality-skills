@@ -57,7 +57,7 @@ being over-read.
 
 ## Interpretation traps
 
-- **A metric that improves the week a target is introduced has been gamed, not improved.** Check the counterweight before celebrating (`metric-catalog.md`).
+- **A metric that improves the week a target is introduced has been gamed, not improved.** Check the counterweight before celebrating (`reference/metric-catalog.md`).
 - **Percentages on small denominators.** 2 → 3 is "+50%" and also nothing. Report counts under ~30.
 - **Survivorship in defect data.** Defects found are a function of looking. A quiet quarter may be a quarter with no QA capacity.
 - **Correlated metrics double-count.** Coverage and test count move together; reporting both as independent evidence of improvement is one fact told twice.

@@ -56,7 +56,7 @@ stage 4  (on R3+ only)         preview deploy, migration dry run, rollback exerc
 ```
 
 Anything expensive belongs in stage 3 with a **trend alert**, not in the blocking path — except
-where the tier requires it (`risk-tiers.md`), in which case it is scoped to the touched module and
+where the tier requires it (`reference/risk-tiers.md`), in which case it is scoped to the touched module and
 runs in stage 4.
 
 ## Auditing an existing pipeline

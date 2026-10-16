@@ -9,6 +9,7 @@ belongs in a review, not in this file.
 """
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
@@ -134,7 +135,7 @@ def v4_playbook_orphans():
         if not pb_dir.exists():
             continue
         body = sections(read(d / "SKILL.md")).get("Decide first", "")
-        linked = {Path(m).name for m in LINK_RE.findall(body)}
+        linked = {Path(m.split("#")[0]).name for m in LINK_RE.findall(body)}
         for pb in sorted(pb_dir.glob("*.md")):
             if pb.name not in linked:
                 fail("V4", f"{d.name}/playbooks/{pb.name} is not linked from Decide first")
@@ -182,6 +183,11 @@ def v8_links():
                 continue
             if not (f.parent / target.split("#")[0]).exists():
                 fail("V8", f"{f.relative_to(ROOT)} links to missing {target}")
+
+
+def _word(word: str, text: str) -> bool:
+    """`word` as a token: not inside E2E, UNBLOCKED, nonetheless or Git-hub."""
+    return re.search(rf"(?<![\w-]){re.escape(word)}(?![\w-])", text) is not None
 
 
 def _norm(s: str) -> str:
@@ -295,6 +301,9 @@ def v17_delivery():
             if open_m not in text or close_m not in text:
                 fail("V17", f"{d.name}/SKILL.md is missing the {key} delivery block")
                 continue
+            if text.count(open_m) != 1 or text.count(close_m) != 1:
+                fail("V17", f"{d.name}/SKILL.md carries the {key} block "
+                            f"{text.count(open_m)} times; only the first is compared")
             got = text.split(open_m, 1)[1].split(close_m, 1)[0].strip("\n")
             if got != want:
                 fail("V17", f"{d.name}/SKILL.md {key} block differs from "
@@ -326,12 +335,14 @@ def v19_paths_resolve():
     probe = SKILL_DIRS[0]
     shared = sorted((SKILLS_ROOT / SHARED).glob("*.md"))
     for d in SKILL_DIRS:
-        readable = [d / "SKILL.md"] + sorted((d / "playbooks").glob("*.md")) \
-            if (d / "playbooks").exists() else [d / "SKILL.md"]
+        readable = ([d / "SKILL.md"] + sorted(d.glob("playbooks/*.md"))
+                    + sorted(d.glob("reference/*.md")))
         for f in readable:
             _check_paths(f, d, f"{d.name}/{f.relative_to(d)}")
-    for f in shared:                      # checked once, against one skill dir
-        _check_paths(f, probe, f"{SHARED}/{f.name}")
+            _check_links(f, d, f.parent, f"{d.name}/{f.relative_to(d)}")
+        for f in shared:                  # read by every skill, so resolved from every one
+            _check_paths(f, d, f"{SHARED}/{f.name} (as read by {d.name})")
+            _check_links(f, d, d / SHARED, f"{SHARED}/{f.name} (as read by {d.name})")
 
 
 # A backticked path is a reference to this set only if it names a file or sits
@@ -343,6 +354,17 @@ def _is_own_reference(p: str) -> bool:
     if p.endswith((".md", ".yaml", ".py")):
         return True
     return p.startswith((f"{SHARED}/", "registry/", "playbooks/", "reference/"))
+
+
+def _check_links(f: Path, skill: Path, here: Path, label: str) -> None:
+    """A link resolves from the file holding it, lexically — so it must stay in the skill."""
+    for target in LINK_RE.findall(read(f)):
+        if target.startswith(("http", "#", "mailto:")):
+            continue
+        norm = Path(os.path.normpath(here / target.split("#")[0]))
+        if skill != norm and skill not in norm.parents:
+            fail("V19", f"{label} links {target!r}, which leaves the skill directory once "
+                        "normalised lexically; installed, it points at nothing")
 
 
 def _check_paths(f: Path, base: Path, label: str) -> None:
@@ -360,7 +382,7 @@ def _check_paths(f: Path, base: Path, label: str) -> None:
 # A definition, as against a mention: a table row or a heading that opens with
 # the word. `patterns` and `checkers` are route vocabulary and live in
 # routes.yaml, so no page is asked to define them.
-DEFINITION_FORMS = ("| `{w}` |", "| `[{w}]` |", "## `{w}`")
+DEFINITION_FORMS = (r"^\|\s*`{w}`\s*\|", r"^\|\s*`\[{w}\]`\s*\|", r"^#{{2,}}\s*`{w}`")
 ROUTE_VOCAB = {"patterns", "checkers"}
 
 
@@ -377,8 +399,8 @@ def v20_contract_vocabulary():
         if key in ROUTE_VOCAB:
             continue
         for word in words:
-            forms = [f.format(w=word) for f in DEFINITION_FORMS]
-            if not any(f in t for t in pages.values() for f in forms):
+            forms = [re.compile(f.format(w=re.escape(word)), re.M) for f in DEFINITION_FORMS]
+            if not any(f.search(t) for t in pages.values() for f in forms):
                 fail("V20", f"no page under {SHARED}/ defines {word!r} ({key}) — "
                             "a table row or a heading, not a mention")
 
@@ -393,7 +415,7 @@ def strip_delivered(text: str) -> str:
 def v21_verify_names_a_grade():
     for d in SKILL_DIRS:
         body = strip_delivered(sections(read(d / "SKILL.md")).get("Verify with", ""))
-        if not any(g in body for g in VOCAB["evidence_levels"]):
+        if not any(_word(g, body) for g in VOCAB["evidence_levels"]):
             fail("V21", f"{d.name} Verify with names no evidence grade of its own; "
                         "the delivered block does not count")
 
@@ -403,8 +425,8 @@ def v22_markers_classified():
         if ".git" in f.parts or f.parts[-2:-1] == ("delivered",):
             continue
         for i, line in enumerate(read(f).splitlines(), 1):
-            if MARKER_RE.search(line) and "`" not in line:
-                if not any(c in line for c in VOCAB["residual_classes"]):
+            if MARKER_RE.search(re.sub(r"`[^`]*`", "", line)):
+                if not any(_word(c, line) for c in VOCAB["residual_classes"]):
                     fail("V22", f"{f.relative_to(ROOT)}:{i} marker carries no residual class")
 
 
@@ -455,8 +477,9 @@ def v24_rendered_tables():
 def v25_playbook_rot():
     pats = [re.compile(p) for p in H["rot_patterns"]]
     for d in SKILL_DIRS:
-        for pb in sorted((d / "playbooks").glob("*.md")) if (d / "playbooks").exists() else []:
-            for i, line in enumerate(read(pb).splitlines(), 1):
+        for pb in [d / "SKILL.md"] + sorted(d.glob("playbooks/*.md")):
+            text = read(pb) if pb.name != "SKILL.md" else strip_delivered(read(pb))
+            for i, line in enumerate(text.splitlines(), 1):
                 for p in pats:
                     if p.search(line):
                         fail("V25", f"{pb.relative_to(ROOT)}:{i} pins a version or date; "
@@ -519,9 +542,9 @@ def v29_reference_headers():
     want = H["reference_headers"]
     for d in SKILL_DIRS:
         for f in sorted((d / "reference").glob("*.md")) if (d / "reference").exists() else []:
-            head = "\n".join(read(f).splitlines()[:12])
+            head = read(f).splitlines()[:12]
             for header in want:
-                if header not in head:
+                if not any(l.startswith(header) for l in head):
                     fail("V29", f"{f.relative_to(ROOT)} has no {header!r} in its first "
                                 "12 lines; the deferred layer states what it claims "
                                 "and when anyone last checked")
@@ -534,12 +557,13 @@ def v30_reference_orphans():
         if not ref_dir.exists():
             continue
         body = sections(read(d / "SKILL.md")).get("Decide first", "")
-        linked = {Path(m).name for m in LINK_RE.findall(body)}
-        for pb in sorted((d / "playbooks").glob("*.md")) if (d / "playbooks").exists() else []:
-            linked |= {Path(m).name for m in LINK_RE.findall(read(pb))}
-            linked |= {Path(m).name for m in TICK_PATH_RE.findall(read(pb))}
+        res = lambda base, m: Path(os.path.normpath(base / m.split("#")[0]))
+        linked = {res(d, m) for m in LINK_RE.findall(body)}
+        for pb in sorted(d.glob("playbooks/*.md")):
+            linked |= {res(pb.parent, m) for m in LINK_RE.findall(read(pb))}
+            linked |= {res(d, m) for m in TICK_PATH_RE.findall(read(pb))}
         for f in sorted(ref_dir.glob("*.md")):
-            if f.name not in linked:
+            if f not in linked:
                 fail("V30", f"{f.relative_to(ROOT)} is reachable from nothing — "
                             "not the Decide first table, not a playbook")
 
@@ -566,7 +590,7 @@ def v31_verified_names_a_check():
                 if not l.strip():
                     break
                 block.append(l)
-            text = " ".join(block)
+            text = block[0]
             if not any(m in text for m in markers):
                 fail("V31", f"{f.relative_to(ROOT)} states a `Verified:` date and nothing "
                             "else; name what re-checks it, or say `no automated check`")
@@ -647,7 +671,7 @@ def v34_tools_reachable():
                         "which are not skills")
         for d in SKILL_DIRS:
             cls = CAP.get(d.name, {}).get("class")
-            has_shell = "Bash" in H["permission_classes"].get(cls, {}).get("tools", "")
+            has_shell = re.search(r"\bBash\b", _tools(H["permission_classes"].get(cls, {}))) is not None
             link = d / tool
             should = d.name in wanted and has_shell
             if should and not link.is_symlink():
@@ -660,7 +684,18 @@ def v34_tools_reachable():
             if link.is_symlink() and link.resolve() != source.resolve():
                 fail("V34", f"{d.name}/{tool} points at {link.resolve()}, not "
                             "the set's own")
+    tools_dir = (ROOT / f"{SET}-tools").resolve()
     for d in SKILL_DIRS:
+        for top, dirs, files in os.walk(d):          # does not descend through links
+            for n in dirs + files:
+                e = Path(top) / n
+                if not e.is_symlink():
+                    continue
+                tgt = e.resolve()
+                if (tgt == tools_dir or tools_dir in tgt.parents) and \
+                        (e.parent != d or n not in declared_tools):
+                    fail("V34", f"{e.relative_to(SKILLS_ROOT)} reaches {tgt.relative_to(ROOT)}; "
+                                "only a declared tool is linked, by name, at the skill root")
         for entry in sorted(d.iterdir()):
             if entry.suffix == ".py" and entry.name not in declared_tools:
                 fail("V34", f"{d.name}/{entry.name} is a tool link nothing "
@@ -781,7 +816,7 @@ def v37_source_pins_the_rot():
     page on test oracles depended on git, having found it inside "legitimate".
     """
     def names(text: str, name: str) -> bool:
-        return re.search(rf"(?<![\w-]){re.escape(name)}(?![\w-])", text) is not None
+        return re.search(rf"(?<![\w-]){re.escape(name)}(?![\w-])", text, re.I) is not None
 
     declared = H.get("source_authorities")
     none_marker = H.get("source_none_marker")
@@ -809,7 +844,7 @@ def v37_source_pins_the_rot():
             head = " ".join(lines[start:end + 1])
             body = "\n".join(lines[:start] + lines[end + 1:])
             named = [a for a in declared if names(head, a)]
-            if not named and none_marker not in head:
+            if not named and not names(head, none_marker):
                 fail("V37", f"{f.relative_to(ROOT)} names no source and does not say "
                             f"{none_marker!r}; a page that depends on nothing says so, "
                             "because silence reads the same from a page that rots")
@@ -838,6 +873,17 @@ ENUM_RE = re.compile(r"(?:^|:\s*)((?:[A-Z][A-Z-]*(?: [A-Z][A-Z-]*)*)"
                      r"(?:\s*\|\s*(?:[A-Z][A-Z-]*(?: [A-Z][A-Z-]*)*))+)\s*(?:#.*)?$")
 
 
+KEYED_ENUM_RE = re.compile(r"^\s*([A-Z][A-Z ]*[A-Z]):\s*((?:[\w-]+\s*\|\s*)+[\w-]+)\s*(?:#.*)?$")
+
+
+def _vocab_for(key: str):
+    k = key.lower().replace(" ", "_")
+    for cand in (k, k + "s", k[:-1] + "ies" if k.endswith("y") else None, k + "es"):
+        if cand in VOCAB:
+            return VOCAB[cand]
+    return None
+
+
 def v38_enumerations_declared():
     """A value set a page switches on is declared vocabulary, or nothing checks it.
 
@@ -851,6 +897,15 @@ def v38_enumerations_declared():
         if ".git" in f.parts:
             continue
         for i, line in enumerate(read(f).splitlines(), 1):
+            km = KEYED_ENUM_RE.match(line)
+            if km:
+                ws = [w.strip() for w in km.group(2).split("|")]
+                miscased = [w for w in ws if w not in declared and w.upper() in declared]
+                bound = _vocab_for(km.group(1))
+                foreign = [w for w in ws if bound is not None and w in declared and w not in bound]
+                if miscased or foreign:
+                    fail("V38", f"{f.relative_to(ROOT)}:{i} {km.group(1)} lists "
+                                f"{', '.join(miscased + foreign)}, not as its vocabulary spells it")
             m = ENUM_RE.search(line)
             if not m:
                 continue

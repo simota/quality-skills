@@ -16,7 +16,7 @@ patterns that produce that state, ordered by how common they are.
 | Smell | Detection | Fix |
 |-------|-----------|-----|
 | **No assertion** | test body ends after the call; only "it didn't throw" is verified | assert on the value, or delete |
-| **Tautology** | `expect(x).toBe(x)`; expected value computed by the same call | derive the oracle (`oracles.md`) |
+| **Tautology** | `expect(x).toBe(x)`; expected value computed by the same call | derive the oracle (`reference/oracles.md`) |
 | **Asserting the mock** | the asserted value is the mock's configured return | assert on the transformation, not the input |
 | **Implementation-copied expectation** | the expected value was pasted from a run | re-derive from spec; check it fails on the parent commit |
 | **`expect(result).toBeTruthy()`** on an object | always passes | assert a field with a value |
@@ -42,7 +42,7 @@ protection.
 | Smell | Detection | Fix |
 |-------|-----------|-----|
 | **Testing privates** | test imports an underscore-prefixed symbol | test through the public surface, or the code is dead |
-| **Mock pyramid** | more than two mocks to construct one test | wrong level (`test-levels.md`), not more mocks |
+| **Mock pyramid** | more than two mocks to construct one test | wrong level (`reference/test-levels.md`), not more mocks |
 | **Duplicate coverage** | 12 tests differing only in a value in the same branch | one parameterized test with the boundaries |
 | **Test with logic** | `if`/loops in the test deciding what to assert | one test per branch; the test should be readable top to bottom |
 | **Unreadable failure** | failure message needs the source open to interpret | assert on named values; add a message |
@@ -58,5 +58,5 @@ protection.
 ## On deleting tests
 
 Every proposed deletion carries the defect class it fails to catch, and goes to the owner rather
-than straight into a commit (`quality-test/SKILL.md` § Always / Never). A suite that shrinks is usually healthier
+than straight into a commit (`SKILL.md` § Always / Never). A suite that shrinks is usually healthier
 — but "usually" is not a mandate, and a deleted test is invisible in every future review.

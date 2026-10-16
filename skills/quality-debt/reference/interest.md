@@ -121,7 +121,7 @@ a higher-precedence file.
 Dividing by a small number **raises** interest — correct, and frequently misread. High interest
 with low confidence does not mean "refactor it now". It means the entry is expensive *and*
 dangerous, so it ranks high **and** its repayment sequence starts with characterization tests
-(`repayment.md`), not with restructuring.
+(`reference/repayment.md`), not with restructuring.
 
 ## Worked example
 
@@ -152,7 +152,7 @@ Two orders of magnitude apart — and the low one is the file everyone complains
 the entire reason the ledger is ordered by measured inputs rather than by discussion. What the
 numbers license is the **rank**: invoice.ts ranks above reportBuilder.ts. They do not license
 "invoice.ts is 80× worse", and they do not fix the order of work inside a module — that is
-`repayment.md`'s.
+`reference/repayment.md`'s.
 
 ## Reporting the ranking
 
