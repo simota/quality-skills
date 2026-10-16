@@ -881,6 +881,10 @@ def _vocab_for(key: str):
     for cand in (k, k + "s", k[:-1] + "ies" if k.endswith("y") else None, k + "es"):
         if cand in VOCAB:
             return VOCAB[cand]
+        # a qualified vocabulary name: OUTCOME is the key of finding_outcomes
+        hits = [v for name, v in VOCAB.items() if cand and name.endswith("_" + cand)]
+        if len(hits) == 1:
+            return hits[0]
     return None
 
 
@@ -909,6 +913,12 @@ def v38_enumerations_declared():
                 if miscased or foreign:
                     fail("V38", f"{f.relative_to(ROOT)}:{i} {km.group(1)} lists "
                                 f"{', '.join(miscased + foreign)}, not as its vocabulary spells it")
+                elif bound is None and any(w in declared for w in ws):
+                    # declared words under a key no vocabulary owns: a misspelt key, or
+                    # a new value set nobody declared. Lists of undeclared lower-case
+                    # values (ROUTE, ORACLE) carry no declared word and stay out of scope.
+                    fail("V38", f"{f.relative_to(ROOT)}:{i} {km.group(1)} lists declared "
+                                "words, but no vocabulary in harness.yaml is keyed by it")
             m = ENUM_RE.search(line)
             if not m:
                 continue

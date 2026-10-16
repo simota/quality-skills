@@ -580,6 +580,13 @@ def _(r):
         "SEVERITY:   CRITICAL | HIGH | MEDIUM | typo | NIT")
 
 
+@case("V38-unbound-key")
+def _(r):
+    """A misspelt key no longer falls back to the flattened word set."""
+    sub(r / f"{S}_quality/HANDOFF.md", "SEVERITY:   CRITICAL | HIGH | MEDIUM | LOW | NIT",
+        "SEVERITYY:  CRITICAL | HIGH | MEDIUM | LOW | NIT")
+
+
 @quiet("V4-anchor")
 def _(r): sub(r / f"{S}quality-test/SKILL.md", "[traps](playbooks/traps.md)", "[traps](playbooks/traps.md#top)")
 
