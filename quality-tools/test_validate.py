@@ -470,6 +470,21 @@ def _(r): sub(r / f"{S}quality-test/playbooks/traps.md", "# ", "# pytest 8.3.2 â
 def _(r): sub(r / f"{S}quality-test/SKILL.md", "## Owns\n", "## Owns (as of v2.14)\n")
 
 
+@case("V29-read-when")
+def _(r):
+    """Each header is required on its own, not only the one the V29 case renames."""
+    f = r / f"{S}quality-test/reference/oracles.md"
+    f.write_text(f.read_text(encoding="utf-8").replace("\nRead when:", "\nRead if:", 1), encoding="utf-8")
+
+
+@case("V29-window")
+def _(r):
+    """Headers pushed below the first twelve lines are headers nobody reads first."""
+    f = r / f"{S}quality-test/reference/oracles.md"
+    f.write_text(f.read_text(encoding="utf-8").replace("\nPurpose:", "\n" * 12 + "Purpose:", 1),
+                 encoding="utf-8")
+
+
 @case("V29-inline")
 def _(r):
     """`**Verified:**` satisfied V29, and V31 and V37 then skipped the page."""
