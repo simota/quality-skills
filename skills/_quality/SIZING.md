@@ -15,7 +15,8 @@ move — choosing the tier for comfort — so the tier is read on first match.
 
 `T0` drops the paperwork. **It never drops the evidence floor** — a one-line
 answer still names its rung, and a `T0` that cannot reach its output's floor
-(`_quality/CONTRACT.md` §2) is a `HYPOTHESIS`, not a finding.
+(`_quality/CONTRACT.md` §2) is a `HYPOTHESIS`, not a finding. With no payload, the answer line
+is its residual record: it names the `HYPOTHESIS` and the check that would settle it.
 
 **Finding mid-run that the tier was wrong means re-sizing and saying so.** A
 `T0` review of one file that has turned into a debt inventory is a `T1` that was

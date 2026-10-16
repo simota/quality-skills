@@ -902,7 +902,10 @@ def v38_enumerations_declared():
                 ws = [w.strip() for w in km.group(2).split("|")]
                 miscased = [w for w in ws if w not in declared and w.upper() in declared]
                 bound = _vocab_for(km.group(1))
-                foreign = [w for w in ws if bound is not None and w in declared and w not in bound]
+                # bound to a vocabulary, every value must be one of its words — a typo
+                # declared nowhere at all is as foreign as a word from another key
+                foreign = [w for w in ws if bound is not None and w not in bound
+                           and w not in miscased]
                 if miscased or foreign:
                     fail("V38", f"{f.relative_to(ROOT)}:{i} {km.group(1)} lists "
                                 f"{', '.join(miscased + foreign)}, not as its vocabulary spells it")

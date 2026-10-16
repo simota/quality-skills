@@ -113,8 +113,8 @@ is the exact failure this pack exists to catch**, arriving from the inside.
 
 ## 8. Residuals
 
-Anything left behind is classified and recorded in the handoff's `residuals` list
-with the place a reader would next look.
+Anything left behind is classified and recorded in the handoff's `residuals` list — at `T0`,
+which has no payload, in the answer line — with the place a reader would next look.
 
 | Class | Means |
 |---|---|

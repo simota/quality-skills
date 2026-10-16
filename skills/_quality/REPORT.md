@@ -54,7 +54,7 @@ A run with nothing unresolved reports lines 1 and 2 and stops.
 ## Bound
 
 The report is the four parts above and nothing else. A `T0` answer (`_quality/SIZING.md`) is the
-verdict line carrying the sweep's counts; a `T2` report also names the findings file. Length
+verdict line carrying the sweep's counts and any residual; a `T2` report also names the findings file. Length
 follows the number of residuals a human must decide, never the amount of work done — a report
 that reproduces the payload is the failure this file exists to stop.
 

@@ -573,6 +573,13 @@ def _(r): sub(r / f"{S}_quality/HANDOFF.md", "VERDICT:    GO | GO-WITH-CONDITION
               "VERDICT:    GO | BLOCK | NO-GO")
 
 
+@case("V38-typo")
+def _(r):
+    """A value declared in no vocabulary at all, upper-cased or not, is still caught."""
+    sub(r / f"{S}_quality/HANDOFF.md", "SEVERITY:   CRITICAL | HIGH | MEDIUM | LOW | NIT",
+        "SEVERITY:   CRITICAL | HIGH | MEDIUM | typo | NIT")
+
+
 @quiet("V4-anchor")
 def _(r): sub(r / f"{S}quality-test/SKILL.md", "[traps](playbooks/traps.md)", "[traps](playbooks/traps.md#top)")
 
