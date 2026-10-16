@@ -44,8 +44,9 @@ Route by **the artifact the user wants back**, not by the words they used.
 | a prioritized remediation plan | `quality-debt` |
 | a root cause for a failing/flaky test | `quality-regression` |
 
-"Improve quality" with no artifact named → `quality-metrics` first. You cannot improve what has no
-baseline, and a baseline is cheap. Then `quality-debt` to order the work.
+"Improve quality" with no artifact named → the dialogue `_quality/SIZING.md` requires, then
+`quality-metrics` first. You cannot improve what has no baseline, and a baseline is cheap. Then
+`quality-debt` to order the work.
 
 ## 3. Boundary pairs that actually collide
 

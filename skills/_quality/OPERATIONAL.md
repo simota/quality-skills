@@ -43,7 +43,8 @@ freely on first use (§3 First run).
 ## 3. State files
 
 Findings, metrics, debt inventories, and flaky registries are **stateful**. Store them as
-committed data, not chat output. Payload shapes for each are in `_quality/HANDOFF.md` §1-6.
+committed data, not chat output. Payload shapes for each are in `_quality/HANDOFF.md` §1-6;
+the flaky registry's record is in `quality-regression`'s triage reference.
 
 | Artifact | Path | Owner | Kind |
 |----------|------|-------|------|
@@ -91,4 +92,6 @@ Code, identifiers, file paths, CLI commands, metric names, and severity labels s
 
 When a `quality-*` skill receives `_AGENT_CONTEXT`, parse `task_type`, `description`, and
 `Constraints`; run the standard workflow without narration; return the `_STEP_COMPLETE` envelope
-defined in `_quality/HANDOFF.md` §7, carrying the payload named there.
+defined in `_quality/HANDOFF.md` §7, carrying the payload named there. A dialogue
+`_quality/SIZING.md` makes mandatory is not skipped: return `_STEP_FAILED`, the question as its
+`reason`, and the default that would be taken.

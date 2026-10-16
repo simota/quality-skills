@@ -99,9 +99,9 @@ exists.** Its install line used to be `cp -R quality-* _common <skills dir>`,
 and `_common` in that directory belongs to an unrelated set — running it wrote
 into someone else's repository.
 
-**One declaration.** `set: quality` in the harness file is the only place the
-name is written; the prefix, the shared directory (`skills/_quality/`), and the label
-every document carries all derive from it.
+**One declaration.** `set: quality` in the harness file is the name; the prefix,
+the shared directory (`skills/_quality/`), and the label every document carries
+are written from it and checked against it (V28), so none can drift on its own.
 
 **Every directory this set owns carries the set name.** Carrying the prefix is
 not what makes something installable: a skill is a directory holding a
@@ -132,6 +132,8 @@ follows the link and finds the file, which is what makes this fail quietly.
 quality-skills/
 ├── README.md
 ├── Makefile
+├── .github/workflows/            # ci (make check's set) · pages (publishes docs/)
+├── docs/                         # the generated overview page, never edited by hand
 ├── quality-registry/             # budgets, boundaries, routes, delivered blocks
 ├── quality-tools/                # validate · tests · figures · render · engine · refute · hook
 └── skills/                       # everything the CLI reads
@@ -142,6 +144,7 @@ quality-skills/
         │                         # Always·Never / Verify with / Done when
         ├── _quality  -> ../_quality         # short names: the parent scopes them
         ├── registry  -> ../../quality-registry
+        ├── refute.py -> ../../quality-tools/refute.py   # the one tool a skill runs
         ├── playbooks/            # judgement. Budgeted, and must not rot
         └── reference/            # what goes stale. No line budget, dated instead
 ```
@@ -154,8 +157,9 @@ not read them as references into this repo.
 ## Working on it
 
 ```sh
-make check      # what CI and the hook run: the rules, proof each still fires, the
-                # tools' unit tests, the routes, the figures, and delivery drift
+make check      # what the hook runs, and CI too (plus a render-and-diff step): the rules,
+                # proof each still fires, the tools' unit tests, the routes, the figures,
+                # and delivery drift
 make render     # after editing anything in quality-registry/delivered/
 make hooks      # run make check on what each commit and merge will contain
 
@@ -165,8 +169,8 @@ make hooks      # run make check on what each commit and merge will contain
 ## Installing
 
 ```sh
-make link                       # into ~/.claude/skills
-make link CLAUDE_DIR=.claude/skills
+make link                       # into each installed CLI's skills dir: claude, codex, agy
+make link CLAUDE_DIR=.claude/skills   # a host is skipped unless its parent dir exists
 ```
 
 Each `quality-*` skill is linked individually. Nothing un-prefixed is copied

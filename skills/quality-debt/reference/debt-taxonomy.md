@@ -84,11 +84,8 @@ every imperfection is a ledger that gets closed unread.
 
 ## Entry shape
 
-The row shape is defined once, in `_quality/HANDOFF.md` §4:
-
-```
-| ID | Location | Type | Cost today | Interest | Confidence of fix | Deliberate? | Status | First seen |
-```
+The row shape is defined once, in `_quality/HANDOFF.md` §4, and is not copied here: a copy is
+how this page fell two columns behind it.
 
 `First seen` never changes. An entry that has been open for eighteen months at a stable interest
 is telling you something true: either the interest is overstated, or the team has decided — by

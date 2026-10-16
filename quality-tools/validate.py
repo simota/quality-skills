@@ -368,8 +368,8 @@ def v20_contract_vocabulary():
     """Every declared word is defined on a shared page, not merely named there.
 
     The earlier form asked whether the word appeared anywhere in CONTRACT.md,
-    and a word used in a sentence passed as defined — the check §5.7 names,
-    that one replaced definition does not trip. A definition is a row or a
+    and a word used in a sentence passed as defined — a check that removing
+    the definition does not trip. A definition is a row or a
     heading, and every vocabulary key is held to it, not three.
     """
     pages = {p.name: read(p) for p in (SKILLS_ROOT / SHARED).glob("*.md")}
