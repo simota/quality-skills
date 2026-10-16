@@ -382,6 +382,17 @@ class SchemaBeforeAsking(unittest.TestCase):
                 engine.well_formed(s)
                 self.assertIsNone(engine.mismatch(answer, engine.strict(s), "v"))
 
+    def test_E1_nullable_or_typeless_is_not_forced_to_be_an_object(self):
+        # null (or any non-object) satisfies these, so they are not refused.
+        for s in ({"type": ["object", "null"], "properties": {},
+                   "anyOf": [{"type": ["object", "null"], "properties": {"a": {}},
+                              "required": ["a"]}]},
+                  {"type": ["object", "null"], "required": ["a"]},
+                  {"properties": {}, "required": ["a"]}):
+            with self.subTest(schema=s):
+                engine.well_formed(s)
+                self.assertIsNone(engine.mismatch(None, engine.strict(s), "v"))
+
     def test_E1_parent_declared_union_still_works(self):
         s = {"type": "object", "properties": {"x": {"type": "integer"}, "y": {"type": "string"}},
              "required": [], "oneOf": [{"required": ["x"]}, {"required": ["y"]}]}

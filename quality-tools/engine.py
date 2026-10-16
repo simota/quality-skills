@@ -130,8 +130,14 @@ def _is_object(schema: dict) -> bool:
 
 
 def _closes(schema) -> bool:
-    """strict() will close this object: it declares its keys and nothing else."""
-    return (isinstance(schema, dict) and _is_object(schema)
+    """The value here must be an object, and strict() will close it.
+
+    Only `type: "object"` forces an object: a nullable or typeless schema also
+    admits values its object keywords never apply to, so a key conflict there
+    leaves the schema satisfiable. Refusing less is the safe side — a schema
+    this misses still fails closed, after the engine answers.
+    """
+    return (isinstance(schema, dict) and schema.get("type") in ("object", ["object"])
             and schema.get("additionalProperties", False) is False)
 
 
