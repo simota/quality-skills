@@ -124,7 +124,15 @@ def codex_ready(schema, where: str = "schema") -> None:
 
 def _is_object(schema: dict) -> bool:
     kind = schema.get("type")
+    if kind is None:
+        return "properties" in schema       # describes an object's keys: closed like one
     return kind == "object" or (isinstance(kind, list) and "object" in kind)
+
+
+def _closes(schema) -> bool:
+    """strict() will close this object: it declares its keys and nothing else."""
+    return (isinstance(schema, dict) and _is_object(schema)
+            and schema.get("additionalProperties", False) is False)
 
 
 # bool is a subclass of int in Python, so integer/number exclude it explicitly.
@@ -203,6 +211,18 @@ def well_formed(schema, where: str = "schema") -> None:
                 raise EngineError(f"{where}: {key} must be a non-empty list, not {schema[key]!r}")
             for i, sub in enumerate(schema[key]):
                 well_formed(sub, f"{where}.{key}[{i}]")
+    if _closes(schema):
+        undeclared = sorted(set(schema.get("required", [])) - set(schema.get("properties", {})))
+        if undeclared:
+            raise EngineError(f"{where}: required {undeclared} not in properties; closed, "
+                              "the object admits no answer")
+    for key in ("allOf", "anyOf", "oneOf"):
+        if (key in schema and (key == "allOf" or _closes(schema))
+                and any(_closes(b) for b in schema[key])):
+            raise EngineError(f"{where}: a {key} branch is an object closed on its own, so it "
+                              "refuses the keys declared beside it; declare the keys on the "
+                              "parent and give the branch only `required`, or set the "
+                              "branch's additionalProperties")
 
 
 def conforms(engine: str, got, schema: dict) -> dict:
@@ -214,9 +234,11 @@ def conforms(engine: str, got, schema: dict) -> dict:
     if not isinstance(got, dict):
         raise EngineError(f"{engine} answered {type(got).__name__}, not an object: {got!r}"[:400])
     try:
+        well_formed(schema)
         problem = mismatch(got, schema, "answer")
     except RecursionError:
-        raise EngineError(f"{engine} answered an object nested too deeply to check") from None
+        raise EngineError(f"{engine} answered an object, or was held to a schema, "
+                          "nested too deeply to check") from None
     if problem:
         raise EngineError(f"{engine}: {problem}"[:400])
     return got
@@ -338,10 +360,16 @@ def run(engine: str, prompt: str, schema: dict) -> dict:
     """
     if not isinstance(schema, dict):
         raise EngineError(f"the schema must be an object, not {type(schema).__name__}")
-    well_formed(schema)
-    sent = strict(schema)
-    if engine == "codex":
-        codex_ready(sent)
+    if "type" in schema and not _is_object(schema):
+        raise EngineError(f"the schema's root type is {schema['type']!r}; every engine "
+                          "answers an object, so no answer could match")
+    try:
+        well_formed(schema)
+        sent = strict(schema)
+        if engine == "codex":
+            codex_ready(sent)
+    except RecursionError:
+        raise EngineError("the schema is nested too deeply to check") from None
     return conforms(engine, _ask(engine, prompt, sent), sent)
 
 
@@ -405,9 +433,20 @@ def _loads(text: str):
     """The parsed value, or None. Nesting deep enough to exhaust the stack is
     just another answer that does not parse."""
     try:
-        return json.loads(text)
+        return json.loads(text, parse_constant=_not_json, parse_float=_finite)
     except (ValueError, RecursionError):
         return None
+
+
+def _not_json(name: str):
+    raise ValueError(f"{name} is not JSON")
+
+
+def _finite(text: str) -> float:
+    f = float(text)
+    if f != f or f in (float("inf"), float("-inf")):
+        raise ValueError(f"{text} does not fit a double")
+    return f
 
 
 def _parse(engine: str, body: str, r: subprocess.CompletedProcess) -> dict:

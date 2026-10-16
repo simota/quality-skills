@@ -22,7 +22,7 @@ help:
 	@echo "make check     validate + test + units + routes + figures + drift (CI and the pre-commit hook run the same)"
 	@echo "make validate  static rules over the corpus"
 	@echo "make test      prove every rule still fires"
-	@echo "make units     the engine, refute and render tests (fake engines, no network)"
+	@echo "make units     the engine, refute, render and figures-checker tests (no network)"
 	@echo "make routes    the acquisition-ownership regression test"
 	@echo "make figures   re-derive the reference pages' figures and git behaviours"
 	@echo "make drift     fail if any SKILL.md delivery block is stale (writes nothing)"
@@ -46,6 +46,7 @@ units:
 	@python3 quality-tools/test_engine.py
 	@python3 quality-tools/test_refute.py
 	@python3 quality-tools/test_render.py
+	@python3 quality-tools/test_figures.py
 
 routes:
 	@python3 quality-tools/test_acquisition_routes.py

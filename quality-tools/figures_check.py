@@ -32,8 +32,11 @@ Extraction — `quality-metrics/reference/extraction.md`, against the installed 
 * `-S` fires when an occurrence count drops, not only when it rises
 * `--shortstat` field 4 counts deletions on a deletion-only diff
 
-Every claim is parsed out of the page rather than restated here, so a page edited
-to say something false fails as loudly as a tool that changed underneath it.
+The interest and bisection claims are parsed out of the page rather than restated
+here, so a page edited to say something false fails as loudly as a tool that
+changed underneath it. The extraction checks re-run the git behaviours the page
+rests on, and hold its pickaxe recipe to the one line that reads the oldest match;
+the prose around that line is not parsed.
 """
 import math
 import os
@@ -86,6 +89,7 @@ def check_formula() -> str:
 
 
 NUM = re.compile(r"\d+\.\d+")
+ORDERED = ("touch_score", "blast_score", "comprehension_score")
 OPERAND_ROW = re.compile(r"^\|\s*`(\w+_score|confidence_of_fix)`\s*\|[^|]*\|([^|]*)\|", re.M)
 BAND_TABLE = re.compile(r"^\|[^|]*\|\s*(\d+\.\d+)\s*(?:—[^|]*)?\|\s*$", re.M)
 
@@ -93,7 +97,7 @@ BAND_TABLE = re.compile(r"^\|[^|]*\|\s*(\d+\.\d+)\s*(?:—[^|]*)?\|\s*$", re.M)
 def severity_bands() -> dict[str, set[str]]:
     out = {}
     for name, scale in OPERAND_ROW.findall(SEVERITY.read_text(encoding="utf-8")):
-        vals = set(NUM.findall(scale))
+        vals = NUM.findall(scale)
         if vals:
             out[name] = vals
     if len(out) != 4:
@@ -111,7 +115,7 @@ def interest_bands() -> dict[str, set[str]]:
         m = re.match(r"Input \d+ — (\w+)", s)
         if not m:
             continue
-        vals = set(BAND_TABLE.findall(s))
+        vals = BAND_TABLE.findall(s)
         if vals:
             out[m.group(1)] = vals
     return out
@@ -131,7 +135,7 @@ def confidence_values() -> set[str]:
 def check_bands() -> int:
     sev, inte = severity_bands(), interest_bands()
     conf = confidence_values()
-    if conf and "confidence_of_fix" in sev and sev["confidence_of_fix"] != conf:
+    if conf and "confidence_of_fix" in sev and set(sev["confidence_of_fix"]) != conf:
         fail("bands", f"confidence_of_fix scale is {sorted(sev['confidence_of_fix'])} "
                       f"but the canonical table lists {sorted(conf)}")
     checked = 0
@@ -144,8 +148,8 @@ def check_bands() -> int:
             continue
         checked += 1
         if got != want:
-            fail("bands", f"{name}: SEVERITY fixes {sorted(want)}, "
-                          f"interest.md scores {sorted(got)}")
+            fail("bands", f"{name}: SEVERITY fixes {want}, top to bottom, "
+                          f"interest.md scores {got}")
     if checked == 0:
         fail("bands", "no operand was compared — the checker has stopped checking anything")
     return checked
@@ -155,9 +159,27 @@ EXAMPLE = re.compile(
     r"interest\s*=\s*\(\s*([\d.]+)\s*×\s*([\d.]+)\s*×\s*([\d.]+)\s*\)\s*/\s*([\d.]+)\s*≈\s*([\d.]+)")
 
 
+ARROW = re.compile(r"→\s*(\d+\.\d+)")
+
+
 def check_examples(conf: set[str]) -> int:
     n = 0
-    for a, b, c, d, claimed in EXAMPLE.findall(INTEREST.read_text(encoding="utf-8")):
+    text = INTEREST.read_text(encoding="utf-8")
+    bands = interest_bands()
+    stated = [l for l in FORMULA.findall(text) if re.search(r"\d", l)]
+    found = EXAMPLE.findall(text)
+    if len(found) != len(stated):
+        fail("worked example", f"{len(stated)} `interest = <numbers>` lines, but only "
+                               f"{len(found)} parse; an unparsed one is not checked")
+    for block in re.findall(r"```(.*?)```", text, re.S):
+        m = EXAMPLE.search(block)
+        if m and ARROW.findall(block) != list(m.groups()[:4]):
+            fail("worked example", f"the arrows give {ARROW.findall(block)}, "
+                                   f"the formula line uses {list(m.groups()[:4])}")
+    for a, b, c, d, claimed in found:
+        for name, v in zip(ORDERED, (a, b, c)):
+            if name in bands and v not in bands[name]:
+                fail("worked example", f"{name} {v} is not one of its bands {bands[name]}")
         n += 1
         actual = (float(a) * float(b) * float(c)) / float(d)
         # the page reports to two significant figures
@@ -238,6 +260,10 @@ def exit_table() -> tuple[list[tuple[range, str]], list[tuple[int, str]]]:
         else:                                               # `125`, or `126`, `127`
             for c in codes:
                 rows.append((range(c, c + 1), word))
+    for codes, word in rows:
+        if not codes:
+            fail("bisect", f"the {word!r} row names an empty range of exit codes")
+    rows = [(c, w) for c, w in rows if c]
     if not rows:
         fail("bisect", "no exit-code table found in bisection.md — "
                        "the checker has stopped checking anything")
@@ -301,6 +327,20 @@ def observed(repo: Repo, good: str, bad: str, code: int, everywhere: bool) -> st
         repo.git("bisect", "reset")
 
 
+def observed_good(repo: Repo, good: str, bad: str) -> str:
+    """Exit 0 below the tip, 1 at it: if 0 reads as good, the tip is blamed."""
+    repo.git("bisect", "start", bad, good)
+    try:
+        r = repo.git("bisect", "run", "sh", "-c",
+                     '[ "$(cat f.txt)" -ge 5 ] && exit 1; exit 0')
+        m = re.search(r"(\w+) is the first '?bad'? commit", r.stdout + r.stderr)
+        if m and repo.out("log", "-1", "--format=%s", m.group(1)) == "c5":
+            return "good"
+        return f"not good (rc={r.returncode})"
+    finally:
+        repo.git("bisect", "reset")
+
+
 def check_exit_table(tmp: pathlib.Path) -> int:
     (tmp / "bisect").mkdir(parents=True)
     repo = Repo(tmp / "bisect")
@@ -311,17 +351,26 @@ def check_exit_table(tmp: pathlib.Path) -> int:
 
     rows, guards = exit_table()
     check_table_covers(rows)
+    guarded = dict(guards)
     n = 0
     for codes, want in rows:
         # both ends of a range, so that widening one cannot pass either
         for code in sorted({codes[0], codes[-1]}):
-            if code == 0:
-                continue      # "good" everywhere is not a bisect, it is an error
             n += 1
-            got = observed(repo, good, bad, code, everywhere=False)
+            if code == 0:
+                # read as good, a predicate that fails only on the tip blames the tip
+                got = observed_good(repo, good, bad)
+            else:
+                got = observed(repo, good, bad, code, everywhere=False)
             if got != want:
                 fail("bisect", f"a predicate exiting {code} on the bad side only is "
                                f"read as {got!r}, but the exit table says {want!r}")
+            if code and code not in guarded:
+                # the guard row must name every code git aborts on everywhere
+                got = observed(repo, good, bad, code, everywhere=True)
+                if got == "abort" and want != "abort":
+                    fail("bisect", f"a predicate exiting {code} on every revision aborts, "
+                                   "but the guard row does not name it")
     for code, want in guards:
         n += 1
         got = observed(repo, good, bad, code, everywhere=True)
@@ -368,6 +417,10 @@ def check_flake_table() -> int:
     p_fail = float(rate.group(1))
     ns = [int(x) for x in HEADER_N.findall(header.group(1))]
     checked = 0
+    loose = re.findall(r"^\|[^|\n]*K=\d+[^|\n]*\|", text, re.M)
+    if len(loose) != len(FLAKE_ROW.findall(text)):
+        fail("false-good", f"{len(loose)} K= rows, but only {len(FLAKE_ROW.findall(text))} "
+                           "parse; an unparsed row is not checked")
     for k, cells in FLAKE_ROW.findall(text):
         claims = PCT.findall(cells)
         if len(claims) != len(ns):
@@ -399,6 +452,22 @@ def check_compounding() -> int:
         fail("compounding", "no `⌈log2 R⌉ = b` or no `1 − (1 − q)^b ≈ x%` in "
                             "bisection.md — the checker has stopped checking anything")
         return 0
+    if len(re.findall(r"1\s*[−-]\s*\(1\s*[−-]\s*\d", text)) != len(worked):
+        fail("compounding", "a `1 − (1 − q)^b` line does not parse; it is not checked")
+    header = re.search(r"^\|\s*K \(threshold\)\s*\|([^\n]*)\|\s*$", text, re.M)
+    ns = [int(x) for x in HEADER_N.findall(header.group(1))] if header else []
+    table = {(int(k), n): float(c) for k, cells in FLAKE_ROW.findall(text)
+             for n, c in zip(ns, PCT.findall(cells))}
+    k = None
+    cited = re.findall(r"(?:`K=(\d+)`, )?N=(\d+):\s*`1 − \(1 − ([\d.]+)\)", text)
+    if len(cited) != len(worked):
+        fail("compounding", "a `1 − (1 − q)^b` does not say which K and N its q is from")
+    for kk, n, q in cited:
+        k = int(kk) if kk else k
+        cell = table.get((k, int(n)))
+        if cell is None or round(float(q) * 100, 6) != cell:
+            fail("compounding", f"q = {q} at K={k}, N={n}, but that cell of the "
+                                f"table is {cell}%")
     for r, b in steps:
         if math.ceil(math.log2(int(r))) != int(b):
             fail("compounding", f"⌈log2 {r}⌉ is {math.ceil(math.log2(int(r)))}, not {b}")
@@ -424,9 +493,9 @@ def check_pickaxe(tmp: pathlib.Path) -> int:
     repo.commit("g.txt", "alpha\n", "drop")
 
     text = EXTRACTION.read_text(encoding="utf-8")
-    if "--reverse" not in text or '-S"<test name>"' not in text:
-        fail("pickaxe", "extraction.md no longer shows the `--reverse ... -S` recipe — "
-                        "the checker has stopped checking anything")
+    if not re.search(r'^git log --reverse\b[^\n]*-S"<test name>"[^\n]*\| head -n 1$', text, re.M):
+        fail("pickaxe", "extraction.md no longer shows the `git log --reverse ... -S ... | "
+                        "head -n 1` recipe — the line whose oldest match the checks below hold")
         return 0
 
     oldest = repo.out("log", "--reverse", "--format=%s", "-S", "alpha", "--", "g.txt")
