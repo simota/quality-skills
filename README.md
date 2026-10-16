@@ -77,11 +77,13 @@ its purpose and a checked-on date instead.
 Nothing held the two together, so a band could move in one and not the other and
 the only thing standing behind either page was a date, which has no failure mode.
 `make figures` re-derives the model from both files — the formula byte-identical,
-every band scale the same set on both sides, every worked example recomputed to
-the precision it claims, and every divisor drawn from the canonical list. It runs
-in `make check` and the pre-commit hook, and five deliberate breaks were each
-observed failing it, including one that changes a table's shape so the checker
-matches nothing.
+every band scale the same values in the same order on both sides, every worked
+example's operands drawn from its bands and its arithmetic recomputed to the
+precision it claims, and every divisor drawn from the canonical list. It runs in
+`make check` and the pre-commit hook. A green run only shows today's pages raise
+no false alarm, so `quality-tools/test_figures.py` breaks each page in a copy and
+requires the checker to fail — including a figure reformatted so that the checker
+would once have parsed nothing and passed.
 
 Repairing it turned up a sentence in SEVERITY.md §4 that had lost its middle:
 it named where the band tables live and then did not say where. The pointer is
