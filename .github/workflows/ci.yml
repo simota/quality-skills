@@ -37,6 +37,8 @@ jobs:
         run: python3 quality-tools/test_refute.py
       - name: Render is all or nothing
         run: python3 quality-tools/test_render.py
+      - name: Figures checker catches broken pages
+        run: python3 quality-tools/test_figures.py
       - name: Acquisition ownership
         run: python3 quality-tools/test_acquisition_routes.py
       - name: Figures re-derived

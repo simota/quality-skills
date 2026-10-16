@@ -21,20 +21,19 @@ skills_dir: skills
 platform_dirs: [.git, .github, .claude, skills, docs]   # named by the platform, not by this set
 
 limits:
-  skill_md_lines: 152         # derived, not chosen: 90 for the skill's own words plus
-                              # the 57 lines of delivered contract every file in this
-                              # set now carries, the last 14 of them the sixth axis:
-                              # what the run says at the end. The raises before it
-                              # (120 -> 128 -> 136) were the
-                              # same move for a smaller block; the blocks have
-                              # grown since, and the cap had come to govern about
-                              # 78 lines of actual skill. Measured own-content max
-                              # in this set: 80 lines, in quality-test
+  skill_md_lines: 152         # derived, not chosen: every file carries 67 lines of
+                              # delivered contract (57 of text, 10 of markers), the last
+                              # 14 of text the sixth axis: what the run says at the end.
+                              # That leaves 85 for the skill's own words. The raises
+                              # before it (120 -> 128 -> 136) were the same move for a
+                              # smaller block. Measured own-content max in this set: 84
+                              # lines, in quality-gate and quality-review
   description_chars: 200      # the listing truncates past this
   playbook_lines: 300
   playbooks_per_skill: 8
-  shared_file_lines: 160     # HANDOFF is a catalogue of six payload schemas and an envelope;
-                             # compression removed a table it duplicated, not the schemas
+  shared_file_lines: 160     # HANDOFF is a catalogue of six payload schemas and an envelope,
+                             # CONTRACT the ladder, floors and residuals; both sit at the cap.
+                             # Compression removed a table HANDOFF duplicated, not the schemas
   shared_lines_total: 1020   # raised by the sixth axis: REPORT.md arrived and
                               # every set landed at 97-99% of the old figure at once,
                               # which is a budget that has stopped leaving room to think
@@ -152,11 +151,12 @@ vocabulary:
   # The four value sets the payloads in HANDOFF.md switch on. Declared so that
   # V20 holds each word to one definition and V38 holds every schema to these
   # spellings — `low` in a playbook fell through nothing while they were only
-  # written on the page. `NIT` and `HYPOTHESIS` each sit in two keys on purpose:
-  # one word, one meaning, two axes that share it.
+  # written on the page. `NIT` and `BLOCKED` each sit in two keys on purpose:
+  # one word, one meaning, two axes that share it. Lower-case value sets
+  # (ROUTE, ORACLE, the ledger Status) are not declared and not checked here.
   severities: [CRITICAL, HIGH, MEDIUM, LOW, NIT]
   blocking: [BLOCK, FOLLOW-UP, NIT]
-  confidence: [CONFIRMED, LIKELY, HYPOTHESIS]
+  confidence: [CONFIRMED, LIKELY]
   verdicts: [GO, GO-WITH-CONDITIONS, NO-GO]
 
 
@@ -174,6 +174,7 @@ label_by_path:
 rot_patterns:
   - '\b(19|20)\d{2}-\d{2}\b'
   - '\bv\d+\.\d+(\.\d+)?\b'
+  - '\b\d+\.\d+\.\d+\b'
 
 reference_headers: ["Purpose:", "Read when:", "Source:", "Verified:"]
 # `Verified:` is when someone looked. `Source:` is what they looked at, and the
@@ -249,6 +250,6 @@ delivered:
   # The sixth axis. The other five bind what has to be true; this one binds what
   # reaches the reader, and it is delivered for the same reason as the rest — a
   # rule about the last step of a run is worth nothing if it is read on two
-  # launches in seven. 15 delivered lines that buy back the thirty a payload
+  # launches in seven. 14 delivered lines that buy back the thirty a payload
   # rendered field by field spends.
   surface: { section: "Done when" }

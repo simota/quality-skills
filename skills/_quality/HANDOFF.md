@@ -33,7 +33,7 @@ FILE:       path/to/file.ts:120
 CLAIM:      <one falsifiable sentence>
 SEVERITY:   CRITICAL | HIGH | MEDIUM | LOW | NIT
 BLOCKING:   BLOCK | FOLLOW-UP | NIT
-CONFIDENCE: CONFIRMED | LIKELY | HYPOTHESIS
+CONFIDENCE: CONFIRMED | LIKELY
 EVIDENCE:   E<n> — <command / file:line / measurement>
 FAILURE:    <input or state → wrong output>
 IF WRONG:   <the observation that would refute this>
@@ -74,9 +74,9 @@ SUGGESTED:  <test level: unit | integration | contract | e2e> — <and why that 
 `ORACLE` is mandatory. A gap handed over without a named oracle produces a test that asserts the
 current behaviour, which closes the ticket and catches nothing (`_quality/CONTRACT.md` §3).
 
-## 4. Debt Entry (`quality-review` / `quality-regression` → `quality-debt`)
+## 4. Debt Entry (`quality-debt`; others hand it a Finding with `ROUTE: quality-debt`)
 
-Appended to `.agents/quality/debt.md`:
+Appended to `.agents/quality/debt.md` by `quality-debt`, its only writer:
 
 ```
 | ID | Recorded | Location | Type | Cost today | Interest | Confidence of fix | Deliberate? | Status | Condition | First seen |
@@ -140,11 +140,11 @@ fenced JSON block so the caller can parse it without reading prose:
   "payload": [ { } ],
   "persisted_to": ".agents/quality/findings.jsonl",
   "not_covered": "<what this run did not examine>",
-  "open": [ {"class": "BLOCKED | OUT-OF-SCOPE | DEFERRED | HYPOTHESIS", "action": "", "where": ""} ]
+  "residuals": [ {"class": "BLOCKED | OUT-OF-SCOPE | DEFERRED | HYPOTHESIS", "action": "", "where": ""} ]
 }
 ```
 
-`open` is the residual list (`_quality/CONTRACT.md` §8) and `report_status` the run's status (§7
+`residuals` is the residual list (`_quality/CONTRACT.md` §8) and `report_status` the run's status (§7
 there); `_STEP_COMPLETE` carries `DONE` or `PARTIAL`, `BLOCKED` is `_STEP_FAILED`. `not_covered` is
 required on every envelope: a caller blind to the scope of what it received will over-read it.
 

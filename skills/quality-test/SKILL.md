@@ -24,11 +24,11 @@ Phases: `GAP → ORACLE → LEVEL → CASES → RED → GREEN → PRUNE`.
 - **Find the suite's existing style.** A second convention costs every future
   reader more than one imperfect consistent one
 <!-- deliver:sizing -->
-- **Size it before anything else**, first match wins. `T0` — one skill owns it,
-  one file or one number, the question fits in one sentence: answer in a line,
-  **no brief, no handoff**. `T1` — a `T0` condition fails: settle the brief
-  first. `T2` — two or more skills own parts of it: route it. `T0` drops the
-  paperwork, **never the evidence floor**. Mis-sized mid-run means re-sizing and saying so
+- **Size it before anything else**, first match wins. `T0` — one skill owns it, one file or
+  one number, the question fits in one sentence: answer in a line that still carries the sweep,
+  **no brief, no handoff payload**. `T1` — a `T0` condition fails: settle the brief first. `T2` —
+  two or more skills own parts of it, or the verdict depends on another's output: route it. `T0`
+  drops the paperwork, **never the evidence floor**. Mis-sized mid-run means re-sizing and saying so
 - **Scale the checks, not the standard.** Run the narrowest check that could
   falsify the claim, and **say which checks were deliberately skipped** — a
   silent skip reads as coverage that was never there
@@ -112,9 +112,9 @@ commonest cause is asserting something that was already true.
   original question's unresolved parts
 - **Report `status`**: `DONE` (every claim warranted, every residual classified) / `PARTIAL` / `BLOCKED`
 - **Every residual is `BLOCKED` / `OUT-OF-SCOPE` / `DEFERRED` / `HYPOTHESIS`**
-  and appears in the handoff's `open`; where this skill's own write scope reaches the place a
+  and appears in the handoff's `residuals`; where this skill's own write scope reaches the place a
   reader would next look, a `#TODO(agent):` marker carrying that class goes there too
-- **Never omit the sweep** — markers against `open`, claims made against claims warranted:
+- **Never omit the sweep** — markers against `residuals`, claims made against claims warranted:
   `swept, 0 markers; 9 claims / 9 warranted`. While either pair disagrees the status is not `DONE`
 <!-- /deliver:report -->
 <!-- deliver:outcome -->

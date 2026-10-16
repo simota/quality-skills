@@ -1,8 +1,8 @@
-- **Size it before anything else**, first match wins. `T0` — one skill owns it,
-  one file or one number, the question fits in one sentence: answer in a line,
-  **no brief, no handoff**. `T1` — a `T0` condition fails: settle the brief
-  first. `T2` — two or more skills own parts of it: route it. `T0` drops the
-  paperwork, **never the evidence floor**. Mis-sized mid-run means re-sizing and saying so
+- **Size it before anything else**, first match wins. `T0` — one skill owns it, one file or
+  one number, the question fits in one sentence: answer in a line that still carries the sweep,
+  **no brief, no handoff payload**. `T1` — a `T0` condition fails: settle the brief first. `T2` —
+  two or more skills own parts of it, or the verdict depends on another's output: route it. `T0`
+  drops the paperwork, **never the evidence floor**. Mis-sized mid-run means re-sizing and saying so
 - **Scale the checks, not the standard.** Run the narrowest check that could
   falsify the claim, and **say which checks were deliberately skipped** — a
   silent skip reads as coverage that was never there

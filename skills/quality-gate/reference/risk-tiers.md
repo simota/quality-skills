@@ -30,7 +30,7 @@ This file is the single source for both the tier surfaces and the required input
 ## Required inputs per tier
 
 Floor values (`floors.*`) live in `.agents/quality/gate.yml`. A criterion whose floor is not
-recorded there is unevaluable — design it first (`criteria.md`) rather than inventing a number.
+recorded there is unevaluable — design it first (`reference/criteria.md`) rather than inventing a number.
 
 | Input | R0 | R1 | R2 | R3 | R4 |
 |-------|:--:|:--:|:--:|:--:|:--:|
@@ -62,5 +62,5 @@ commitment) are what stand in for it. Demanding a rollback there blocks every `R
 ## Tier and verdict interaction
 
 - At `R0`/`R1`, `NO-GO` should be rare. If it is not, the gate is checking the wrong things at those tiers.
-- At `R3`/`R4`, `GO-WITH-CONDITIONS` is rarely appropriate: the conditions are usually about safety, and deferred safety is not a condition (`criteria.md`).
+- At `R3`/`R4`, `GO-WITH-CONDITIONS` is rarely appropriate: the conditions are usually about safety, and deferred safety is not a condition (`reference/criteria.md`).
 - At `R4`, an override is not available. If an `R4` criterion is unmet, the change waits.

@@ -113,8 +113,8 @@ is the exact failure this pack exists to catch**, arriving from the inside.
 
 ## 8. Residuals
 
-Anything left behind is classified and recorded in the handoff's `open` list
-with the place a reader would next look.
+Anything left behind is classified and recorded in the handoff's `residuals` list — at `T0`,
+which has no payload, in the answer line — with the place a reader would next look.
 
 | Class | Means |
 |---|---|
@@ -124,22 +124,22 @@ with the place a reader would next look.
 | `HYPOTHESIS` | Believed, could not reach its floor. Carries the observation or safe check that would settle it |
 
 `HYPOTHESIS` is the useful form of a claim that did not make it (§2), never a downgraded
-finding; it never blocks.
+finding: it lives in `residuals`, not the findings log, and it never blocks or counts.
 
 Where a skill's own write scope reaches the place a reader would next look, it puts a
 `#TODO(agent): <class> — <action>` marker there. Holding `Write` is not that scope: a skill whose
-scope does not reach it writes the entry into `open` alone and names where the marker belongs. **The report closes and is gone; the
+scope does not reach it writes the entry into `residuals` alone and names where the marker belongs. **The report closes and is gone; the
 marker stays.**
 
 ## 9. The completion sweep — never omitted
 
 Before reporting, run both halves and state both results:
 
-1. **Markers introduced by this run** — every one appears in `open` with a
+1. **Markers introduced by this run** — every one appears in `residuals` with a
    matching class
 2. **Warrants** — every claim made, against every claim warranted (§2)
 
-Report it in one line: `swept, 1 marker / 1 in open; 9 claims / 9 warranted`.
+Report it in one line: `swept, 1 marker / 1 in residuals; 9 claims / 9 warranted`.
 **While either pair fails to match, the status is not `DONE`.**
 
 ## 10. Comments — the code says what, a comment says why

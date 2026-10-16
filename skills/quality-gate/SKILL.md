@@ -24,11 +24,11 @@ Phases: `SCOPE → ACQUIRE → EVALUATE → DECIDE → RECORD`.
 - **Name which skills contributed and which did not run.** An absent input is
   part of the verdict, not a gap in it
 <!-- deliver:sizing -->
-- **Size it before anything else**, first match wins. `T0` — one skill owns it,
-  one file or one number, the question fits in one sentence: answer in a line,
-  **no brief, no handoff**. `T1` — a `T0` condition fails: settle the brief
-  first. `T2` — two or more skills own parts of it: route it. `T0` drops the
-  paperwork, **never the evidence floor**. Mis-sized mid-run means re-sizing and saying so
+- **Size it before anything else**, first match wins. `T0` — one skill owns it, one file or
+  one number, the question fits in one sentence: answer in a line that still carries the sweep,
+  **no brief, no handoff payload**. `T1` — a `T0` condition fails: settle the brief first. `T2` —
+  two or more skills own parts of it, or the verdict depends on another's output: route it. `T0`
+  drops the paperwork, **never the evidence floor**. Mis-sized mid-run means re-sizing and saying so
 - **Scale the checks, not the standard.** Run the narrowest check that could
   falsify the claim, and **say which checks were deliberately skipped** — a
   silent skip reads as coverage that was never there
@@ -73,7 +73,7 @@ Phases: `SCOPE → ACQUIRE → EVALUATE → DECIDE → RECORD`.
   is fine" when only the diff was examined is how gates get blamed for the
   incident they were never looking at
 - Always: judge blocking by `_quality/SEVERITY.md` §3 exactly — introduced and
-  `MEDIUM` or above, or any `CRITICAL` reachable from the changed surface, blocks;
+  `MEDIUM` or above, or a `CRITICAL` the change makes newly reachable, blocks;
   every other pre-existing finding routes to debt
 - Always: verify the rollback was exercised before approving `R3`; at `R4`, where
   none can exist, the dry run and the written undo plan stand in for it
@@ -114,9 +114,9 @@ on a hunch destroys the gate's credibility faster than any bug does.**
   original question's unresolved parts
 - **Report `status`**: `DONE` (every claim warranted, every residual classified) / `PARTIAL` / `BLOCKED`
 - **Every residual is `BLOCKED` / `OUT-OF-SCOPE` / `DEFERRED` / `HYPOTHESIS`**
-  and appears in the handoff's `open`; where this skill's own write scope reaches the place a
+  and appears in the handoff's `residuals`; where this skill's own write scope reaches the place a
   reader would next look, a `#TODO(agent):` marker carrying that class goes there too
-- **Never omit the sweep** — markers against `open`, claims made against claims warranted:
+- **Never omit the sweep** — markers against `residuals`, claims made against claims warranted:
   `swept, 0 markers; 9 claims / 9 warranted`. While either pair disagrees the status is not `DONE`
 <!-- /deliver:report -->
 <!-- deliver:outcome -->

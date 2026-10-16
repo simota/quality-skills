@@ -77,11 +77,13 @@ its purpose and a checked-on date instead.
 Nothing held the two together, so a band could move in one and not the other and
 the only thing standing behind either page was a date, which has no failure mode.
 `make figures` re-derives the model from both files — the formula byte-identical,
-every band scale the same set on both sides, every worked example recomputed to
-the precision it claims, and every divisor drawn from the canonical list. It runs
-in `make check` and the pre-commit hook, and five deliberate breaks were each
-observed failing it, including one that changes a table's shape so the checker
-matches nothing.
+every band scale the same values in the same order on both sides, every worked
+example's operands drawn from its bands and its arithmetic recomputed to the
+precision it claims, and every divisor drawn from the canonical list. It runs in
+`make check` and the pre-commit hook. A green run only shows today's pages raise
+no false alarm, so `quality-tools/test_figures.py` breaks each page in a copy and
+requires the checker to fail — including a figure reformatted so that the checker
+would once have parsed nothing and passed.
 
 Repairing it turned up a sentence in SEVERITY.md §4 that had lost its middle:
 it named where the band tables live and then did not say where. The pointer is
@@ -99,9 +101,9 @@ exists.** Its install line used to be `cp -R quality-* _common <skills dir>`,
 and `_common` in that directory belongs to an unrelated set — running it wrote
 into someone else's repository.
 
-**One declaration.** `set: quality` in the harness file is the only place the
-name is written; the prefix, the shared directory (`skills/_quality/`), and the label
-every document carries all derive from it.
+**One declaration.** `set: quality` in the harness file is the name; the prefix,
+the shared directory (`skills/_quality/`), and the label every document carries
+are written from it and checked against it (V28), so none can drift on its own.
 
 **Every directory this set owns carries the set name.** Carrying the prefix is
 not what makes something installable: a skill is a directory holding a
@@ -132,6 +134,8 @@ follows the link and finds the file, which is what makes this fail quietly.
 quality-skills/
 ├── README.md
 ├── Makefile
+├── .github/workflows/            # ci (make check's set) · pages (publishes docs/)
+├── docs/                         # the generated overview page, never edited by hand
 ├── quality-registry/             # budgets, boundaries, routes, delivered blocks
 ├── quality-tools/                # validate · tests · figures · render · engine · refute · hook
 └── skills/                       # everything the CLI reads
@@ -142,6 +146,7 @@ quality-skills/
         │                         # Always·Never / Verify with / Done when
         ├── _quality  -> ../_quality         # short names: the parent scopes them
         ├── registry  -> ../../quality-registry
+        ├── refute.py -> ../../quality-tools/refute.py   # the one tool a skill runs
         ├── playbooks/            # judgement. Budgeted, and must not rot
         └── reference/            # what goes stale. No line budget, dated instead
 ```
@@ -154,8 +159,9 @@ not read them as references into this repo.
 ## Working on it
 
 ```sh
-make check      # what CI and the hook run: the rules, proof each still fires, the
-                # tools' unit tests, the routes, the figures, and delivery drift
+make check      # what the hook runs, and CI too (plus a render-and-diff step): the rules,
+                # proof each still fires, the tools' unit tests, the routes, the figures,
+                # and delivery drift
 make render     # after editing anything in quality-registry/delivered/
 make hooks      # run make check on what each commit and merge will contain
 
@@ -165,8 +171,8 @@ make hooks      # run make check on what each commit and merge will contain
 ## Installing
 
 ```sh
-make link                       # into ~/.claude/skills
-make link CLAUDE_DIR=.claude/skills
+make link                       # into each installed CLI's skills dir: claude, codex, agy
+make link CLAUDE_DIR=.claude/skills   # a host is skipped unless its parent dir exists
 ```
 
 Each `quality-*` skill is linked individually. Nothing un-prefixed is copied

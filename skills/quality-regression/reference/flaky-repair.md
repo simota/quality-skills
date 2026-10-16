@@ -89,7 +89,7 @@ and file the gap.
 
 ## `REGRESSION` — the code broke
 
-Not a test problem at all. Bisect (`bisection.md`), grade the culprit diff via `quality-review`,
+Not a test problem at all. Bisect (`reference/bisection.md`), grade the culprit diff via `quality-review`,
 emit a fix directive, and keep the failing test exactly as it is — it is working correctly and is
 the guard.
 

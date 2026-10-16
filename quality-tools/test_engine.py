@@ -349,5 +349,80 @@ class Main(Fakes):
         self.assertIn("UNAVAILABLE", self.output)
 
 
+def refused(fn, *a):
+    """True when fn raises EngineError without ever reaching an engine."""
+    with mock.patch.object(engine, "_ask", side_effect=AssertionError("engine was called")):
+        try:
+            fn(*a)
+        except engine.EngineError:
+            return True
+    return False
+
+class SchemaBeforeAsking(unittest.TestCase):
+    """A schema no answer could satisfy is refused before an engine is paid to try."""
+    def test_E1_required_not_declared_is_refused_before_asking(self):
+        self.assertTrue(refused(engine.run, "claude", "p", {"type": "object", "required": ["a"]}))
+
+    def test_E1_composed_objects_are_refused_before_asking(self):
+        for s in ({"type": "object", "anyOf": [
+                      {"type": "object", "properties": {"k": {"const": "a"}}, "required": ["k"]}]},
+                  {"allOf": [{"type": "object", "properties": {"a": {}}, "required": ["a"]},
+                             {"type": "object", "properties": {"b": {}}, "required": ["b"]}]}):
+            self.assertTrue(refused(engine.run, "claude", "p", s), s)
+
+    def test_E1_satisfiable_closed_branches_are_kept(self):
+        # Closing a branch is not the conflict; an undeclared required key is.
+        for s, answer in (
+                ({"allOf": [{"type": "object", "properties": {"a": {"type": "string"}},
+                             "required": ["a"]}]}, {"a": "x"}),
+                ({"type": "object", "properties": {"k": {"const": "a"}}, "required": ["k"],
+                  "anyOf": [{"type": "object", "properties": {"k": {"const": "a"}},
+                             "required": ["k"]}]}, {"k": "a"})):
+            with self.subTest(schema=s):
+                engine.well_formed(s)
+                self.assertIsNone(engine.mismatch(answer, engine.strict(s), "v"))
+
+    def test_E1_nullable_or_typeless_is_not_forced_to_be_an_object(self):
+        # null (or any non-object) satisfies these, so they are not refused.
+        for s in ({"type": ["object", "null"], "properties": {},
+                   "anyOf": [{"type": ["object", "null"], "properties": {"a": {}},
+                              "required": ["a"]}]},
+                  {"type": ["object", "null"], "required": ["a"]},
+                  {"properties": {}, "required": ["a"]}):
+            with self.subTest(schema=s):
+                engine.well_formed(s)
+                self.assertIsNone(engine.mismatch(None, engine.strict(s), "v"))
+
+    def test_E1_parent_declared_union_still_works(self):
+        s = {"type": "object", "properties": {"x": {"type": "integer"}, "y": {"type": "string"}},
+             "required": [], "oneOf": [{"required": ["x"]}, {"required": ["y"]}]}
+        engine.well_formed(s)
+        self.assertIsNone(engine.mismatch({"x": 1}, engine.strict(s), "v"))
+
+    def test_E2_untyped_object_is_closed(self):
+        s = {"type": "object", "required": ["a"],
+             "properties": {"a": {"properties": {"b": {"type": "string"}}, "required": ["b"]}}}
+        self.assertIsNotNone(engine.mismatch({"a": {"b": "x", "extra": 1}}, engine.strict(s), "v"))
+
+    def test_E3_conforms_refuses_malformed_schema(self):
+        for s in ({"type": [["object"]]}, {"anyOf": []}, {"oneOf": []}):
+            with self.assertRaises(engine.EngineError):
+                engine.conforms("x", {"a": 1}, s)
+
+    def test_E4_nan_and_infinity_are_not_json(self):
+        for body in ('{"n": NaN}', '{"n": Infinity}', '{"n": 1e400}'):
+            self.assertIsNone(engine._loads(body), body)
+
+    def test_E5_non_object_root_is_refused_before_asking(self):
+        self.assertTrue(refused(engine.run, "claude", "p", {"type": "string"}))
+
+    def test_E6_deep_schema_is_an_engine_error(self):
+        # Built directly: json.loads on 3.9 cannot itself decode this depth.
+        s = {}
+        for _ in range(1000):
+            s = {"type": "array", "items": s}
+        self.assertTrue(refused(engine.run, "claude", "p", s))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)

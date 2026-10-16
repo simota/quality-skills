@@ -13,7 +13,7 @@ findings, arriving by length instead of by count.
 
 | Object | Holds | Read by |
 |---|---|---|
-| The payloads (`_quality/HANDOFF.md`, `_quality/OPERATIONAL.md` §3) | Every finding, its rung, its outcome, the whole `open` list | The next skill, and the person when they ask |
+| The payloads (`_quality/HANDOFF.md`, `_quality/OPERATIONAL.md` §3) | Every finding, its rung, its outcome, the whole `residuals` list | The next skill, and the person when they ask |
 | The report | The verdict, the line of evidence under it, what is unresolved | The person, now |
 
 The report is a **view over** the payload, never a second copy of it in prose. A payload rendered
@@ -54,9 +54,9 @@ A run with nothing unresolved reports lines 1 and 2 and stops.
 ## Bound
 
 The report is the four parts above and nothing else. A `T0` answer (`_quality/SIZING.md`) is the
-verdict line alone; a `T2` report also names the findings file. Length follows the number of
-residuals a human must decide, never the amount of work done — a report that reproduces the
-payload is the failure this file exists to stop.
+verdict line carrying the sweep's counts and any residual; a `T2` report also names the findings file. Length
+follows the number of residuals a human must decide, never the amount of work done — a report
+that reproduces the payload is the failure this file exists to stop.
 
 **Ten findings, two that matter: report the two and the count of the rest** (`_quality/VALUES.md`
 §4). The other eight are in the payload with their rungs, which is where someone acting on them

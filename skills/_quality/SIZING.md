@@ -9,13 +9,14 @@ move — choosing the tier for comfort — so the tier is read on first match.
 
 | Tier | All of these hold | What it costs |
 |---|---|---|
-| `T0` | One skill obviously owns it · one file or one number · the question fits in one sentence | Answer in a line. **No brief, no handoff** |
+| `T0` | One skill obviously owns it · one file or one number · the question fits in one sentence | Answer in a line that still carries the sweep. **No brief, no handoff payload** |
 | `T1` | One skill owns it, but a `T0` condition fails | Settle the brief, then run. Handoff on return |
 | `T2` | Two or more skills own parts of it, or a verdict depends on another skill's output | Route it: settle the brief once, run the chain, one report covers every stage |
 
 `T0` drops the paperwork. **It never drops the evidence floor** — a one-line
-answer still names its rung, and a `T0` that cannot reach `E1` is a `HYPOTHESIS`,
-not a finding.
+answer still names its rung, and a `T0` that cannot reach its output's floor
+(`_quality/CONTRACT.md` §2) is a `HYPOTHESIS`, not a finding. With no payload, the answer line
+is its residual record: it names the `HYPOTHESIS` and the check that would settle it.
 
 **Finding mid-run that the tier was wrong means re-sizing and saying so.** A
 `T0` review of one file that has turned into a debt inventory is a `T1` that was

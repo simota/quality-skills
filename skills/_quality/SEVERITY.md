@@ -40,7 +40,7 @@ test is the description, never the proportion, and lowering a true band is its o
 
 | Blocking | Condition |
 |----------|-----------|
-| `BLOCK` | introduced by this change **and** ≥ `MEDIUM`; or any `CRITICAL` reachable from the changed surface |
+| `BLOCK` | introduced by this change **and** ≥ `MEDIUM`; or a pre-existing `CRITICAL` the change makes newly reachable |
 | `FOLLOW-UP` | pre-existing, or `LOW`, or requires design agreement to fix properly |
 | `NIT` | cosmetic; author's discretion, no response required |
 
@@ -59,7 +59,7 @@ interest = (touch_score × blast_score × comprehension_score) / confidence_of_f
 it to a band. Multiplying raw units directly is a category error: 18 commits × 9 importers × 90
 minutes is not a quantity, and it lands three orders of magnitude off the scale below. The band
 tables and the extraction command for each raw input live in `quality-debt`'s
-`reference/interest.md`, which scores them; this file fixes the scale they map onto, and
+interest reference, which scores them; this file fixes the scale they map onto, and
 `make figures` holds the two in agreement.
 
 | Operand | Raw measurement | Band scale |
@@ -93,13 +93,13 @@ read the gap between two adjacent entries as meaningful.
 
 | Class | Meaning | Action |
 |-------|---------|--------|
-| `REGRESSION` | passed before, fails now, product code changed | Bisect, then fix product code. Never the test. |
+| `REGRESSION` | passed before, fails now, product code changed | Bisect, then a fix directive for the product code. Never change the test. |
 | `FLAKY-ORDER` | passes alone, fails in suite | Shared state. Fix isolation, not the assertion. |
 | `FLAKY-TIME` | timing, clock, timezone, or race dependent | Inject the clock; remove sleeps. |
 | `FLAKY-ENV` | machine, network, or fixture dependent | Pin or stub the boundary. |
 | `STALE` | asserts behaviour that was deliberately changed | Update the test, and say so loudly in the PR. |
 | `WRONG-ORACLE` | test was never valid; both sides agree wrongly | Delete and re-derive from spec (`_quality/CONTRACT.md` §3). |
-| `PREEXISTING-DEFECT` | a new test reveals a bug that was always there | Nothing to bisect — the defect predates the test. Fix the product; the test is already the guard. |
+| `PREEXISTING-DEFECT` | a new test reveals a bug that was always there | Nothing to bisect — the defect predates the test. A fix directive for the product; the test is already the guard. |
 
 **Quarantine is a countdown, not a cupboard.** A quarantined test carries an owner and an expiry
 date. Expired quarantine deletes the test and files the coverage gap as debt — an indefinitely
@@ -114,10 +114,10 @@ Attached to a finding, independent of severity.
 | `CONFIRMED` | reproduced, or proven from code with the path shown |
 | `LIKELY` | strong static evidence, not executed |
 
-The third label is `HYPOTHESIS`, defined once as the residual class of that name
-(`_quality/CONTRACT.md` § Residuals): believed, could not reach its floor,
-carries the observation or safe check that would settle it. `HYPOTHESIS` findings never block and are never counted. They are listed last, under their own
-heading, so a reader can stop reading before them.
+A claim that earns neither label is not a finding: it is a `HYPOTHESIS`, the residual class of that
+name (`_quality/CONTRACT.md` § Residuals) — carried in `residuals`, never in the findings log, so
+it never blocks and never counts toward defects or precision. Once its check is run it becomes a
+finding at the rung it reached, or is dropped.
 
 ## Verdict labels
 

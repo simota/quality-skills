@@ -58,9 +58,14 @@ row wins.
 | 3 | `_quality/ROUTING.md` | which skill owns the call |
 | 4 | `_quality/SEVERITY.md` | how a finding is ranked |
 | 5 | `_quality/CONTRACT.md` | whether a claim may be stated at all |
-| 6 | `_quality/HANDOFF.md` | how work crosses a skill edge |
-| 7 | `_quality/OPERATIONAL.md` | journal, state, language, defaults |
-| 8 | The individual `SKILL.md` | domain specifics |
+| 6 | `_quality/OUTCOMES.md` | what a finding turned out to be, and how precision is reported |
+| 7 | `_quality/HANDOFF.md` | how work crosses a skill edge |
+| 8 | `_quality/SIZING.md` | how much ceremony a request is worth |
+| 9 | `_quality/REPORT.md` | what reaches the reader |
+| 10 | `_quality/OPERATIONAL.md` | journal, state, language, defaults |
+| 11 | The individual `SKILL.md` | domain specifics |
+
+This file is not a row: its order resolves values, the table resolves written rules.
 
 A `SKILL.md` may **tighten** a rule above it, never loosen one. "This skill
 skips evidence grading because it is fast" is not a valid tightening.
@@ -93,5 +98,5 @@ rather than performing it.
 - Two contracts in `_quality/` give conflicting instructions for this exact case
 
 When it fires: do the work, state which rule was suspended and why, and record
-the gap as `#TODO(agent): OUT-OF-SCOPE`. Suspending a rule silently is the
+it in `residuals` as `OUT-OF-SCOPE` (`_quality/CONTRACT.md` §8). Suspending a rule silently is the
 failure this section exists to prevent.

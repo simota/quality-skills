@@ -128,7 +128,7 @@ With `q` the table's cell for your K and N and `b` bad-commit steps, P(wrong cul
 ⌈log2 100⌉ = 7 steps, all of them on bad commits at worst — at `K=1`, N=20: `1 − (1 − 0.12)^7 ≈ 59%`, and at N=46:
 `1 − (1 − 0.008)^7 ≈ 5.5%`. Size N for the whole bisect, not for one run.
 
-Measure `p` first (`triage.md` § Reproduction quality). Choosing N without it is guesswork, and a
+Measure `p` first (`reference/triage.md` § Reproduction quality). Choosing N without it is guesswork, and a
 bisect run at the wrong N returns a wrong answer with no indication that it did.
 
 ## Establishing known-good

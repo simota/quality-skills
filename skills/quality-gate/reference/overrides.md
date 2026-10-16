@@ -49,7 +49,7 @@ the dashboard" compensates for a detection gap, not for a correctness gap.
 
 ## What may never be overridden
 
-- An `R4` criterion (`risk-tiers.md`). If an `R4` requirement is unmet, the change waits.
+- An `R4` criterion (`reference/risk-tiers.md`). If an `R4` requirement is unmet, the change waits.
 - Anything protecting data that cannot be recovered.
 - A criterion whose failure mode is silent — where nobody would notice being wrong. The whole value of the check is that nobody else will catch it.
 - The record itself. There is no override of the override process.
@@ -62,7 +62,7 @@ Every override expires; the default is 14 days. At expiry, exactly two outcomes:
 2. It is not — the change is reverted, or a **new** override is written with a new approver and a new date.
 
 An override renewed three times is not an exception; it is a criterion the project has decided not
-to meet. Say so plainly and take it to criteria design (`criteria.md`): either the criterion is wrong, or the project has
+to meet. Say so plainly and take it to criteria design (`reference/criteria.md`): either the criterion is wrong, or the project has
 a standing gap that deserves to be visible rather than renewed quietly.
 
 ## The rate is the diagnostic
@@ -71,7 +71,7 @@ Track overrides per release. The number is more informative than any individual 
 
 | Rate | Reading |
 |------|---------|
-| ~0 | either healthy, or the gate checks nothing — audit it (`ci-gates.md`) |
+| ~0 | either healthy, or the gate checks nothing — audit it (`reference/ci-gates.md`) |
 | under ~1 in 10 | working as intended |
 | over ~1 in 10 | the criteria do not match how this project actually works |
 | over ~1 in 3 | the gate is decorative; developers have routed around it and the records are now theatre |
