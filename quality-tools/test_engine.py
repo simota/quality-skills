@@ -370,6 +370,18 @@ class SchemaBeforeAsking(unittest.TestCase):
                              {"type": "object", "properties": {"b": {}}, "required": ["b"]}]}):
             self.assertTrue(refused(engine.run, "claude", "p", s), s)
 
+    def test_E1_satisfiable_closed_branches_are_kept(self):
+        # Closing a branch is not the conflict; an undeclared required key is.
+        for s, answer in (
+                ({"allOf": [{"type": "object", "properties": {"a": {"type": "string"}},
+                             "required": ["a"]}]}, {"a": "x"}),
+                ({"type": "object", "properties": {"k": {"const": "a"}}, "required": ["k"],
+                  "anyOf": [{"type": "object", "properties": {"k": {"const": "a"}},
+                             "required": ["k"]}]}, {"k": "a"})):
+            with self.subTest(schema=s):
+                engine.well_formed(s)
+                self.assertIsNone(engine.mismatch(answer, engine.strict(s), "v"))
+
     def test_E1_parent_declared_union_still_works(self):
         s = {"type": "object", "properties": {"x": {"type": "integer"}, "y": {"type": "string"}},
              "required": [], "oneOf": [{"required": ["x"]}, {"required": ["y"]}]}

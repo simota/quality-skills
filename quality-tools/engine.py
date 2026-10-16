@@ -216,13 +216,44 @@ def well_formed(schema, where: str = "schema") -> None:
         if undeclared:
             raise EngineError(f"{where}: required {undeclared} not in properties; closed, "
                               "the object admits no answer")
-    for key in ("allOf", "anyOf", "oneOf"):
-        if (key in schema and (key == "allOf" or _closes(schema))
-                and any(_closes(b) for b in schema[key])):
-            raise EngineError(f"{where}: a {key} branch is an object closed on its own, so it "
-                              "refuses the keys declared beside it; declare the keys on the "
-                              "parent and give the branch only `required`, or set the "
-                              "branch's additionalProperties")
+    _satisfiable(schema, where)
+
+
+def _keys(s) -> tuple[set, set]:
+    """(declared, required) keys of a subschema; a non-dict declares nothing."""
+    if not isinstance(s, dict):
+        return set(), set()
+    return set(s.get("properties", {})), set(s.get("required", []))
+
+
+def _satisfiable(schema: dict, where: str) -> None:
+    """Refuse a composition no answer could match once strict() closes its objects.
+
+    Closing is not the conflict; a key some part requires that a closed part
+    does not declare is. Under allOf every part holds at once, so each closed
+    part must declare every required key. Under anyOf/oneOf one branch must be
+    usable: closed, it declares what the parent and allOf require; and what it
+    requires, a closed parent declares.
+    """
+    declared, required = _keys(schema)
+    parts = [b for b in schema.get("allOf", []) if isinstance(b, dict)]
+    for b in parts:
+        required |= _keys(b)[1]
+    for s, at in [(schema, where)] + [(b, f"{where}.allOf[{i}]") for i, b in enumerate(parts)]:
+        if _closes(s) and not required <= _keys(s)[0]:
+            raise EngineError(f"{at}: required {sorted(required - _keys(s)[0])} is not declared "
+                              "in this closed object, so no answer can match; declare it there "
+                              "or set its additionalProperties")
+    for key in ("anyOf", "oneOf"):
+        branches = schema.get(key)
+        if not branches:
+            continue
+        usable = [b for b in branches
+                  if not (_closes(b) and not required <= _keys(b)[0])
+                  and not (_closes(schema) and not _keys(b)[1] <= declared)]
+        if not usable:
+            raise EngineError(f"{where}: no {key} branch can match once objects are closed — "
+                              "each requires a key a closed object beside it does not declare")
 
 
 def conforms(engine: str, got, schema: dict) -> dict:
