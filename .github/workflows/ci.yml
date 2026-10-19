@@ -10,7 +10,9 @@ permissions:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    # Pinned: setup-python ships 3.9 builds for 22.04 and 24.04 only, so a moving
+    # ubuntu-latest would drop the floor leg without anyone choosing to.
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     # 3.9 is the floor the tools actually run on (Path.readlink, list[str] at
     # runtime); 3.8 fails. The floor is tested so it stays a fact, not a guess.
@@ -39,6 +41,8 @@ jobs:
         run: python3 quality-tools/test_render.py
       - name: Figures checker catches broken pages
         run: python3 quality-tools/test_figures.py
+      - name: Hook, Makefile and CI agree
+        run: python3 quality-tools/test_tooling.py
       - name: Acquisition ownership
         run: python3 quality-tools/test_acquisition_routes.py
       - name: Figures re-derived

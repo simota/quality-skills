@@ -13,7 +13,8 @@ AGY_DIR    ?= $(HOME)/.gemini/antigravity-cli/skills
 # written to when it is installed here, and its own home — the parent of the
 # skills directory — is what says so: judging by the skills directory itself
 # would skip a host that has one but has never been given a skill.
-HOST_DIRS  := $(CLAUDE_DIR) $(CODEX_DIR) $(AGY_DIR)
+# Quoted: a home with a space in it is one directory, not two.
+HOST_DIRS  := "$(CLAUDE_DIR)" "$(CODEX_DIR)" "$(AGY_DIR)"
 
 .DEFAULT_GOAL := help
 .PHONY: help check validate test units routes figures drift engines refute render hooks link unlink status
@@ -22,7 +23,7 @@ help:
 	@echo "make check     validate + test + units + routes + figures + drift (CI and the pre-commit hook run the same)"
 	@echo "make validate  static rules over the corpus"
 	@echo "make test      prove every rule still fires"
-	@echo "make units     the engine, refute, render and figures-checker tests (no network)"
+	@echo "make units     the engine, refute, render, figures-checker and hook/Makefile/CI tests (no network)"
 	@echo "make routes    the acquisition-ownership regression test"
 	@echo "make figures   re-derive the reference pages' figures and git behaviours"
 	@echo "make drift     fail if any SKILL.md delivery block is stale (writes nothing)"
@@ -47,6 +48,7 @@ units:
 	@python3 quality-tools/test_refute.py
 	@python3 quality-tools/test_render.py
 	@python3 quality-tools/test_figures.py
+	@python3 quality-tools/test_tooling.py
 
 routes:
 	@python3 quality-tools/test_acquisition_routes.py
@@ -70,9 +72,14 @@ render:
 
 # git says where the hook goes: in a worktree or submodule .git is a file.
 # pre-merge-commit gets the same script: without it a merge commit skips the check.
+# A hook already there that is not this one is someone else's — under a shared
+# core.hooksPath, other repos' — and is never overwritten.
 hooks:
 	@for name in pre-commit pre-merge-commit; do \
-		hook=$$(git rev-parse --git-path "hooks/$$name") && \
+		hook=$$(git rev-parse --git-path "hooks/$$name") || exit 1; \
+		if [ -e "$$hook" ] && ! grep -q '^# Install with: make hooks$$' "$$hook"; then \
+			echo "$$hook is not this repo's hook; not overwriting it"; exit 1; \
+		fi; \
 		mkdir -p "$$(dirname "$$hook")" && \
 		cp quality-tools/githooks/pre-commit "$$hook" && \
 		chmod +x "$$hook" && \
@@ -85,8 +92,12 @@ hooks:
 SKILL_DIRS := $(patsubst %/SKILL.md,%,$(wildcard skills/quality-*/SKILL.md))
 
 # A link into another checkout or set is not ours to repoint, as in unlink.
+# A relative host directory would resolve inside this repo, not the caller's
+# project, so it is refused; so is a run that finds no skills to link.
 link:
+	@[ -n "$(SKILL_DIRS)" ] || { echo "no skills/quality-*/SKILL.md here; run from the repo root"; exit 1; }
 	@for dir in $(HOST_DIRS); do \
+		case "$$dir" in /*) ;; *) echo "$$dir is relative; give an absolute path"; exit 1;; esac; \
 		if [ ! -d "$$(dirname "$$dir")" ]; then echo "skip $$dir (host not installed here)"; continue; fi; \
 		mkdir -p "$$dir"; \
 		echo "$$dir"; \

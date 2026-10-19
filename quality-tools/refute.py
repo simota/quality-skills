@@ -145,6 +145,9 @@ def main() -> int:
                     help="the engine running this — stated, never sniffed")
     ap.add_argument("--json", action="store_true", help="emit the result as JSON")
     a = ap.parse_args()
+    # The verdicts print after every engine call has been paid for; a non-UTF-8
+    # console must not turn them into a UnicodeEncodeError and exit 1.
+    sys.stdout.reconfigure(errors="replace")
 
     if not (REFUTATION.get("lens") and REFUTATION.get("refuted_when")):
         print("harness.yaml declares no refutation lens; a refuter with no domain "

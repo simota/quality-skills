@@ -20,9 +20,15 @@ trap 'rm -rf "$tmp"' EXIT
 trap 'exit 1' HUP INT TERM
 
 # Before the GIT_* variables go: under `commit -a` or `commit <paths>`,
-# GIT_INDEX_FILE names the temporary index that is the commit. checkout-index
-# writes symlinks as symlinks, which the skills' links depend on.
-git checkout-index -a --prefix="$tmp/"
+# GIT_INDEX_FILE names the temporary index that is the commit. write-tree takes
+# exactly what will be committed: an intent-to-add entry is not in it. The tree
+# is read into a fresh index, so no skip-worktree bit from a sparse checkout
+# drops a file from the export. checkout-index writes symlinks as symlinks,
+# which the skills' links depend on.
+tree=$(git write-tree)
+mkdir "$tmp/tree"
+GIT_INDEX_FILE="$tmp/index" git read-tree "$tree"
+GIT_INDEX_FILE="$tmp/index" git checkout-index -a --ignore-skip-worktree-bits --prefix="$tmp/tree/"
 
 # git exports GIT_DIR, GIT_INDEX_FILE and others to hooks. The checks must see
 # only the exported tree; inherited, these point every git they run at this repo.
@@ -30,4 +36,4 @@ for var in $(env | sed -n 's/^\(GIT_[A-Za-z0-9_]*\)=.*/\1/p'); do
 	unset "$var"
 done
 
-make -s -C "$tmp" check
+make -s -C "$tmp/tree" check
