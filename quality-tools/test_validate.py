@@ -19,7 +19,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.dont_write_bytecode = True                     # no __pycache__ in the tools dir
-import validate                                    # noqa: E402  — for RULES only
+try:
+    import validate  # noqa: E402  — for RULES only
+except SystemExit:                  # it ran main() on import: no case below would run
+    sys.exit("importing validate ran its main()")
 
 
 def run(root: Path) -> tuple[int, str]:
@@ -243,6 +246,10 @@ def _(r): sub(r / "quality-registry/harness.yaml", "set: quality", "set: qa")
 
 @case("V28-generic-dir")
 def _(r): (r / "registry").mkdir()
+
+
+@case("V28-shared-missing")
+def _(r): shutil.rmtree(r / f"{S}_quality")
 
 
 @case("V29")
@@ -642,11 +649,15 @@ def main() -> int:
             shutil.copytree(ROOT, copy, symlinks=True,
                             ignore=shutil.ignore_patterns(".git", "__pycache__"))
             mutate(copy)
-            _, out = run(copy)
+            rc, out = run(copy)
             expect = rule.split("-")[0]
             if not re.search(rf"^\s*{expect}: ", out, re.M):
                 bad.append(rule)
                 print(f"  {rule} did not fire\n{out}")
+            elif rc != 1 or "Traceback" in out:
+                # Reported but exiting 0 passes CI and the hook all the same.
+                bad.append(rule)
+                print(f"  {rule} fired but exited {rc}\n{out}")
 
     print(f"{len(CASES)} rules exercised, {len(bad)} silent")
     if bad:

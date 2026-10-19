@@ -150,6 +150,50 @@ class Render(unittest.TestCase):
         self.assertIn("quality-test/SKILL.md", r.stderr)
         self.assertEqual(self.snapshot(), before)
 
+    def test_help_exits_zero(self):
+        r = self.render("--help")
+        self.assertEqual(r.returncode, 0)
+        self.assertIn("usage", r.stdout)
+
+    def test_reversed_markers_refused_cleanly(self):
+        p = self.skill("quality-test")
+        t = p.read_text(encoding="utf-8")
+        o, c = "<!-- deliver:values -->", "<!-- /deliver:values -->"
+        p.write_text(t.replace(o, "@@O@@").replace(c, o).replace("@@O@@", c), encoding="utf-8")
+        before = self.snapshot()
+        r = self.render()                      # render() asserts no Traceback
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("opening first", r.stderr)
+        self.assertEqual(self.snapshot(), before)
+
+    def test_insert_into_section_round_trips(self):
+        """Delivering into a section with no markers yields exactly the rendered file."""
+        clean = self.skill("quality-test").read_bytes()
+        self.strip_block("quality-test", "values")
+        self.assertEqual(self.render().returncode, 0)
+        self.assertEqual(self.skill("quality-test").read_bytes(), clean)
+
+    def test_insert_into_empty_section(self):
+        """A section whose next heading follows at once still gets the block, once."""
+        self.strip_block("quality-test", "values")
+        p = self.skill("quality-test")
+        t = p.read_text(encoding="utf-8")
+        a = t.index("## Decide first\n") + len("## Decide first\n")
+        b = t.index("## ", a)
+        p.write_text(t[:a] + t[b:], encoding="utf-8")
+        self.assertEqual(self.render().returncode, 0)
+        t = p.read_text(encoding="utf-8")
+        self.assertEqual(t.count("\n## Always / Never"), 1)
+        self.assertEqual(t.count("<!-- deliver:values -->"), 1)
+        self.assertLess(t.index("## Decide first"), t.index("<!-- deliver:values -->"))
+        self.assertLess(t.index("<!-- /deliver:values -->"), t.index("## Always / Never"))
+
+    def test_failure_says_nothing_written(self):
+        self.edit("quality-test", "<!-- /deliver:values -->\n", "")
+        r = self.render()
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("nothing written", r.stderr)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=1)
