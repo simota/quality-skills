@@ -591,6 +591,10 @@ def _(r):
 def _(r): sub(r / f"{S}quality-test/SKILL.md", "[traps](playbooks/traps.md)", "[traps](playbooks/traps.md#top)")
 
 
+@quiet("V19-anchor")
+def _(r): sub(r / f"{S}quality-test/reference/test-smells.md", "`reference/oracles.md`", "`reference/oracles.md#top`")
+
+
 @quiet("V34-scoped-list")
 def _(r):
     import yaml as _y

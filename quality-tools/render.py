@@ -40,15 +40,19 @@ def delivered(errors: list[str]) -> dict[str, str]:
         path = ROOT / "quality-registry" / "delivered" / f"{key}.md"
         try:
             blocks[key] = path.read_text(encoding="utf-8").rstrip("\n")
-        except OSError as e:
-            errors.append(f"{path.relative_to(ROOT)}: {e.strerror or e}")
+        except (OSError, UnicodeDecodeError) as e:
+            errors.append(f"{path.relative_to(ROOT)}: {getattr(e, 'strerror', None) or e}")
     return blocks
 
 
 def render(path: Path, blocks: dict[str, str], errors: list[str]) -> str | None:
     """The rendered text, or None after appending why it cannot be rendered."""
-    text = path.read_text(encoding="utf-8")
     where = path.parent.name
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as e:
+        errors.append(f"{where}/SKILL.md: {getattr(e, 'strerror', None) or e}")
+        return None
     for key, spec in H["delivered"].items():
         block = blocks[key]
         open_m, close_m = f"<!-- deliver:{key} -->", f"<!-- /deliver:{key} -->"

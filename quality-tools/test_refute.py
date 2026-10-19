@@ -84,6 +84,17 @@ class Runs(unittest.TestCase):
         self.assertNotIn("Traceback", plain.stderr + as_json.stderr)
         return plain.returncode, as_json.returncode
 
+    def test_ascii_console_still_reports(self):
+        # The text report carries non-ASCII; printing it must not cost the verdicts.
+        self.fake("codex", True)
+        path = self.dir / "claims.json"
+        path.write_text(json.dumps(CLAIM), encoding="utf-8")
+        env = {**os.environ, "PATH": str(self.bin), "PYTHONIOENCODING": "ascii"}
+        r = subprocess.run([sys.executable, str(HERE / "refute.py"), "--running", "claude", str(path)],
+                           capture_output=True, text=True, env=env, timeout=60)
+        self.assertNotIn("Traceback", r.stderr)
+        self.assertEqual(r.returncode, 0, r.stderr)
+
     def test_no_claims_checked_nothing(self):
         self.assertEqual(self.codes([], "--running", "claude"), (3, 3))
 

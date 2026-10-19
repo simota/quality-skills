@@ -172,7 +172,7 @@ make hooks      # run make check on what each commit and merge will contain
 
 ```sh
 make link                       # into each installed CLI's skills dir: claude, codex, agy
-make link CLAUDE_DIR=.claude/skills   # a host is skipped unless its parent dir exists
+make link CLAUDE_DIR=/path/to/project/.claude/skills   # absolute; skipped unless .claude/ exists
 ```
 
 Each `quality-*` skill is linked individually. Nothing un-prefixed is copied

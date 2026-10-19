@@ -139,5 +139,17 @@ class Render(unittest.TestCase):
         self.assertEqual(self.snapshot(), before)
 
 
+    def test_undecodable_skill_is_an_error(self):
+        # Reported like any other unreadable file, and nothing is written.
+        with open(self.skill("quality-test"), "ab") as f:
+            f.write(b"\xff")
+        self.make_stale("quality-review")
+        before = self.snapshot()
+        r = self.render()
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("quality-test/SKILL.md", r.stderr)
+        self.assertEqual(self.snapshot(), before)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)

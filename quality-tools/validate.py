@@ -369,6 +369,7 @@ def _check_links(f: Path, skill: Path, here: Path, label: str) -> None:
 
 def _check_paths(f: Path, base: Path, label: str) -> None:
     for p in TICK_PATH_RE.findall(read(f)):
+        p = p.split("#")[0]               # an anchor names a place in the file, not a file
         if p.startswith(("http", "~", "/")) or " " in p or not _is_own_reference(p):
             continue
         if ".." in p:
