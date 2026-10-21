@@ -25,7 +25,10 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.dont_write_bytecode = True
-import engine                                       # noqa: E402
+try:
+    import engine  # noqa: E402
+except SystemExit:                  # it ran main() on import: no test below would run
+    sys.exit("importing engine ran its main()")
 
 OK = {"type": "object", "properties": {"ok": {"type": "boolean"}}, "required": ["ok"]}
 
@@ -422,6 +425,206 @@ class SchemaBeforeAsking(unittest.TestCase):
         for _ in range(1000):
             s = {"type": "array", "items": s}
         self.assertTrue(refused(engine.run, "claude", "p", s))
+
+
+class MismatchRejects(unittest.TestCase):
+    def bad(self, v, s): self.assertIsNotNone(engine.mismatch(v, s, "v"), (v, s))
+    def good(self, v, s): self.assertIsNone(engine.mismatch(v, s, "v"), (v, s))
+
+    def test_any_of_mismatch_is_reported(self):                      # L346
+        self.bad(1.5, {"anyOf": [{"type": "string"}, {"type": "integer"}]})
+
+    def test_one_of_counts_matches_not_misses(self):                 # L350
+        self.good(1.5, {"oneOf": [{"type": "integer"}, {"type": "number"}, {"type": "string"}]})
+
+    def test_enum_and_const_reject_other_values(self):               # L287-294 same()
+        self.bad("y", {"enum": ["x"]})
+        self.bad(False, {"const": True})
+        self.bad([1], {"const": [1, 2]})
+        self.bad([1, 2], {"const": [1, 3]})
+        self.bad({"a": 1}, {"const": {"a": 1, "b": 2}})
+        self.bad({"a": 2}, {"const": {"a": 1}})
+        self.bad({"a": True}, {"const": {"a": 1}})
+        self.bad("ab", {"const": ["a", "b"]})
+        self.bad(["a", "b"], {"const": "ab"})
+        self.bad([], {"const": {}})
+        self.bad({}, {"const": []})
+        self.bad({"a": 1, "b": 3}, {"const": {"a": 1, "b": 2}})              # L293 all->any
+
+    def test_number_is_not_a_string(self):                           # L153
+        self.bad("1", {"type": "number"})
+
+    def test_items_default_admits_anything(self):                    # L381
+        self.good([1, "x"], {"type": "array"})
+
+    def test_empty_additional_properties_schema_admits_extras(self):  # L369
+        self.good({"b": 1}, {"type": "object", "additionalProperties": {}})
+
+    def test_non_schema_is_engine_error(self):                       # L320
+        with self.assertRaises(engine.EngineError):
+            engine.mismatch(1, 3, "v")
+
+
+class WellFormedShapes(unittest.TestCase):
+    def refuses(self, s):
+        with self.assertRaises(engine.EngineError, msg=s):
+            engine.well_formed(s)
+
+    def test_refuses_more_malformed_shapes(self):
+        self.refuses({"type": "object", "additionalProperties": {"type": "strnig"}})   # L206
+        self.refuses({"type": "array", "items": {"type": "strnig"}})                   # L211
+        self.refuses({"anyOf": [{"type": "strnig"}]})                                  # L219
+        self.refuses({"enum": "ab"})                                                   # L194
+        self.refuses({"type": ["string", "strnig"]})                                   # L191
+        self.refuses({"type": "object", "properties": {"a": {}}, "required": ["a", "a"]})  # L196
+        # anyOf branch requiring a key the closed parent does not declare   L259
+        self.refuses({"type": "object", "properties": {}, "anyOf": [{"required": ["x"]}]})
+        # closed branch that does not declare the parent's required key     L258
+        self.refuses({"type": "object", "properties": {"k": {}}, "required": ["k"],
+                      "anyOf": [{"type": "object", "properties": {}, "required": []}]})
+
+    def test_accepts_legitimate_shapes(self):
+        engine.well_formed({"enum": ["a"]})                                            # L194
+        engine.well_formed({"type": "array", "items": {"type": "string"}})             # L209
+        engine.well_formed({"type": "object", "properties": {}, "anyOf": [True]})      # L230
+        # an open object may require a key it does not list                 L140-141
+        engine.well_formed({"type": "object", "additionalProperties": True, "required": ["a"]})
+        engine.well_formed({"type": "object", "additionalProperties": {}, "required": ["a"]})
+        # allOf: what a part declares is not what it requires              L247
+        engine.well_formed({"allOf": [{"type": "object", "properties": {"a": {}}, "required": []},
+                                      {"type": "object", "properties": {"b": {}}}]})
+        # a closed root declares what allOf requires                      L249
+        engine.well_formed({"type": "object", "properties": {"a": {}, "b": {}}, "required": ["a"],
+                            "allOf": [{"required": ["b"]}]})
+        # an open branch need not redeclare the parent's keys             L258 (_closes(b))
+        engine.well_formed({"type": "object", "properties": {"x": {}}, "required": ["x"],
+                            "oneOf": [{"required": ["x"]}]})
+        # a closed branch may declare more than is required              L258/L259
+        engine.well_formed({"type": "object", "properties": {"k": {}}, "required": ["k"],
+                            "anyOf": [{"type": "object", "properties": {"k": {}}, "required": []}]})
+        engine.well_formed({"type": "object", "properties": {"k": {}, "z": {}}, "required": ["k"],
+                            "anyOf": [{"type": "object", "properties": {"k": {}, "z": {}},
+                                       "required": ["k"]}]})
+
+
+class StrictAndCodexReady(unittest.TestCase):
+    def test_strict_keeps_boolean_subschemas(self):                  # L71-72
+        out = engine.strict({"type": "object", "properties": {"a": True, "b": False}})
+        self.assertIs(out["properties"]["a"], True)
+        self.assertIs(out["properties"]["b"], False)
+
+    def test_strict_adds_empty_properties(self):                     # L87
+        self.assertEqual(engine.strict({"type": "object"}),
+                         {"type": "object", "additionalProperties": False, "properties": {}})
+
+    def test_strict_closes_nullable_object_only(self):               # L129
+        self.assertIs(engine.strict({"type": ["object", "null"]})["additionalProperties"], False)
+        self.assertEqual(engine.strict({"type": ["string", "null"]}), {"type": ["string", "null"]})
+
+    def test_strict_closes_property_named_like_a_keyword(self):      # L77
+        out = engine.strict({"type": "object", "properties": {
+            "default": {"type": "object", "properties": {}}}})
+        self.assertIs(out["properties"]["default"]["additionalProperties"], False)
+
+    def test_codex_ready_ignores_values(self):                       # L113-114
+        engine.codex_ready(engine.strict({"type": "object", "required": ["o"], "properties": {
+            "o": {"type": "object", "properties": {}, "default": {"a": 1}}}}))
+
+    def test_codex_ready_walks_items_not_as_properties(self):        # L115
+        engine.codex_ready(engine.strict({"type": "object", "required": ["a"], "properties": {
+            "a": {"type": "array", "items": {"type": "string"}}}}))
+
+    def test_codex_ready_walks_any_of(self):                         # L118
+        with self.assertRaises(engine.EngineError):
+            engine.codex_ready(engine.strict({"type": "object", "required": ["a"], "properties": {
+                "a": {"anyOf": [{"type": "object", "additionalProperties": True}, {"type": "null"}]}}}))
+
+    def test_codex_ready_walks_items(self):                          # L121-122
+        with self.assertRaises(engine.EngineError):
+            engine.codex_ready(engine.strict({"type": "object", "required": ["a"], "properties": {
+                "a": {"type": "array", "items": {"type": "object", "properties": {"b": {}}}}}}))
+
+    def test_codex_ready_refuses_empty_schema_extras(self):          # L103
+        with self.assertRaises(engine.EngineError):
+            engine.codex_ready({"type": "object", "properties": {}, "additionalProperties": {}})
+
+
+class RunAnswers(Fakes):
+    def test_float_in_answer_is_accepted(self):                      # L484-486
+        s = {"type": "object", "properties": {"x": {"type": "number"}}, "required": ["x"]}
+        fake(self.bin, "claude", 'answer({"structured_output": {"x": 1.5}})')
+        self.assertEqual(engine.run("claude", "p", s), {"x": 1.5})
+
+    def test_engine_error_carries_its_own_words(self):               # L500-501
+        fake(self.bin, "claude", 'sys.stderr.write("".join(f"l{i}\\n" for i in range(1, 9))); sys.exit(3)')
+        msg = self.refused("claude")
+        self.assertIn("[exit 3]", msg)
+        self.assertIn("l3", msg)
+        self.assertNotIn("l2\n", msg)
+        fake(self.bin, "codex", 'print("codex: model overloaded")')
+        self.assertIn("model overloaded", self.refused("codex"))
+
+    def test_non_object_answer_under_typeless_schema(self):          # L271-272
+        s = {"properties": {"ok": {"type": "boolean"}}, "required": ["ok"]}
+        fake(self.bin, "agy", 'answer({"structured_output": [1]})')
+        self.assertIn("not an object", self.refused("agy", s))
+
+    def test_run_refuses_boolean_schema(self):                       # L398-399
+        with self.assertRaises(engine.EngineError):
+            engine.run("claude", "p", True)
+
+    def test_deep_schema_under_object_root(self):                    # L409
+        s = {}
+        for _ in range(1000):
+            s = {"type": "array", "items": s}
+        self.assertTrue(refused(engine.run, "claude", "p",
+                                {"type": "object", "properties": {"a": s}, "required": ["a"]}))
+
+    def test_other_than(self):                                       # L507-513
+        with self.assertRaises(engine.EngineError):
+            engine.other_than("gpt")
+        with mock.patch.dict(engine.ENGINES, {"runs_on": ["claude"]}):
+            with self.assertRaises(engine.EngineError):
+                engine.other_than("claude")
+
+
+class Cli(Fakes):
+    def main(self, *argv):
+        out = io.StringIO()
+        with mock.patch.object(sys, "argv", ["engine.py", *argv]), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+            rc = engine.main()
+        self.output = out.getvalue()
+        return rc
+
+    def test_half_the_inputs_is_usage(self):                         # L553
+        p = self.bin / "p.txt"; p.write_text("p")
+        self.assertEqual(self.main("--running", "claude", "--prompt-file", str(p)), 2)
+        self.assertIn("need --prompt-file and --schema", self.output)
+        self.assertEqual(self.main("--running", "claude", "--schema", str(p)), 2)
+        self.assertEqual(self.main(), 2)
+        self.assertIn("need --running", self.output)                # L551
+
+    def test_errors_are_reported(self):                              # L561, L570
+        p, s = self.bin / "p.txt", self.bin / "s.json"
+        p.write_text("p"); s.write_text("{bad")
+        self.main("--running", "claude", "--prompt-file", str(p), "--schema", str(s))
+        self.assertIn("cannot read", self.output)
+        s.write_text('{"type": "object", "properties": {}}')
+        self.assertEqual(self.main("--running", "claude", "--prompt-file", str(p), "--schema", str(s)), 1)
+        self.assertIn("not on PATH", self.output)
+
+    def test_cli_exit_code(self):                                    # L576-577
+        r = subprocess.run([sys.executable, str(Path(__file__).resolve().parent / "engine.py")], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 2)
+
+    def test_selftest_counts(self):                                  # L522-532
+        self.assertEqual(self.main("--selftest"), 0)
+        self.assertIn("engines reachable: 0/3", self.output)
+        fake(self.bin, "claude", 'answer({"structured_output": {"ok": True}})')
+        self.main("--selftest")
+        self.assertIn("claude: answered {'ok': True}", self.output)
+        self.assertIn("engines reachable: 1/3", self.output)
 
 
 if __name__ == "__main__":

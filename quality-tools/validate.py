@@ -586,13 +586,9 @@ def v31_verified_names_a_check():
             start = next((i for i, l in enumerate(lines) if l.startswith("Verified:")), None)
             if start is None:
                 continue                      # V29 already reports the missing header
-            block = []
-            for l in lines[start:]:
-                if not l.strip():
-                    break
-                block.append(l)
-            text = block[0]
-            if not any(m in text for m in markers):
+            # The `Verified:` line alone: a marker in the sentence that follows
+            # is body text, not a statement of what re-checks the page.
+            if not any(m in lines[start] for m in markers):
                 fail("V31", f"{f.relative_to(ROOT)} states a `Verified:` date and nothing "
                             "else; name what re-checks it, or say `no automated check`")
 
@@ -993,7 +989,15 @@ def main() -> int:
     # not turn a failure report into a UnicodeEncodeError.
     sys.stdout.reconfigure(errors="replace")
     for rule in RULES:
-        rule()
+        # A rule that cannot read what it checks has found a problem, not a bug
+        # to hide: it reports under its own id, and the rules after it still run.
+        # A missing shared directory once ended the run in a traceback before
+        # V28, whose job is to say so, was reached.
+        try:
+            rule()
+        except Exception as e:            # noqa: BLE001 — reported, never swallowed
+            fail(rule.__name__.split("_")[0].upper(),
+                 f"could not run: {type(e).__name__}: {e}")
     print(f"{len(RULES)} rules · {len(SKILLS)} skills · hooks {hooks_state()}")
     if FAILURES:
         for f in sorted(FAILURES):

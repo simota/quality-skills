@@ -22,7 +22,7 @@ HOST_DIRS  := "$(CLAUDE_DIR)" "$(CODEX_DIR)" "$(AGY_DIR)"
 help:
 	@echo "make check     validate + test + units + routes + figures + drift (CI and the pre-commit hook run the same)"
 	@echo "make validate  static rules over the corpus"
-	@echo "make test      prove every rule still fires"
+	@echo "make test      prove every rule still fires, and says what it should"
 	@echo "make units     the engine, refute, render, figures-checker and hook/Makefile/CI tests (no network)"
 	@echo "make routes    the acquisition-ownership regression test"
 	@echo "make figures   re-derive the reference pages' figures and git behaviours"
@@ -42,6 +42,7 @@ validate:
 
 test:
 	@python3 quality-tools/test_validate.py
+	@python3 quality-tools/test_validate_messages.py
 
 units:
 	@python3 quality-tools/test_engine.py

@@ -9,6 +9,8 @@ Run: make units
 """
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import os
 import subprocess
@@ -17,11 +19,15 @@ import tempfile
 import textwrap
 import unittest
 from pathlib import Path
+from unittest import mock
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.dont_write_bytecode = True
-import refute                                       # noqa: E402
+try:
+    import refute  # noqa: E402
+except SystemExit:                  # it ran main() on import: no test below would run
+    sys.exit("importing refute ran its main()")
 
 CLAIM = [{"id": "c1", "claim": "the cache is invalidated on every write"}]
 
@@ -151,6 +157,60 @@ class Runs(unittest.TestCase):
                            capture_output=True, text=True, env=env, timeout=60)
         self.assertEqual(r.returncode, 2)
         self.assertNotIn("Traceback", r.stderr)
+
+    def test_one_unchecked_claim_fails_the_run(self):
+        """Exit 3 when ANY claim is UNCHECKED, not only when all are."""
+        (self.bin / "codex").write_text(textwrap.dedent(f"""\
+            #!{sys.executable}
+            import json, sys
+            argv = sys.argv[1:]
+            if "SECOND" in argv[-1]:
+                sys.exit(1)                      # no answer for this claim
+            open(argv[argv.index("-o") + 1], "w").write(json.dumps(
+                {{"refuted": True, "reason": "r", "what_would_settle_it": "s"}}))
+            """), encoding="utf-8")
+        (self.bin / "codex").chmod(0o755)
+        claims = [CLAIM[0], {"id": "c2", "claim": "SECOND claim"}]
+        self.assertEqual(self.codes(claims, "--running", "claude"), (3, 3))
+
+    def test_where_and_evidence_reach_the_refuter(self):
+        seen = {}
+        def fake_run(name, prompt, schema):
+            seen["prompt"] = prompt
+            return vote(False)
+        with mock.patch.object(refute.engine, "run", fake_run):
+            refute.ask("codex", {"id": "c", "claim": "x", "where": "src/a.py:10",
+                                 "evidence": "test_a passes"})
+        self.assertIn("where: src/a.py:10", seen["prompt"])
+        self.assertIn("evidence offered: test_a passes", seen["prompt"])
+
+    def test_no_lens_cannot_start(self):
+        for lens in ({}, {"lens": "x"}, {"refuted_when": "y"}):
+            with self.subTest(lens=lens), mock.patch.object(refute, "REFUTATION", lens), \
+                    mock.patch.object(sys, "argv", ["refute.py", "--running", "claude", "c.json"]):
+                err = io.StringIO()
+                with contextlib.redirect_stderr(err):
+                    self.assertEqual(refute.main(), 1)
+                self.assertIn("no refutation lens", err.getvalue())
+
+    def test_non_list_claims_is_usage(self):
+        self.assertEqual(self.codes(None, "--running", "claude", raw="3"), (2, 2))
+
+    def test_plain_report(self):
+        self.fake("codex", True)
+        r = self.run_refute([dict(CLAIM[0])], "--running", "claude")
+        self.assertIn("[REFUTED] c1", r.stdout)
+        self.assertIn("codex: refuted=True", r.stdout)
+        self.assertIn("would settle it: s", r.stdout)
+        self.assertIn("agy: NO VERDICT", r.stdout)
+        self.assertIn("1 refuted · 0 contested · 0 unrefuted · 0 unchecked", r.stdout)
+        self.assertIn("Unrefuted means nothing was found", r.stdout)
+
+    def test_errors_say_why(self):
+        r = self.run_refute(None, "--running", "claude", raw="not json")
+        self.assertIn("refute:", r.stderr)
+        r = self.run_refute(CLAIM, "--running", "gpt")
+        self.assertIn("not one of", r.stderr)
 
 
 if __name__ == "__main__":
