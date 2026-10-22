@@ -68,6 +68,21 @@ For an incoming bug report or incident:
 Reversing 3 and 5 produces a test derived from the fix, which passes on any code that resembles
 the fix and catches nothing (`_quality/CONTRACT.md` §3).
 
+## The registry record
+
+`.agents/quality/flaky.jsonl` takes one object per line: the classification, and for a quarantine
+the `QUARANTINE` block (`playbooks/classification.md`) as JSON.
+
+```json
+{"date":"YYYY-MM-DD","ref":"<sha>","test":"<test id>","class":"<_quality/SEVERITY.md §5>","evidence":"E<n> — <the runs and the command>","owner":"<a person>","expires":"YYYY-MM-DD","blind_spot":"<one sentence>"}
+```
+
+`test` is the record's `ID`. A quarantine record leaves `status` out — that is what keeps it on the
+active list — and an extension is a new one. Every other record sets it: `"fixed"` or `"deleted"`
+closes a quarantine, and `"one-off"` records a failure classified and never quarantined, so the
+third occurrence is recognised. `owner`, `expires` and `blind_spot` are empty on any record that
+is not a quarantine.
+
 ## Quarantine review
 
 Open every triage with the expiry list. For each entry:

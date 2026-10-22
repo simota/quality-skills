@@ -27,7 +27,11 @@ COMPENSATING CONTROL: <what reduces the risk in the meantime>
 APPROVER:    <a named person who can accept this risk>
 EXPIRES:     YYYY-MM-DD
 ON EXPIRY:   <what happens: the criterion is met, or the change is reverted>
+STATUS:      open · closed — <on closed: met, with the evidence; reverted; or renewed as <new id>>
 ```
+
+`quality-gate` appends it to `.agents/quality/verdicts.md` after the verdict it overrides, and
+closes it at expiry with a later record carrying the same id (`_quality/HANDOFF.md` §0).
 
 Every field is required. The two that people try to omit are the two that matter:
 
@@ -58,7 +62,7 @@ the dashboard" compensates for a detection gap, not for a correctness gap.
 
 Every override expires; the default is 14 days. At expiry, exactly two outcomes:
 
-1. The criterion is now met — close the record with the evidence.
+1. The criterion is now met — close the record (`STATUS: closed`) with the evidence.
 2. It is not — the change is reverted, or a **new** override is written with a new approver and a new date.
 
 An override renewed three times is not an exception; it is a criterion the project has decided not

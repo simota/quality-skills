@@ -6,7 +6,7 @@
 Gate produces no findings, so it must fetch them, in this order:
 
 **1. Read the persisted payload.** Every contributing skill writes to a fixed path
-(`_quality/HANDOFF.md` §0). Read the latest record per `ID` from:
+(`_quality/HANDOFF.md` §0). Read the last record per `ID` from:
 
 | Criterion needs | Read |
 |-----------------|------|
@@ -27,9 +27,9 @@ The floors those values are compared against are not evidence to acquire: they a
 own, in `gate.yml`.
 
 **Operational evidence has no skill owner.** A rollback exercised, a preview environment, a
-migration's reversibility, a dry run, an undo plan — the change owner produces these, and records
-the link or run log in `.agents/quality/verdicts.md`. Ask for it; never produce it yourself. Still
-missing after the owner was asked is `NO-GO (insufficient evidence)`.
+migration's reversibility, a dry run, an undo plan — the change owner produces these and hands over
+the link or run log, which this skill records in `.agents/quality/verdicts.md`. Ask for it; never
+produce it yourself. Still missing after the owner was asked is `NO-GO (insufficient evidence)`.
 
 **`NO-GO (insufficient evidence)` is for evidence that cannot be obtained** — the suite will not
 run, the environment is unavailable, a human check has no owner. It is never the answer to
