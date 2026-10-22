@@ -27,7 +27,7 @@ COMPENSATING CONTROL: <what reduces the risk in the meantime>
 APPROVER:    <a named person who can accept this risk>
 EXPIRES:     YYYY-MM-DD
 ON EXPIRY:   <what happens: the criterion is met, or the change is reverted>
-STATUS:      open · closed — <on closed: met, with the evidence; reverted; or renewed as <new id>>
+STATUS:      open · closed — <on closed: met, with the evidence; reverted; or renewed as <new id> — and whether RISK happened>
 ```
 
 `quality-gate` appends it to `.agents/quality/verdicts.md` after the verdict it overrides, and

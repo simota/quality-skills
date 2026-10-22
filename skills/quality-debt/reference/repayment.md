@@ -87,7 +87,7 @@ revisited on evidence, which means it will be revisited on mood.
 Rarely, and never as a default. The conditions, all of which must hold:
 
 - The current behaviour is **specified somewhere other than the code** — otherwise the rewrite loses every bug fix embedded in it and nobody can tell what regressed.
-- The old system can keep running while the new one is built and verified against it (the old system is the reference oracle; the comparison tests are owed as a Coverage Gap with `ORACLE: reference-impl`).
+- The old system can keep running while the new one is built and verified against it (the old system is the reference oracle; the fix directive's `PROOF:` names the comparison tests against it, the `reference-impl` oracle).
 - There is a migration path for data and for callers, written down before starting.
 - The cost is compared honestly against incremental repayment, including the year of parallel maintenance.
 

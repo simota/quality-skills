@@ -74,14 +74,14 @@ the fix and catches nothing (`_quality/CONTRACT.md` §3).
 the `QUARANTINE` block (`playbooks/classification.md`) as JSON.
 
 ```json
-{"date":"YYYY-MM-DD","ref":"<sha>","test":"<test id>","class":"<_quality/SEVERITY.md §5>","evidence":"E<n> — <the runs and the command>","owner":"<a person>","expires":"YYYY-MM-DD","blind_spot":"<one sentence>"}
+{"date":"YYYY-MM-DD","ref":"<sha>","test":"<test id>","class":"<_quality/SEVERITY.md §5>","evidence":"E<n> — <the runs and the command>","owner":"<a person>","expires":"YYYY-MM-DD","blind_spot":"<one sentence>","status":"quarantined"}
 ```
 
-`test` is the record's `ID`. A quarantine record leaves `status` out — that is what keeps it on the
-active list — and an extension is a new one. Every other record sets it: `"fixed"` or `"deleted"`
-closes a quarantine, and `"one-off"` records a failure classified and never quarantined, so the
-third occurrence is recognised. `owner`, `expires` and `blind_spot` are empty on any record that
-is not a quarantine.
+`test` is the record's `ID`, and `status` is always set. `"quarantined"` (an extension is a new
+one) and `"open"` (classified, under repair, not quarantined) leave the test open; `"fixed"`,
+`"deleted"` and `"one-off"` close it. `"one-off"` is a failure classified and not seen again,
+recorded so the third occurrence is recognised — never written over an open quarantine, which
+only a fix or a deletion closes. `owner`, `expires` and `blind_spot` are empty unless `quarantined`.
 
 ## Quarantine review
 
@@ -92,12 +92,12 @@ Open every triage with the expiry list. For each entry:
 | Expired, fixed | Append a closure record (`status: "fixed"`) for that test id; never delete the original line |
 | Expired, not fixed, owner present | **Propose** deletion to the owner — deleting a test needs permission (`SKILL.md` § Always / Never). On a yes: delete, append `status: "deleted"`, file the `BLIND SPOT` as a debt entry. On a no: extend, below |
 | Expired, not fixed, `FLAKY-TIME` race | Never propose deletion: the test is the race's only detector (`reference/flaky-repair.md`). Extend under a new owner, and keep the race filed as a product defect |
-| Extended (new owner) | Append a superseding quarantine record — new `OWNER`, new `EXPIRES`, same `BLIND SPOT`, no closing `status`, so it stays on the active list. The same owner again is not an extension |
+| Extended (new owner) | Append a superseding quarantine record — new `OWNER`, new `EXPIRES`, same `BLIND SPOT`, `status: "quarantined"`, so it stays on the active list. The same owner again is not an extension |
 | Expired, owner gone | Note the orphaning in the journal; find a new owner and extend, or propose deletion as above |
 | Not expired | Leave; count it |
 
 The registry is append-only (`_quality/OPERATIONAL.md` §3): the active quarantine list is the set of
-test ids whose **latest** record has no closing `status`. `outcome` is not used here: it is a
+test ids whose **last** record is `quarantined`. `outcome` is not used here: it is a
 finding's adjudication (`_quality/OUTCOMES.md`). Nothing is ever removed.
 
 The count matters. A quarantine list that only grows is a suite being retired one test at a time

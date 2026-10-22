@@ -683,11 +683,16 @@ def v34_tools_reachable():
             fail("V34", f"linked_tools names {tool}, which is not in {SET}-tools/")
             continue
         # A bare skill name is not a list of one: set() of it is its letters.
-        if who != "all" and not (isinstance(who, list) and all(isinstance(w, str) for w in who)):
+        # Unreadable, nothing can be said about who should hold the link, but
+        # where an existing link points still can.
+        wanted = None
+        if who == "all":
+            wanted = set(SKILLS)
+        elif isinstance(who, list) and all(isinstance(w, str) for w in who):
+            wanted = set(who)
+        else:
             fail("V34", f"linked_tools[{tool}] is {who!r}; it is `all` or a list of skills")
-            continue
-        wanted = set(SKILLS) if who == "all" else set(who)
-        unknown = wanted - set(SKILLS)
+        unknown = (wanted or set()) - set(SKILLS)
         if unknown:
             fail("V34", f"linked_tools[{tool}] names {sorted(unknown)}, "
                         "which are not skills")
@@ -695,6 +700,11 @@ def v34_tools_reachable():
             cls = CAP.get(d.name, {}).get("class")
             has_shell = re.search(r"\bBash\b", _tools(H["permission_classes"].get(cls, {}))) is not None
             link = d / tool
+            if wanted is None:
+                if link.is_symlink() and link.resolve() != source.resolve():
+                    fail("V34", f"{d.name}/{tool} points at {link.resolve()}, not "
+                                "the set's own")
+                continue
             should = d.name in wanted and has_shell
             if should and not link.is_symlink():
                 fail("V34", f"{d.name} may run {SET}-tools/{tool} but cannot reach "
@@ -739,6 +749,14 @@ def v35_signature():
     sig = H.get("signature")
     if not isinstance(sig, dict):
         fail("V35", "harness.yaml declares no signature mapping; this rule is checking nothing")
+        return
+    missing = [k for k in ("name", "contract", "vocabulary", "required_of", "own_word") if k not in sig]
+    if missing:
+        fail("V35", f"signature declares no {', '.join(missing)}; this rule cannot run without them")
+        return
+    if sig["vocabulary"] not in VOCAB:
+        fail("V35", f"signature.vocabulary names {sig['vocabulary']!r}, which harness.yaml "
+                    "vocabulary does not declare")
         return
     contract = f"{SHARED}/{sig['contract']}"
     path = SKILLS_ROOT / contract

@@ -16,8 +16,8 @@ state-file table in `_quality/OPERATIONAL.md` §3 — one table, not two that dr
 **Append, never rewrite** (`_quality/OPERATIONAL.md` §3). A record whose state changes — a finding
 adjudicated, a fix or gap closed, a debt item repaid, a quarantine expired — is superseded by a
 later record with the same `ID`; current state is the last record per `ID` in the log. A verdict
-is never superseded, and a wrong snapshot is followed by a corrected one whose `note` names it.
-`.agents/quality/gate.yml` alone is a mutable current definition, not an event log.
+is never superseded; a wrong snapshot stays, read as replaced by the later one whose `note` names
+it. `.agents/quality/gate.yml` alone is a mutable current definition, not an event log.
 
 **Freshness.** Every payload records the `ref` (commit SHA) it was produced against. A consumer reading
 one whose `ref` is not the ref under decision must say so; `quality-gate` treats stale evidence as absent.
@@ -88,7 +88,7 @@ This is the **only** ledger shape; `quality-debt`'s taxonomy describes how to fi
 guess at future pain. Future pain is what `interest` in `_quality/SEVERITY.md` §4 computes.
 
 `Status` is `open` · `repaid` · `wont-fix`. Append-only: a change is a new row with the same `ID`, a
-later `Recorded` date and the new status; current state is the latest `Recorded` per `ID`. `First
+later `Recorded` date and the new status; current state is the last row per `ID`. `First
 seen` is copied forward unchanged — its age is data. `Condition` is required on `wont-fix` and on
 an `open` entry deliberately not repaid now: the observation that reopens the decision. `Interest`
 is `unscored` for debt with no file for the formula to read (`quality-debt`'s taxonomy).
