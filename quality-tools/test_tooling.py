@@ -15,6 +15,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import yaml
 
@@ -24,6 +25,8 @@ GIT_ENV = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
 GIT_ENV.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull, LC_ALL="C",
                GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@example.com",
                GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@example.com")
+# What would point a child make at a real skills directory instead of the fake HOME.
+LEAKS = ("CLAUDE_DIR", "CODEX_DIR", "AGY_DIR", "MAKEFLAGS", "MFLAGS", "MAKELEVEL")
 
 
 class Repo(unittest.TestCase):
@@ -55,8 +58,10 @@ class HookExport(Repo):
         text = HOOK.read_text(encoding="utf-8")
         line = re.search(r'^make -s -C "(\$tmp[^"]*)" check$', text, re.M)
         self.assertIsNotNone(line, "the hook no longer ends in make check")
+        self.git_vars = self.tmp / "git-vars"
         listing = (f'(cd "{line.group(1)}" && find . -type f | sort | '
-                   f'while read -r f; do echo "$f:$(cat "$f")"; done) > "{self.seen}"')
+                   f'while read -r f; do echo "$f:$(cat "$f")"; done) > "{self.seen}"; '
+                   f'env | sed -n "s/^\\(GIT_[A-Za-z0-9_]*\\)=.*/\\1/p" > "{self.git_vars}"')
         hook = self.d / ".git" / "hooks" / "pre-commit"
         hook.parent.mkdir(exist_ok=True)
         hook.write_text(text.replace(line.group(0), listing), encoding="utf-8")
@@ -67,6 +72,13 @@ class HookExport(Repo):
         self.git("add", "a")
         self.git("commit", "-qm", "x")
         return self.seen.read_text().split()
+
+    def test_the_check_inherits_no_git_variables(self):
+        # Under `commit -a` git hands the hook GIT_INDEX_FILE (and the author
+        # variables here); inherited, every git the check runs reads this repo.
+        (self.d / "a").write_text("a2\n")
+        self.git("commit", "-qam", "x")
+        self.assertEqual(self.git_vars.read_text().split(), [])
 
     def test_sparse_checkout_exports_every_file(self):
         self.git("sparse-checkout", "set", "--no-cone", "/a")
@@ -125,9 +137,42 @@ class MakeLink(unittest.TestCase):
         (self.home / ".claude").mkdir(parents=True)
 
     def make(self, *args):
-        env = {**os.environ, "HOME": str(self.home)}
+        # `?=` lets an exported CLAUDE_DIR, or one given to an outer `make check`
+        # and carried in MAKEFLAGS, win over the fake HOME — and `unlink` would
+        # then remove the links this checkout really installed.
+        env = {k: v for k, v in os.environ.items() if k not in LEAKS}
+        env["HOME"] = str(self.home)
         return subprocess.run(["make", "-s", "-C", str(ROOT), *args], env=env,
                               capture_output=True, text=True, timeout=60)
+
+    def test_an_exported_host_dir_is_not_touched(self):
+        outside = self.home.parent / "real" / ".codex" / "skills"
+        outside.mkdir(parents=True)
+        mine = outside / "quality-debt"
+        mine.symlink_to(ROOT / "skills" / "quality-debt")
+        with mock.patch.dict(os.environ, {"CODEX_DIR": str(outside),
+                                          "MAKEFLAGS": f"CLAUDE_DIR={outside}"}):
+            self.assertEqual(self.make("link").returncode, 0)
+            self.assertEqual(self.make("unlink").returncode, 0)
+        self.assertTrue(mine.is_symlink())
+
+    def test_what_is_not_ours_is_kept(self):
+        skills = self.home / ".claude" / "skills"
+        skills.mkdir()
+        elsewhere = self.home.parent / "other-set" / "quality-debt"
+        elsewhere.mkdir(parents=True)
+        (skills / "quality-debt").symlink_to(elsewhere)
+        (skills / "quality-test").mkdir()
+        for target in ("link", "unlink"):
+            r = self.make(target)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            self.assertEqual(os.readlink(skills / "quality-debt"), str(elsewhere), target)
+            self.assertTrue((skills / "quality-test").is_dir(), target)
+            self.assertFalse((skills / "quality-test").is_symlink(), target)
+            # `ln -sfn` into a real directory would put the link inside it.
+            self.assertEqual(list((skills / "quality-test").iterdir()), [], target)
+        # A host whose home is absent is not installed here, and is not created.
+        self.assertEqual(sorted(p.name for p in self.home.iterdir()), [".claude"])
 
     def test_home_with_a_space(self):
         r = self.make("link")

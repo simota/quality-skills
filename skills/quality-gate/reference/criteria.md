@@ -28,7 +28,7 @@ short enough to be respected.
 | Suite green with zero skips added | test runner + skip count | skip count is the counterweight to a green run |
 | Suite pass rate ≥ `floors.suite_pass_rate` over the last N runs | `quality-metrics` | measures reliability, not one lucky run |
 | Mutation score on the touched module ≥ `floors.mutation_score[<module>]` | `quality-metrics` | cannot be raised by assertion-free tests |
-| Rollback verified for `R3`+ | a documented, exercised undo | requires an artifact, not a statement |
+| Rollback verified for `R3` (`R4` has none: its dry run and written undo plan stand in, `reference/risk-tiers.md`) | a documented, exercised undo | requires an artifact, not a statement |
 | Migration is reversible or has a stated forward-fix | migration review | forces the question before the deploy |
 | No new `CRITICAL` dependency advisory | audit tool | mechanical |
 

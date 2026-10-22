@@ -47,7 +47,7 @@ consequence's band (`_quality/SEVERITY.md` §2); **reachability can only lower i
 | Reachable by | Severity |
 |--------------|----------|
 | ordinary user input, today | the band of its consequence |
-| unusual but legitimate input, or a dependency being slow | that band, at most `MEDIUM` |
+| unusual but legitimate input, or a dependency being slow | that band, at most `MEDIUM` — except `CRITICAL`, whose test (`_quality/SEVERITY.md` §2) asks what is lost, not how often it is reached |
 | only under a state the system prevents elsewhere | not a defect — cite the guard; at most a `NIT` defence-in-depth note |
 | only in a scenario you cannot construct | not a finding — drop it |
 

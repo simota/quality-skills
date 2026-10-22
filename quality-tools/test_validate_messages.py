@@ -335,6 +335,49 @@ def _(r): sub(r / "quality-registry/capabilities.yaml", "      go: quality-debt"
 @case("V27-outside", must=["points outside the repo"])
 def _(r): (r / f"{S}quality-test/outside").symlink_to(tempfile.gettempdir())
 
+@case("V27-nested-outside", must=["V27: quality-test/playbooks/ext.md points outside the repo"])
+def _(r): (r / f"{S}quality-test/playbooks/ext.md").symlink_to(tempfile.gettempdir())
+
+@case("V27-nested-broken", must=["V27: quality-test/assets/gone is a broken symlink"])
+def _(r):
+    (r / f"{S}quality-test/assets").mkdir()
+    (r / f"{S}quality-test/assets/gone").symlink_to("../../_gone")
+
+# A file one level down is read by none of the per-file rules: refused, not skipped.
+@case("V4-subdirectory", must=["V4: quality-test/playbooks/more/ is a subdirectory"])
+def _(r):
+    (r / f"{S}quality-test/playbooks/more").mkdir()
+    (r / f"{S}quality-test/playbooks/more/huge.md").write_text("x\n" * 400, encoding="utf-8")
+
+@case("V30-subdirectory", must=["V30: quality-test/reference/more/ is a subdirectory"])
+def _(r):
+    (r / f"{S}quality-test/reference/more").mkdir()
+    (r / f"{S}quality-test/reference/more/bare.md").write_text("x\n", encoding="utf-8")
+
+# A link to reference/oracles.md is not a link to playbooks/oracles.md.
+@case("V4-same-name-elsewhere", must=["V4: quality-test/playbooks/oracles.md is not linked"])
+def _(r): (r / f"{S}quality-test/playbooks/oracles.md").write_text("<!-- quality:guidance -->\n", encoding="utf-8")
+
+# A mention in prose is not a row in the table.
+@case("V24-readme-row-removed", must=["V24: README.md does not list quality-test"])
+def _(r):
+    p = r / "README.md"
+    lines = [l for l in p.read_text(encoding="utf-8").splitlines(keepends=True)
+             if not l.startswith("| [`quality-test`]")]
+    p.write_text("".join(lines), encoding="utf-8")
+
+@case("V38-bulleted", must=["traps.md:", "lists low, not as"])
+def _(r):
+    p = r / f"{S}quality-test/playbooks/traps.md"
+    p.write_text(p.read_text(encoding="utf-8") + "\n- SEVERITY: CRITICAL | HIGH | MEDIUM | low | NIT\n",
+                 encoding="utf-8")
+
+# Below a delivered block, the line reported is the line in the file.
+_SKILL = (ROOT / f"{S}quality-test/SKILL.md").read_text(encoding="utf-8").splitlines()
+@case("V25-line-after-delivered-block",
+      must=[f"V25: skills/quality-test/SKILL.md:{_SKILL.index('## Done when') + 2} pins"])
+def _(r): sub(r / f"{S}quality-test/SKILL.md", "## Done when\n", "## Done when\nPinned to v2.14.0.\n")
+
 @case("V34-class-without-bash", must=["links refute.py and its class grants no Bash"])
 def _(r):
     sub(r / "quality-registry/harness.yaml", "permission_classes:\n",

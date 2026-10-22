@@ -52,7 +52,7 @@ changes, or merge on green-so-far. Structure for feedback speed:
 stage 1  (< 2 min, blocking)   lint --quiet, type check, unit tests, changed-file checks
 stage 2  (< 10 min, blocking)  integration tests, build, security advisories
 stage 3  (nightly, reporting)  mutation, full e2e, load, dependency drift
-stage 4  (on R3+ only)         preview deploy, migration dry run, rollback exercise
+stage 4  (on R3+ only)         preview deploy, migration dry run, rollback exercise (R3; R4 has no rollback)
 ```
 
 Anything expensive belongs in stage 3 with a **trend alert**, not in the blocking path — except
@@ -94,7 +94,8 @@ floors:
                                  # whose suite passed with no retries; 0.95 = one red run in 20
   suite_pass_window: 20
   mutation_score:
-    src/billing: 0.60            # per-module; unlisted modules have no mutation floor
+    src/billing: 0.60            # per-module; a touched module not listed has no recorded
+                                 # floor, so at R3+ its criterion is unevaluable, not met
 
 tiers:
   R2:
@@ -117,7 +118,7 @@ tiers:
       - id: rollback-verified
         command: "manual — link the exercised rollback"
         blocking: true
-        red_means: "no verified undo exists for an irreversible-class change"
+        red_means: "no verified undo exists for this R3 change"
         next_step: "exercise the rollback in staging and link the run"
         remove_when: "never"
 ```

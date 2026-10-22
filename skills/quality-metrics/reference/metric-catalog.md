@@ -27,7 +27,7 @@ into being wrong without anyone noticing.
 |--------|------------|---------------------|-----------|
 | **Mutation score** | killed mutants ÷ viable mutants | whether the suite may be trusted as gate evidence | expensive; scope it to critical modules |
 | Line / branch coverage | executed ÷ executable | where to look for unverified behaviour | rises with assertion-free tests; never a headline |
-| Suite pass rate | green runs ÷ total runs, over a window | whether CI signal is usable at all | falls silently as quarantine grows |
+| Suite pass rate | green runs ÷ total runs, over a window | whether CI signal is usable at all | rises silently as quarantine grows — read it with the quarantine count |
 | Quarantine count | tests skipped with an expiry | whether coverage is quietly shrinking | must include expiry breaches |
 | Suite runtime | wall-clock, p50 and p95 | whether developers will keep running it locally | p95 matters more than p50 |
 
@@ -54,7 +54,7 @@ into being wrong without anyone noticing.
 
 | Metric | Definition | Decision it changes | Watch out |
 |--------|------------|---------------------|-----------|
-| Churn × complexity | commits in 90d × cyclomatic complexity | supplies `quality-debt`'s ranking inputs | formatting sweeps destroy the churn signal |
+| Churn × complexity | commits in 90d × cyclomatic complexity | where change concentrates in hard code; `quality-debt` takes its own churn count directly (`_quality/ROUTING.md` §3) | formatting sweeps destroy the churn signal |
 | Cognitive complexity | nesting- and flow-weighted | which function is genuinely hard to change | tool-defined; pin the tool and version |
 | Coupling / fan-in | modules importing this one | blast radius of a change | counts declared imports, not runtime coupling |
 | Duplication | duplicated blocks above N tokens | whether a change must be made in 6 places | some duplication is correct; do not target it blindly |

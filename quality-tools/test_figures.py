@@ -58,6 +58,60 @@ class Broken(unittest.TestCase):
         self.edit("EXTRACTION", "-- <test file> | head -n 1", "-- <test file> | tail -n 1")
         self.assertNotEqual(self.run_main(), 0)
 
+    def test_pickaxe_recipe_limited_before_it_is_reversed(self):
+        # git applies -1 before --reverse, so this reads the newest match.
+        self.edit("EXTRACTION", "git log --reverse --format=%cI", "git log --reverse -1 --format=%cI")
+        self.assertNotEqual(self.run_main(), 0)
+
+    def test_pickaxe_limit_after_a_quoted_pipe(self):
+        # The pipe inside the format is not the pipeline; the limit after it still counts.
+        self.edit("EXTRACTION", "git log --reverse --format=%cI", "git log --reverse --format='%H|%cI' -1")
+        self.assertNotEqual(self.run_main(), 0)
+
+    def test_example_ending_a_sentence_is_reported_not_raised(self):
+        self.edit("INTEREST", "/ 0.3 ≈ 0.3", "/ 0.3 ≈ 0.3.")
+        self.assertEqual(self.run_main(), 0, fc.failures)
+        self.edit("INTEREST", "/ 0.3 ≈ 0.3.", "/ 0.3 ≈ 0.4.")
+        self.assertNotEqual(self.run_main(), 0)
+
+    def test_zero_divisor_is_reported_not_raised(self):
+        self.edit("INTEREST", "/ 0.3 ≈ 0.3", "/ 0 ≈ 0.3")
+        self.assertNotEqual(self.run_main(), 0)
+
+    def test_zero_divisor_fails_even_when_canonical(self):
+        # 0.0 in both SEVERITY tables makes it canonical; dividing by it is still wrong.
+        self.edit("SEVERITY", "| 1.0 · 0.6 · 0.3 · 0.2 |", "| 1.0 · 0.6 · 0.0 · 0.2 |")
+        self.edit("SEVERITY", "| no tests; stateful, I/O, or concurrent | 0.3 |",
+                  "| no tests; stateful, I/O, or concurrent | 0.0 |")
+        p = fc.INTEREST
+        p.write_text(p.read_text(encoding="utf-8").replace("/ 0.3 ≈", "/ 0.0 ≈")
+                     .replace("→ 0.3\n", "→ 0.0\n"), encoding="utf-8")
+        self.assertNotEqual(self.run_main(), 0)
+        self.assertTrue(any("divisor 0.0" in f for f in fc.failures), fc.failures)
+
+    def test_a_second_formula_that_disagrees(self):
+        self.edit("INTEREST", "## Reporting the ranking",
+                  "```\ninterest = (touch_score × blast_score × comprehension_score) × confidence_of_fix\n```\n\n"
+                  "## Reporting the ranking")
+        self.assertNotEqual(self.run_main(), 0)
+
+    def test_a_second_formula_with_a_constant_in_severity(self):
+        # SEVERITY has no worked examples, so a digit there exempts nothing.
+        self.edit("SEVERITY", "## 5. Regression",
+                  "interest = (touch_score × blast_score × comprehension_score) / confidence_of_fix + 1\n\n"
+                  "## 5. Regression")
+        self.assertNotEqual(self.run_main(), 0)
+
+    def test_a_second_formula_without_parentheses(self):
+        self.edit("INTEREST", "## Reporting the ranking",
+                  "```\ninterest = touch_score × blast_score\n```\n\n## Reporting the ranking")
+        self.assertNotEqual(self.run_main(), 0)
+
+    def test_divisor_values_restated_in_interest(self):
+        self.edit("INTEREST", "## Worked example",
+                  "| State | Value |\n|---|---|\n| tested | 1.0 |\n| untested | 0.4 |\n\n## Worked example")
+        self.assertNotEqual(self.run_main(), 0)
+
     def test_clean_pages_pass(self):
         self.assertEqual(self.run_main(), 0, fc.failures)
 

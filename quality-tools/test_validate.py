@@ -197,7 +197,7 @@ def _(r):
 
 @case("V21")
 def _(r): sub(r / f"{S}quality-test/SKILL.md",
-              """`RED` is the evidence and it is not a formality (`E3`, or `E4` where the oracle's
+              """`RED` is the evidence and it is not a formality (`E3`, or `E4` where an independent test form's
 expectation is traced to the spec, a property, or a prior version — never the code).""",
               "`RED` is the evidence and it is not a formality.")
 
@@ -459,7 +459,7 @@ def _(r):
 
 @case("V21-token")
 def _(r): sub(r / f"{S}quality-test/SKILL.md",
-              """`RED` is the evidence and it is not a formality (`E3`, or `E4` where the oracle's
+              """`RED` is the evidence and it is not a formality (`E3`, or `E4` where an independent test form's
 expectation is traced to the spec, a property, or a prior version — never the code).""",
               "`RED` is the evidence; run the E2E suite as well.")
 
@@ -592,6 +592,27 @@ def _(r):
     """A misspelt key no longer falls back to the flattened word set."""
     sub(r / f"{S}_quality/HANDOFF.md", "SEVERITY:   CRITICAL | HIGH | MEDIUM | LOW | NIT",
         "SEVERITYY:  CRITICAL | HIGH | MEDIUM | LOW | NIT")
+
+
+@case("V3-only-in-yaml")
+def _(r):
+    p = r / "quality-registry/capabilities.yaml"
+    p.write_text(p.read_text(encoding="utf-8") + "\nquality-ghost:\n  signals: [ghost]\n", encoding="utf-8")
+
+
+@case("V9-case")
+def _(r):
+    """The same signal in another case is still claimed twice."""
+    sub(r / "quality-registry/capabilities.yaml",
+        "signals: [oracle, test level,", "signals: [Bisection, oracle, test level,")
+
+
+@case("V10-tie")
+def _(r):
+    """Two skills' signals of equal length: a tie is not a route to the expected one."""
+    p = r / "quality-registry/fixtures.yaml"
+    p.write_text(p.read_text(encoding="utf-8")
+                 + '\n- ask: "the diff makes it fail"\n  expect: quality-review\n', encoding="utf-8")
 
 
 @quiet("V4-anchor")

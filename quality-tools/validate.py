@@ -134,11 +134,20 @@ def v4_playbook_orphans():
         pb_dir = d / "playbooks"
         if not pb_dir.exists():
             continue
+        no_subdirectories("V4", d, "playbooks")
         body = sections(read(d / "SKILL.md")).get("Decide first", "")
-        linked = {Path(m.split("#")[0]).name for m in LINK_RE.findall(body)}
+        # By path: a link to reference/x.md is not a link to playbooks/x.md.
+        linked = {Path(os.path.normpath(d / m.split("#")[0])) for m in LINK_RE.findall(body)}
         for pb in sorted(pb_dir.glob("*.md")):
-            if pb.name not in linked:
+            if pb not in linked:
                 fail("V4", f"{d.name}/playbooks/{pb.name} is not linked from Decide first")
+
+
+def no_subdirectories(rule: str, d: Path, layer: str) -> None:
+    """Every per-file rule reads `<layer>/*.md`; a file one level down escapes all of them."""
+    for sub in sorted(p for p in (d / layer).iterdir() if p.is_dir()):
+        fail(rule, f"{d.name}/{layer}/{sub.name}/ is a subdirectory; no budget, header "
+                   f"or link rule reads below {layer}/, so its files are never checked")
 
 
 def v5_playbook_budget():
@@ -408,8 +417,9 @@ def v20_contract_vocabulary():
 
 def strip_delivered(text: str) -> str:
     for key in H["delivered"]:
+        # Blanked, not removed: a line reported below the block keeps its number.
         text = re.sub(rf"<!-- deliver:{key} -->.*?<!-- /deliver:{key} -->",
-                      "", text, flags=re.S)
+                      lambda m: "\n" * m.group(0).count("\n"), text, flags=re.S)
     return text
 
 
@@ -464,7 +474,8 @@ def v24_rendered_tables():
     for name in SKILLS:
         if f"`{name}`" not in routing:
             fail("V24", f"{ROUTING_FILE} does not list {name}")
-        if name not in readme:
+        # The table row: a mention in prose is not a listing.
+        if f"| [`{name}`](" not in readme:
             fail("V24", f"README.md does not list {name}")
     # The set's own non-skill directories (quality-tools, quality-registry) share
     # the prefix; naming them is not naming a skill.
@@ -498,14 +509,18 @@ def v26_boundaries_real():
 def v27_symlinks_stay_inside():
     """What a skill reaches must live in this repo, and must actually be there."""
     for d in SKILL_DIRS:
-        for entry in sorted(d.iterdir()):
+        # The whole skill, not its top level: a link in playbooks/ is read as surely.
+        # Links are reported, never followed, so _quality/ is not walked again here.
+        entries = [Path(top) / n for top, dirs, files in os.walk(d) for n in dirs + files]
+        for entry in sorted(entries):
             if not entry.is_symlink():
                 continue
+            name = entry.relative_to(d.parent).as_posix()
             target = (entry.parent / entry.readlink()).resolve()
             if not target.exists():
-                fail("V27", f"{d.name}/{entry.name} is a broken symlink")
+                fail("V27", f"{name} is a broken symlink")
             elif ROOT.resolve() not in target.parents and target != ROOT.resolve():
-                fail("V27", f"{d.name}/{entry.name} points outside the repo ({target})")
+                fail("V27", f"{name} points outside the repo ({target})")
 
 
 def v28_namespace_agrees():
@@ -557,6 +572,7 @@ def v30_reference_orphans():
         ref_dir = d / "reference"
         if not ref_dir.exists():
             continue
+        no_subdirectories("V30", d, "reference")
         body = sections(read(d / "SKILL.md")).get("Decide first", "")
         res = lambda base, m: Path(os.path.normpath(base / m.split("#")[0]))
         linked = {res(d, m) for m in LINK_RE.findall(body)}
@@ -870,7 +886,7 @@ ENUM_RE = re.compile(r"(?:^|:\s*)((?:[A-Z][A-Z-]*(?: [A-Z][A-Z-]*)*)"
                      r"(?:\s*\|\s*(?:[A-Z][A-Z-]*(?: [A-Z][A-Z-]*)*))+)\s*(?:#.*)?$")
 
 
-KEYED_ENUM_RE = re.compile(r"^\s*([A-Z][A-Z ]*[A-Z]):\s*((?:[\w-]+\s*\|\s*)+[\w-]+)\s*(?:#.*)?$")
+KEYED_ENUM_RE = re.compile(r"^\s*(?:[-*+>]\s+)*([A-Z][A-Z ]*[A-Z]):\s*((?:[\w-]+\s*\|\s*)+[\w-]+)\s*(?:#.*)?$")
 
 
 def _vocab_for(key: str):
