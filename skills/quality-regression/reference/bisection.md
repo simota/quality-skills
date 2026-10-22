@@ -166,7 +166,8 @@ leads to a revert that does not fix the defect.
 CULPRIT:    <sha> — <subject>
 RANGE:      <good sha>..<bad sha>  (N commits)
 PREDICATE:  <the script, verbatim>
-CONFIDENCE: CONFIRMED (deterministic) | LIKELY (thresholded over N runs)
+CONFIDENCE: CONFIRMED — deterministic, or thresholded with N, K and P(wrong culprit) stated
+            (never LIKELY: that label means not executed, _quality/SEVERITY.md §6)
 MECHANISM:  <why this commit produces the failure, in one sentence>
 LATENT?:    <yes/no — did this commit create the defect or expose it?>
 ```

@@ -102,8 +102,9 @@ read the gap between two adjacent entries as meaningful.
 | `PREEXISTING-DEFECT` | a new test reveals a bug that was always there | Nothing to bisect — the defect predates the test. A fix directive for the product; the test is already the guard. |
 
 **Quarantine is a countdown, not a cupboard.** A quarantined test carries an owner and an expiry
-date. Expired quarantine deletes the test and files the coverage gap as debt — an indefinitely
-skipped test is worse than no test, because it reads as coverage on the dashboard.
+date. At expiry the test is fixed; deleted, with the owner's permission, and its coverage gap filed
+as debt; or extended under a **new** owner — never left skipped past its date, because an
+indefinitely skipped test is worse than no test: it reads as coverage on the dashboard.
 
 ## 6. Confidence labels
 

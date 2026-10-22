@@ -26,9 +26,9 @@ Phases: `INTENT → SCOPE → AXES → ABSENCE → GRADE → EMIT`.
 <!-- deliver:sizing -->
 - **Size it before anything else**, first match wins. `T0` — one skill owns it, one file or
   one number, the question fits in one sentence: answer in a line that still carries the sweep,
-  **no brief, no handoff payload**. `T1` — a `T0` condition fails: settle the brief first. `T2` —
-  two or more skills own parts of it, or the verdict depends on another's output: route it. `T0`
-  drops the paperwork, **never the evidence floor**. Mis-sized mid-run means re-sizing and saying so
+  **no brief, no handoff payload**. `T1` — one skill owns it, but a `T0` condition fails: settle the
+  brief first. `T2` — two or more skills own parts of it, or the verdict depends on another's output:
+  route it. `T0` drops the paperwork, **never the evidence floor**. Mis-sized mid-run: re-size, say so
 - **Scale the checks, not the standard.** Run the narrowest check that could
   falsify the claim, and **say which checks were deliberately skipped** — a
   silent skip reads as coverage that was never there
@@ -143,8 +143,8 @@ named; and everything found outside this change left as a directive, not an edit
 - **The payload is the record, the report is the view.** Every finding, rung and outcome lives
   there; ten findings with two that matter are reported as the two and the count of the rest
 - **The report is the four parts above and nothing else** — verdict, sweep, residuals, next; the
-  findings file is named, never reproduced. It carries only what the payload does not, and its
-  length follows the residuals a human must decide (`_quality/REPORT.md`)
+  findings file is named, never reproduced. It is a view over the payload, never a copy of it, and
+  its length follows the residuals a human must decide (`_quality/REPORT.md`)
 - **Not bigger than it is.** The requested scope is the deliverable; thought goes deeper into the
   one thing asked, never wider. **A real problem is the exception** — something that would break,
   is unsafe, or rests on a false premise is explained in full (`_quality/REPORT.md`)

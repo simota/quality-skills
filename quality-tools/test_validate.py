@@ -197,7 +197,7 @@ def _(r):
 
 @case("V21")
 def _(r): sub(r / f"{S}quality-test/SKILL.md",
-              """`RED` is the evidence and it is not a formality (`E3`, or `E4` where the oracle's
+              """`RED` is the evidence and it is not a formality (`E3`, or `E4` where an independent test form's
 expectation is traced to the spec, a property, or a prior version — never the code).""",
               "`RED` is the evidence and it is not a formality.")
 
@@ -459,7 +459,7 @@ def _(r):
 
 @case("V21-token")
 def _(r): sub(r / f"{S}quality-test/SKILL.md",
-              """`RED` is the evidence and it is not a formality (`E3`, or `E4` where the oracle's
+              """`RED` is the evidence and it is not a formality (`E3`, or `E4` where an independent test form's
 expectation is traced to the spec, a property, or a prior version — never the code).""",
               "`RED` is the evidence; run the E2E suite as well.")
 

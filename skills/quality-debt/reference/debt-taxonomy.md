@@ -54,13 +54,16 @@ every quarter.
 
 ## Deliberate debt entries
 
-Deliberate debt carries two extra fields:
+Deliberate debt is recorded in two of the ledger's own columns (`_quality/HANDOFF.md` §4 is the
+only ledger shape — no fields are added to it):
 
 ```
-TAKEN:     YYYY-MM-DD — <the reason, as stated at the time>
-CONDITION: <what makes it due>     e.g. "when a second tenant onboards"
-CONDITION MET? <yes/no — checked this review>
+Deliberate?  yes — YYYY-MM-DD, <the reason, as stated at the time>
+Condition    <what makes it due>     e.g. "when a second tenant onboards"
 ```
+
+Whether the condition is met is checked at each review, not stored: a met condition is reported,
+and the entry's next row carries the decision it forces.
 
 Check the condition **before** computing interest. Deliberate debt whose condition is met is
 usually the best entry in the ledger: the shape was intentional, someone documented it, and the

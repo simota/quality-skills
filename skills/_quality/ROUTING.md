@@ -57,7 +57,7 @@ Route by **the artifact the user wants back**, not by the words they used.
 | `test` vs `regression` | Test builds coverage **forward** from a spec. Regression builds it **backward** from an observed failure. A bug report always enters through regression. |
 | `metrics` vs `debt` | Metrics owns the measured series — what is trended, snapshotted, and reported — and proposes nothing. Debt proposes and sequences, and takes the one-off inputs its ranking needs (churn, importer counts) directly, because they are single git and grep queries with no trend attached. Debt never establishes or reads a trend; that is metrics' output. |
 | `gate` vs everyone | Gate never finds anything on its own. It **consumes** the other five and renders a verdict. A gate that does its own analysis has no independent input left to check. |
-| `debt` vs `regression` | An expired quarantine becomes a debt entry. A debt item that keeps causing incidents escalates back as a regression class. The handoff is bidirectional and both directions are used. |
+| `debt` vs `regression` | An expired quarantine that is deleted becomes a debt entry. A debt item that keeps causing incidents escalates back as a regression class. The handoff is bidirectional and both directions are used. |
 
 ## 4. What this pack does not do
 
