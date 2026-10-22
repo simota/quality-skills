@@ -594,6 +594,27 @@ def _(r):
         "SEVERITYY:  CRITICAL | HIGH | MEDIUM | LOW | NIT")
 
 
+@case("V3-only-in-yaml")
+def _(r):
+    p = r / "quality-registry/capabilities.yaml"
+    p.write_text(p.read_text(encoding="utf-8") + "\nquality-ghost:\n  signals: [ghost]\n", encoding="utf-8")
+
+
+@case("V9-case")
+def _(r):
+    """The same signal in another case is still claimed twice."""
+    sub(r / "quality-registry/capabilities.yaml",
+        "signals: [oracle, test level,", "signals: [Bisection, oracle, test level,")
+
+
+@case("V10-tie")
+def _(r):
+    """Two skills' signals of equal length: a tie is not a route to the expected one."""
+    p = r / "quality-registry/fixtures.yaml"
+    p.write_text(p.read_text(encoding="utf-8")
+                 + '\n- ask: "the diff makes it fail"\n  expect: quality-review\n', encoding="utf-8")
+
+
 @quiet("V4-anchor")
 def _(r): sub(r / f"{S}quality-test/SKILL.md", "[traps](playbooks/traps.md)", "[traps](playbooks/traps.md#top)")
 
