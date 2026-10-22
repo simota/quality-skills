@@ -63,6 +63,11 @@ class Broken(unittest.TestCase):
         self.edit("EXTRACTION", "git log --reverse --format=%cI", "git log --reverse -1 --format=%cI")
         self.assertNotEqual(self.run_main(), 0)
 
+    def test_pickaxe_limit_after_a_quoted_pipe(self):
+        # The pipe inside the format is not the pipeline; the limit after it still counts.
+        self.edit("EXTRACTION", "git log --reverse --format=%cI", "git log --reverse --format='%H|%cI' -1")
+        self.assertNotEqual(self.run_main(), 0)
+
     def test_example_ending_a_sentence_is_reported_not_raised(self):
         self.edit("INTEREST", "/ 0.3 ≈ 0.3", "/ 0.3 ≈ 0.3.")
         self.assertEqual(self.run_main(), 0, fc.failures)

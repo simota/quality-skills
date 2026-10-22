@@ -515,7 +515,9 @@ def check_pickaxe(tmp: pathlib.Path) -> int:
                         "head -n 1` recipe — the line whose oldest match the checks below hold")
         return 0
     # git limits before it reverses: `--reverse -1` is the newest match, reversed.
-    if re.search(r"\s(?:-\d+|-n\s*\d+|--max-count\b)", recipe.group(0).split("|")[0]):
+    # The match ends in `| head -n 1`, so the last pipe is the pipeline; an
+    # earlier one may sit inside a quoted format.
+    if re.search(r"\s(?:-\d+|-n\s*\d+|--max-count\b)", recipe.group(0).rsplit("|", 1)[0]):
         fail("pickaxe", f"the recipe {recipe.group(0)!r} limits the log, and git applies the "
                         "limit before --reverse, so it reads the newest match")
 
