@@ -19,6 +19,7 @@ An override does not happen without this artifact. Producing it *is* the overrid
 ```
 OVERRIDE <id>
 DATE:        YYYY-MM-DD
+REF:         <commit sha it was granted for; another ref needs its own override>
 SCOPE:       <what is shipping>
 CRITERION:   <the unmet criterion, verbatim>
 WHY UNMET:   <the actual reason — "no time" is an acceptable and common answer>
