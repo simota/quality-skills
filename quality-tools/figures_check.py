@@ -76,18 +76,21 @@ FORMULA = re.compile(r"^interest\s*=.*$", re.M)
 
 def check_formula() -> str:
     a = FORMULA.findall(SEVERITY.read_text(encoding="utf-8"))
-    b = [l for l in FORMULA.findall(INTEREST.read_text(encoding="utf-8")) if "(" in l]
+    # interest.md's worked examples carry digits; check_examples recomputes
+    # them, and fails on any digit-bearing line that does not parse as one.
+    b = [l for l in FORMULA.findall(INTEREST.read_text(encoding="utf-8"))
+         if not re.search(r"\d", l)]
     if not a or not b:
         fail("formula", "no `interest = ...` line found in "
                         f"{'SEVERITY.md' if not a else 'interest.md'} — "
                         "the checker has stopped checking anything")
         return ""
     # Every statement of it, not the first: a second one further down that
-    # disagrees is a second formula. Worked examples carry digits and are
-    # recomputed in check_examples instead.
+    # disagrees is a second formula. SEVERITY.md has no worked examples, so
+    # every line there is a statement, digits or not.
     for page, lines in (("SEVERITY.md", a), ("interest.md", b)):
         for line in lines:
-            if not re.search(r"\d", line) and line.strip() != a[0].strip():
+            if line.strip() != a[0].strip():
                 fail("formula", f"SEVERITY.md says {a[0].strip()!r}, "
                                 f"{page} says {line.strip()!r}")
     return a[0].strip()

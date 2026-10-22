@@ -79,6 +79,18 @@ class Broken(unittest.TestCase):
                   "## Reporting the ranking")
         self.assertNotEqual(self.run_main(), 0)
 
+    def test_a_second_formula_with_a_constant_in_severity(self):
+        # SEVERITY has no worked examples, so a digit there exempts nothing.
+        self.edit("SEVERITY", "## 5. Regression",
+                  "interest = (touch_score × blast_score × comprehension_score) / confidence_of_fix + 1\n\n"
+                  "## 5. Regression")
+        self.assertNotEqual(self.run_main(), 0)
+
+    def test_a_second_formula_without_parentheses(self):
+        self.edit("INTEREST", "## Reporting the ranking",
+                  "```\ninterest = touch_score × blast_score\n```\n\n## Reporting the ranking")
+        self.assertNotEqual(self.run_main(), 0)
+
     def test_divisor_values_restated_in_interest(self):
         self.edit("INTEREST", "## Worked example",
                   "| State | Value |\n|---|---|\n| tested | 1.0 |\n| untested | 0.4 |\n\n## Worked example")
