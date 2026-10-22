@@ -147,7 +147,7 @@ If the labels do not exist, the metric does not exist. Say so; do not approximat
 One JSON object per line, appended to `.agents/quality/metrics.jsonl`:
 
 ```json
-{"date":"2026-08-21","ref":"a1b2c3d","metric":"mutation_score","value":0.62,"unit":"ratio","source":"npx stryker run --mutate 'src/billing/**'","scope":"src/billing","tool":"stryker@8.2.0"}
+{"date":"2026-08-21","ref":"a1b2c3d","metric":"mutation_score","value":0.62,"unit":"ratio","source":"npx --no-install stryker run --mutate 'src/billing/**'","scope":"src/billing","tool":"stryker@8.2.0"}
 ```
 
 `tool` is required for anything whose value is tool-dependent — complexity, mutation, coverage.

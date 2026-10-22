@@ -65,7 +65,7 @@ try/except, a retry, a widened type, a raised timeout. Naming it up front is wha
 GAP <ID>
 REF:        <commit sha>
 BEHAVIOUR:  <what is unverified, stated as an observable>
-ORACLE:     spec | golden | property | reference-impl | production-capture
+ORACLE:     spec | golden | property | metamorphic | reference-impl | production-capture
 WHY E3 FAILS: <why a same-context unit test would not catch this>
 SUGGESTED:  <test level: unit | integration | contract | e2e> — <and why that level>
 STATUS:     open · closed — <on closed: the test that closes it, and the run that saw it red>
