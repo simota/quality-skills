@@ -78,6 +78,17 @@ class Broken(unittest.TestCase):
         self.edit("INTEREST", "/ 0.3 ≈ 0.3", "/ 0 ≈ 0.3")
         self.assertNotEqual(self.run_main(), 0)
 
+    def test_zero_divisor_fails_even_when_canonical(self):
+        # 0.0 in both SEVERITY tables makes it canonical; dividing by it is still wrong.
+        self.edit("SEVERITY", "| 1.0 · 0.6 · 0.3 · 0.2 |", "| 1.0 · 0.6 · 0.0 · 0.2 |")
+        self.edit("SEVERITY", "| no tests; stateful, I/O, or concurrent | 0.3 |",
+                  "| no tests; stateful, I/O, or concurrent | 0.0 |")
+        p = fc.INTEREST
+        p.write_text(p.read_text(encoding="utf-8").replace("/ 0.3 ≈", "/ 0.0 ≈")
+                     .replace("→ 0.3\n", "→ 0.0\n"), encoding="utf-8")
+        self.assertNotEqual(self.run_main(), 0)
+        self.assertTrue(any("divisor 0.0" in f for f in fc.failures), fc.failures)
+
     def test_a_second_formula_that_disagrees(self):
         self.edit("INTEREST", "## Reporting the ranking",
                   "```\ninterest = (touch_score × blast_score × comprehension_score) × confidence_of_fix\n```\n\n"

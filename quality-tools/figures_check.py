@@ -199,7 +199,10 @@ def check_examples(conf: set[str]) -> int:
             fail("worked example",
                  f"divisor {d} is not one of SEVERITY's canonical values {sorted(conf)}")
         if float(d) == 0:
-            continue                      # not canonical, so reported above; nothing to recompute
+            # Reported here, not assumed reported above: a 0.0 in both of
+            # SEVERITY's tables would be canonical and pass that check.
+            fail("worked example", f"divisor {d} is zero; the example divides by it")
+            continue
         actual = (float(a) * float(b) * float(c)) / float(d)
         # the page reports to two significant figures
         digits = len(claimed.replace(".", "").lstrip("0")) or 1
