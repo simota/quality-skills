@@ -82,9 +82,14 @@ def check_formula() -> str:
                         f"{'SEVERITY.md' if not a else 'interest.md'} — "
                         "the checker has stopped checking anything")
         return ""
-    if a[0].strip() != b[0].strip():
-        fail("formula", f"SEVERITY.md says {a[0].strip()!r}, "
-                        f"interest.md says {b[0].strip()!r}")
+    # Every statement of it, not the first: a second one further down that
+    # disagrees is a second formula. Worked examples carry digits and are
+    # recomputed in check_examples instead.
+    for page, lines in (("SEVERITY.md", a), ("interest.md", b)):
+        for line in lines:
+            if not re.search(r"\d", line) and line.strip() != a[0].strip():
+                fail("formula", f"SEVERITY.md says {a[0].strip()!r}, "
+                                f"{page} says {line.strip()!r}")
     return a[0].strip()
 
 
@@ -135,6 +140,10 @@ def confidence_values() -> set[str]:
 def check_bands() -> int:
     sev, inte = severity_bands(), interest_bands()
     conf = confidence_values()
+    if "confidence_of_fix" in inte:
+        # interest.md says not to restate them: a second table is a second rubric.
+        fail("bands", f"interest.md restates confidence_of_fix as {inte['confidence_of_fix']}; "
+                      "its values live only in SEVERITY.md §4")
     if conf and "confidence_of_fix" in sev and set(sev["confidence_of_fix"]) != conf:
         fail("bands", f"confidence_of_fix scale is {sorted(sev['confidence_of_fix'])} "
                       f"but the canonical table lists {sorted(conf)}")
@@ -155,8 +164,10 @@ def check_bands() -> int:
     return checked
 
 
+# A number, not a run of digits and dots: a sentence's full stop is not a decimal.
+_N = r"(\d+(?:\.\d+)?)"
 EXAMPLE = re.compile(
-    r"interest\s*=\s*\(\s*([\d.]+)\s*×\s*([\d.]+)\s*×\s*([\d.]+)\s*\)\s*/\s*([\d.]+)\s*≈\s*([\d.]+)")
+    rf"interest\s*=\s*\(\s*{_N}\s*×\s*{_N}\s*×\s*{_N}\s*\)\s*/\s*{_N}\s*≈\s*{_N}")
 
 
 ARROW = re.compile(r"→\s*(\d+\.\d+)")
@@ -181,6 +192,11 @@ def check_examples(conf: set[str]) -> int:
             if name in bands and v not in bands[name]:
                 fail("worked example", f"{name} {v} is not one of its bands {bands[name]}")
         n += 1
+        if conf and d not in conf:
+            fail("worked example",
+                 f"divisor {d} is not one of SEVERITY's canonical values {sorted(conf)}")
+        if float(d) == 0:
+            continue                      # not canonical, so reported above; nothing to recompute
         actual = (float(a) * float(b) * float(c)) / float(d)
         # the page reports to two significant figures
         digits = len(claimed.replace(".", "").lstrip("0")) or 1
@@ -189,9 +205,6 @@ def check_examples(conf: set[str]) -> int:
             fail("worked example",
                  f"({a} × {b} × {c}) / {d} = {actual:.4f}, "
                  f"which to {digits} s.f. is {rounded}, not {claimed}")
-        if conf and d not in conf:
-            fail("worked example",
-                 f"divisor {d} is not one of SEVERITY's canonical values {sorted(conf)}")
     if n == 0:
         fail("worked example", "no worked example matched — "
                                "the checker has stopped checking anything")
@@ -493,10 +506,15 @@ def check_pickaxe(tmp: pathlib.Path) -> int:
     repo.commit("g.txt", "alpha\n", "drop")
 
     text = EXTRACTION.read_text(encoding="utf-8")
-    if not re.search(r'^git log --reverse\b[^\n]*-S"<test name>"[^\n]*\| head -n 1$', text, re.M):
+    recipe = re.search(r'^git log --reverse\b[^\n]*-S"<test name>"[^\n]*\| head -n 1$', text, re.M)
+    if not recipe:
         fail("pickaxe", "extraction.md no longer shows the `git log --reverse ... -S ... | "
                         "head -n 1` recipe — the line whose oldest match the checks below hold")
         return 0
+    # git limits before it reverses: `--reverse -1` is the newest match, reversed.
+    if re.search(r"\s(?:-\d+|-n\s*\d+|--max-count\b)", recipe.group(0).split("|")[0]):
+        fail("pickaxe", f"the recipe {recipe.group(0)!r} limits the log, and git applies the "
+                        "limit before --reverse, so it reads the newest match")
 
     oldest = repo.out("log", "--reverse", "--format=%s", "-S", "alpha", "--", "g.txt")
     oldest = oldest.splitlines()[0] if oldest else ""

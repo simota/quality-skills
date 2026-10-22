@@ -58,6 +58,32 @@ class Broken(unittest.TestCase):
         self.edit("EXTRACTION", "-- <test file> | head -n 1", "-- <test file> | tail -n 1")
         self.assertNotEqual(self.run_main(), 0)
 
+    def test_pickaxe_recipe_limited_before_it_is_reversed(self):
+        # git applies -1 before --reverse, so this reads the newest match.
+        self.edit("EXTRACTION", "git log --reverse --format=%cI", "git log --reverse -1 --format=%cI")
+        self.assertNotEqual(self.run_main(), 0)
+
+    def test_example_ending_a_sentence_is_reported_not_raised(self):
+        self.edit("INTEREST", "/ 0.3 ≈ 0.3", "/ 0.3 ≈ 0.3.")
+        self.assertEqual(self.run_main(), 0, fc.failures)
+        self.edit("INTEREST", "/ 0.3 ≈ 0.3.", "/ 0.3 ≈ 0.4.")
+        self.assertNotEqual(self.run_main(), 0)
+
+    def test_zero_divisor_is_reported_not_raised(self):
+        self.edit("INTEREST", "/ 0.3 ≈ 0.3", "/ 0 ≈ 0.3")
+        self.assertNotEqual(self.run_main(), 0)
+
+    def test_a_second_formula_that_disagrees(self):
+        self.edit("INTEREST", "## Reporting the ranking",
+                  "```\ninterest = (touch_score × blast_score × comprehension_score) × confidence_of_fix\n```\n\n"
+                  "## Reporting the ranking")
+        self.assertNotEqual(self.run_main(), 0)
+
+    def test_divisor_values_restated_in_interest(self):
+        self.edit("INTEREST", "## Worked example",
+                  "| State | Value |\n|---|---|\n| tested | 1.0 |\n| untested | 0.4 |\n\n## Worked example")
+        self.assertNotEqual(self.run_main(), 0)
+
     def test_clean_pages_pass(self):
         self.assertEqual(self.run_main(), 0, fc.failures)
 
