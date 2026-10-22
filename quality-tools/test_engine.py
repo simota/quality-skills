@@ -305,6 +305,37 @@ class Run(Fakes):
     def test_unknown_engine(self):
         self.assertIn("is not one of", self.refused("gpt"))
 
+    def test_a_prompt_that_looks_like_an_option_still_arrives_as_the_prompt(self):
+        # The real CLIs parse argv: before `--`, a word that starts with a dash
+        # is an option, and one they do not know stops the run ("unknown option").
+        # A prompt opening with front matter or a list item is such a word.
+        prompt = "---\ntitle: front matter\n---\n- a list item"
+        options = {"claude": {"-p": 0, "--output-format": 1, "--json-schema": 1},
+                   "codex": {"--output-schema": 1, "-o": 1, "--sandbox": 1,
+                             "--skip-git-repo-check": 0}}
+        for name, known in options.items():
+            fake(self.bin, name, f'''
+                known, words, i = {known!r}, [], 1 if argv[:1] == ["exec"] else 0
+                while i < len(argv):
+                    if argv[i] == "--":
+                        words += argv[i + 1:]
+                        break
+                    if argv[i].startswith("-"):
+                        if argv[i] not in known:
+                            sys.exit("error: unknown option " + repr(argv[i]))
+                        i += 1 + known[argv[i]]
+                        continue
+                    words.append(argv[i])
+                    i += 1
+                ok = words == [{prompt!r}]
+                answer({{"ok": ok}} if "-o" in argv else {{"structured_output": {{"ok": ok}}}})''')
+        fake(self.bin, "agy", f'''
+            ok = argv[0] == "--print=" + {prompt!r}
+            answer({{"structured_output": {{"ok": ok}}}})''')
+        for name in ("claude", "codex", "agy"):
+            with self.subTest(engine=name):
+                self.assertEqual(engine.run(name, prompt, OK), {"ok": True})
+
     def test_schema_sent_is_closed(self):
         fake(self.bin, "codex", '''
             s = json.load(open(argv[argv.index("--output-schema") + 1]))

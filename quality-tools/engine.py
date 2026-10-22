@@ -419,18 +419,21 @@ def _ask(engine: str, prompt: str, schema: dict):
         d = pathlib.Path(tmp)
         s = d / "schema.json"
         s.write_text(json.dumps(schema), encoding="utf-8")
+        # `--` goes last, just before the prompt: a prompt that opens with a dash
+        # (front matter, a list item) is otherwise parsed as an unknown option,
+        # and options placed after `--` would be read as the prompt instead.
         if engine == "codex":
             out = d / "answer.json"
             argv = ["codex", "exec", "--output-schema", str(s), "-o", str(out),
-                    "--sandbox", "read-only", "--skip-git-repo-check", prompt]
+                    "--sandbox", "read-only", "--skip-git-repo-check", "--", prompt]
             r = _spawn(engine, argv)
             body = out.read_text(encoding="utf-8", errors="replace") if out.exists() else ""
             if not body.strip():
                 raise EngineError(f"codex wrote no answer.\n{_tail(r)}")
             return _parse(engine, body, r)
         if engine == "claude":
-            argv = ["claude", "-p", prompt, "--output-format", "json",
-                    "--json-schema", json.dumps(schema)]
+            argv = ["claude", "-p", "--output-format", "json",
+                    "--json-schema", json.dumps(schema), "--", prompt]
             r = _spawn(engine, argv)
             envelope = _parse(engine, r.stdout, r)
             body = envelope.get("structured_output")
