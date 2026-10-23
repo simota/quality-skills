@@ -195,6 +195,39 @@ def _(r): sub(r / "quality-registry/harness.yaml", "linked_tools:", "unlinked_to
 @case("V34-missing-tool-message", must=["V34: linked_tools names nosuch.py"])
 def _(r): sub(r / "quality-registry/harness.yaml", "  refute.py: all", "  refute.py: all\n  nosuch.py: all")
 
+@case("V35-no-signature", must=["V35: harness.yaml declares no signature mapping",
+                                 "V28: _quality/ does not exist"], must_not=["Traceback"])
+def _(r):
+    # One rule's missing key is that rule's finding: the others still run and report.
+    sub(r / "quality-registry/harness.yaml", "\nsignature:", "\nunused_signature:")
+    shutil.rmtree(r / f"{S}_quality")
+
+@case("V28-no-platform-dirs", must=["V28: harness.yaml platform_dirs is None",
+                                    "V35: signature names _quality/"], must_not=["Traceback"])
+def _(r):
+    sub(r / "quality-registry/harness.yaml", "\nplatform_dirs:", "\nunused_platform_dirs:")
+    shutil.rmtree(r / f"{S}_quality")
+
+@case("V34-bare-skill-name", must=["V34: linked_tools[refute.py] is 'quality-debt'; it is `all` or a list"],
+      must_not=["which are not skills", "does not name it"])
+def _(r): sub(r / "quality-registry/harness.yaml", "  refute.py: all", "  refute.py: quality-debt")
+
+@case("V34-bare-skill-name-wrong-target", must=["is 'quality-debt'; it is `all`",
+      "quality-test/refute.py points at"])
+def _(r):
+    # The value being unreadable must not hide a link that points at the wrong file.
+    sub(r / "quality-registry/harness.yaml", "  refute.py: all", "  refute.py: quality-debt")
+    link = r / f"{S}quality-test/refute.py"; link.unlink(); link.symlink_to("../../quality-tools/render.py")
+
+@case("V35-signature-incomplete", must=["V35: signature declares no own_word"], must_not=["Traceback"])
+def _(r): sub(r / "quality-registry/harness.yaml", "  own_word:", "  unused_own_word:")
+
+@case("V35-unknown-vocabulary", must=["V35: signature.vocabulary names 'nope'"], must_not=["Traceback"])
+def _(r):
+    import re as _re
+    p = r / "quality-registry/harness.yaml"; t = p.read_text(encoding="utf-8")
+    p.write_text(_re.sub(r"(?m)^  vocabulary: \w+", "  vocabulary: nope", t, count=1), encoding="utf-8")
+
 @case("V35-contract-missing", must=["V35: signature names _quality/NOPE.md"], must_not=["Traceback"])
 def _(r): sub(r / "quality-registry/harness.yaml", "  contract: OUTCOMES.md", "  contract: NOPE.md")
 

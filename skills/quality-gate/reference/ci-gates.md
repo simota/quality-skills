@@ -18,7 +18,7 @@ Before a check is added, write its row:
 | Field | Example |
 |-------|---------|
 | Check | `mutation score (src/billing) ≥ 0.60` |
-| Command | `npx stryker run --mutate 'src/billing/**'` — Stryker reports 0–100, so this floor is `thresholds.break: 60` |
+| Command | `npx --no-install stryker run --mutate 'src/billing/**'` — Stryker reports 0–100, so this floor is `thresholds.break: 60` |
 | Red means | the suite cannot detect injected defects in billing |
 | Developer does | add a test with a named oracle for the surviving mutant listed in the report |
 | Runtime | ~4 min |
@@ -103,7 +103,7 @@ tiers:
       - id: no-block-findings
         command: "read .agents/quality/findings.jsonl at the ref: no current BLOCK"
         blocking: true
-        red_means: "a defect introduced by this change, MEDIUM or above"
+        red_means: "a defect introduced by this change, MEDIUM or above; or a pre-existing CRITICAL it makes newly reachable"
         next_step: "address the cited finding or argue it down with evidence"
         remove_when: "never — this is the core criterion"
       - id: new-behaviour-tested

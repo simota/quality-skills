@@ -13,16 +13,14 @@ rendered field by field.
 A payload with no address cannot be handed anywhere. The paths, and who owns each, are the
 state-file table in `_quality/OPERATIONAL.md` §3 — one table, not two that drift apart.
 
-**Append, never rewrite** (`_quality/OPERATIONAL.md` §3). A payload whose state changes — a finding
-closed, a debt item repaid, a quarantine expired — is superseded by appending a new record with
-the same `ID` and a later date. Current state is the latest record per `ID`. The one exception is
-`.agents/quality/gate.yml`, which is a mutable current definition, not an event log.
+**Append, never rewrite** (`_quality/OPERATIONAL.md` §3). A record whose state changes — a finding
+adjudicated, a fix or gap closed, a debt item repaid, a quarantine expired — is superseded by a
+later record with the same `ID`; current state is the last record per `ID` in the log. A verdict
+is never superseded; a wrong snapshot stays, read as replaced by the later one whose `note` names
+it. `.agents/quality/gate.yml` alone is a mutable current definition, not an event log.
 
-**Freshness.** Every payload records the `ref` (commit SHA) it was produced against. A consumer
-that reads a payload whose `ref` is not the ref under decision must say so; `quality-gate` treats
-stale evidence as absent evidence.
-
----
+**Freshness.** Every payload records the `ref` (commit SHA) it was produced against. A consumer reading
+one whose `ref` is not the ref under decision must say so; `quality-gate` treats stale evidence as absent.
 
 ## 1. Finding (`quality-review`, `quality-regression` → anyone)
 
@@ -55,6 +53,7 @@ WHERE:    file:line
 WHAT:     <the behavioural change required, not the code>
 WHY NOT:  <the tempting wrong fix, and why it is wrong>
 PROOF:    <the test or measurement that must pass afterwards, named>
+STATUS:   open · closed — <on closed: the PROOF run that closed it>
 ```
 
 `WHY NOT` exists because most findings have an obvious cheap fix that suppresses the symptom — a
@@ -66,9 +65,10 @@ try/except, a retry, a widened type, a raised timeout. Naming it up front is wha
 GAP <ID>
 REF:        <commit sha>
 BEHAVIOUR:  <what is unverified, stated as an observable>
-ORACLE:     spec | golden | property | reference-impl | production-capture
+ORACLE:     spec | golden | property | metamorphic | reference-impl | production-capture
 WHY E3 FAILS: <why a same-context unit test would not catch this>
 SUGGESTED:  <test level: unit | integration | contract | e2e> — <and why that level>
+STATUS:     open · closed — <on closed: the test that closes it, and the run that saw it red>
 ```
 
 `ORACLE` is mandatory. A gap handed over without a named oracle produces a test that asserts the
@@ -88,7 +88,7 @@ This is the **only** ledger shape; `quality-debt`'s taxonomy describes how to fi
 guess at future pain. Future pain is what `interest` in `_quality/SEVERITY.md` §4 computes.
 
 `Status` is `open` · `repaid` · `wont-fix`. Append-only: a change is a new row with the same `ID`, a
-later `Recorded` date and the new status; current state is the latest `Recorded` per `ID`. `First
+later `Recorded` date and the new status; current state is the last row per `ID`. `First
 seen` is copied forward unchanged — its age is data. `Condition` is required on `wont-fix` and on
 an `open` entry deliberately not repaid now: the observation that reopens the decision. `Interest`
 is `unscored` for debt with no file for the formula to read (`quality-debt`'s taxonomy).
@@ -101,7 +101,7 @@ by-product snapshots (coverage, mutation score, pass rate, quarantine count), wi
 Appended to `.agents/quality/metrics.jsonl`, one object per line:
 
 ```json
-{"date":"YYYY-MM-DD","ref":"<sha>","metric":"<name>","value":0,"unit":"<unit>","source":"<exact command>","scope":"<paths>","tool":"<name@version>"}
+{"date":"YYYY-MM-DD","ref":"<sha>","metric":"<name>","value":0,"unit":"<unit>","source":"<exact command>","scope":"<paths>","tool":"<name@version>","note":"<on a correction only: the line it corrects>"}
 ```
 
 `source` is the exact command that produced `value`; `tool` is required wherever the value depends

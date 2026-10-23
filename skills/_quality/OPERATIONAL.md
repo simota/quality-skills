@@ -58,8 +58,8 @@ the flaky registry's record is in `quality-regression`'s triage reference.
 | Gate definition | `.agents/quality/gate.yml` | `quality-gate` | **mutable definition** |
 
 **Event logs are append-only.** Never rewrite history — a trend line reconstructed after the fact
-is a story, not data. State changes by **appending a superseding record with the same `ID` and a
-later date**; current state is the latest record per `ID`. Every event-log record carries a
+is a story, not data. State changes by **appending a superseding record with the same `ID`**;
+current state is the last record per `ID` in the log. Every record whose state can change carries a
 `status` (or `outcome`) field so that open/closed is derivable without deleting anything.
 
 **`gate.yml` is the one exception**: it is the current criteria set, edited in place. Criteria are

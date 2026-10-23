@@ -23,8 +23,9 @@ For every input, from every source:
 | **Over maximum** | one past — is it rejected, truncated, or accepted? All three happen. |
 | **Malformed** | wrong type, wrong encoding, null, injected control characters |
 
-Write the ones that could plausibly fail. Skipping is fine; skipping *without having asked* is
-how the empty-list crash reaches production.
+The first four are written for every input (`SKILL.md` § Always / Never). **Malformed** is written
+where the input can carry it; skipping it is fine, skipping it *without having asked* is how the
+injected control character reaches production.
 
 ## Equivalence partitioning
 

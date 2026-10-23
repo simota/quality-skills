@@ -62,7 +62,8 @@ null and the exception cannot be thrown. Harmless-looking, and it hides the real
 one place that genuinely needed a check now looks identical to twenty places that didn't.
 
 Check: for each new guard, ask what call path produces the condition it guards. No path → `LOW`
-finding, route to `quality-debt` if pervasive.
+finding. The same pattern spread through code this change did not touch is pre-existing, and goes
+to `quality-debt`.
 
 ## Additional probes
 

@@ -47,7 +47,7 @@ NOW:         0.62   (2026-08-21, a1b2c3d)
 PREVIOUS:    0.55   (2026-07-15, 9f8e7d6)
 DELTA:       +0.07 over 37 days
 COMPARABLE:  yes — same scope, stryker@8.2.0 both runs
-COMMAND:     npx stryker run --mutate 'src/billing/**'
+COMMAND:     npx --no-install stryker run --mutate 'src/billing/**'
 READS AS:    the suite now detects 62% of injected defects in billing, up from 55%
 NOT SHOWN:   nothing outside src/billing; no mutation data for the payment gateway adapter
 ```

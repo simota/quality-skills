@@ -45,8 +45,6 @@ SET = H["set"]
 SHARED = H["shared_dir"]
 CONTRACT_FILE = f"{SHARED}/CONTRACT.md"
 ROUTING_FILE = f"{SHARED}/ROUTING.md"
-SIGNATURE = H["signature"]
-PLATFORM_DIRS = set(H["platform_dirs"])
 
 SKILLS_ROOT = ROOT / H["skills_dir"] if H.get("skills_dir") else ROOT
 SKILL_DIRS = sorted(p for p in SKILLS_ROOT.glob(f"{PREFIX}*") if (p / "SKILL.md").exists())
@@ -536,12 +534,19 @@ def v28_namespace_agrees():
         fail("V28", f"shared_dir is {SHARED!r}; set {SET!r} requires {'_' + SET!r}")
     if not (SKILLS_ROOT / SHARED).is_dir():
         fail("V28", f"{SHARED}/ does not exist")
+    # Read here, not at import: a key missing from harness.yaml is this rule's
+    # finding, and must not take the other rules down with it.
+    platform_dirs = H.get("platform_dirs")
+    if not isinstance(platform_dirs, list):
+        fail("V28", f"harness.yaml platform_dirs is {platform_dirs!r}, not a list; "
+                    "no directory can be told apart from one this set owns")
+        return
     # Every directory this set owns carries the set name. The alternative rule —
     # "prefix only what gets installed" — needs a judgement about what travels,
     # and a sibling set's install line (`cp -R quality-* _common <skills dir>`)
     # is what that judgement looks like when it is wrong.
     for d in sorted(list(ROOT.iterdir()) + list(SKILLS_ROOT.iterdir() if SKILLS_ROOT != ROOT else [])):
-        if not d.is_dir() or d.name in PLATFORM_DIRS:
+        if not d.is_dir() or d.name in platform_dirs:
             continue
         if not (d.name.startswith(PREFIX) or d.name == SHARED):
             fail("V28", f"{d.name}/ carries no set name; a directory this set owns "
@@ -677,8 +682,17 @@ def v34_tools_reachable():
         if not source.exists():
             fail("V34", f"linked_tools names {tool}, which is not in {SET}-tools/")
             continue
-        wanted = set(SKILLS) if who == "all" else set(who)
-        unknown = wanted - set(SKILLS)
+        # A bare skill name is not a list of one: set() of it is its letters.
+        # Unreadable, nothing can be said about who should hold the link, but
+        # where an existing link points still can.
+        wanted = None
+        if who == "all":
+            wanted = set(SKILLS)
+        elif isinstance(who, list) and all(isinstance(w, str) for w in who):
+            wanted = set(who)
+        else:
+            fail("V34", f"linked_tools[{tool}] is {who!r}; it is `all` or a list of skills")
+        unknown = (wanted or set()) - set(SKILLS)
         if unknown:
             fail("V34", f"linked_tools[{tool}] names {sorted(unknown)}, "
                         "which are not skills")
@@ -686,6 +700,11 @@ def v34_tools_reachable():
             cls = CAP.get(d.name, {}).get("class")
             has_shell = re.search(r"\bBash\b", _tools(H["permission_classes"].get(cls, {}))) is not None
             link = d / tool
+            if wanted is None:
+                if link.is_symlink() and link.resolve() != source.resolve():
+                    fail("V34", f"{d.name}/{tool} points at {link.resolve()}, not "
+                                "the set's own")
+                continue
             should = d.name in wanted and has_shell
             if should and not link.is_symlink():
                 fail("V34", f"{d.name} may run {SET}-tools/{tool} but cannot reach "
@@ -727,23 +746,35 @@ def v35_signature():
     the mechanism also names its own half of it, because a rule stated
     everywhere and owned nowhere is a ritual.
     """
-    contract = f"{SHARED}/{SIGNATURE['contract']}"
+    sig = H.get("signature")
+    if not isinstance(sig, dict):
+        fail("V35", "harness.yaml declares no signature mapping; this rule is checking nothing")
+        return
+    missing = [k for k in ("name", "contract", "vocabulary", "required_of", "own_word") if k not in sig]
+    if missing:
+        fail("V35", f"signature declares no {', '.join(missing)}; this rule cannot run without them")
+        return
+    if sig["vocabulary"] not in VOCAB:
+        fail("V35", f"signature.vocabulary names {sig['vocabulary']!r}, which harness.yaml "
+                    "vocabulary does not declare")
+        return
+    contract = f"{SHARED}/{sig['contract']}"
     path = SKILLS_ROOT / contract
     if not path.exists():
         fail("V35", f"signature names {contract}, which does not exist")
         return
     text = read(path)
-    for word in VOCAB[SIGNATURE["vocabulary"]]:
+    for word in VOCAB[sig["vocabulary"]]:
         if f"`{word}`" not in text:
             fail("V35", f"{contract} never defines {word!r}, which "
-                        f"{SIGNATURE['vocabulary']} declares")
-    for name in SIGNATURE["required_of"]:
+                        f"{sig['vocabulary']} declares")
+    for name in sig["required_of"]:
         if name not in SKILLS:
             fail("V35", f"signature.required_of names {name!r}, which is not a skill")
             continue
         body = strip_delivered(read(SKILLS_ROOT / name / "SKILL.md"))
-        if SIGNATURE["own_word"] not in body:
-            fail("V35", f"{name} owes the {SIGNATURE['name']} mechanism and never names "
+        if sig["own_word"] not in body:
+            fail("V35", f"{name} owes the {sig['name']} mechanism and never names "
                         f"it in its own words; the delivered block does not count")
 
 
