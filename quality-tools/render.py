@@ -39,7 +39,9 @@ def delivered(errors: list[str]) -> dict[str, str]:
     for key in H["delivered"]:
         path = ROOT / "quality-registry" / "delivered" / f"{key}.md"
         try:
-            blocks[key] = path.read_text(encoding="utf-8").rstrip("\n")
+            # Both ends, as V17 reads it back: a leading blank line kept here
+            # was drift there that no render could clear.
+            blocks[key] = path.read_text(encoding="utf-8").strip("\n")
         except (OSError, UnicodeDecodeError) as e:
             errors.append(f"{path.relative_to(ROOT)}: {getattr(e, 'strerror', None) or e}")
     return blocks

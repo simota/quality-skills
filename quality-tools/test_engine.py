@@ -368,6 +368,13 @@ class Main(Fakes):
         self.assertEqual(self.main("--running", "gpt", *self.files()), 1)
         self.assertEqual(self.main("agy", "--running", "claude", *self.files()), 1)
 
+    def test_an_unknown_running_engine_is_refused_with_a_named_checker(self):
+        # A misspelt --running excludes nothing, so codex would check its own work.
+        fake(self.bin, "codex", 'answer({"ok": True})')
+        self.assertEqual(self.main("codex", "--running", "codx", *self.files()), 1)
+        self.assertIn("'codx' is not one of", self.output)
+        self.assertNotIn('"ok"', self.output)
+
     def test_bad_input_files_are_usage_errors(self):
         fake(self.bin, "codex", 'answer({"ok": True})')
         args = self.files()

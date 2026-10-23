@@ -63,15 +63,18 @@ def read(p: Path) -> str:
 
 
 def frontmatter(text: str) -> dict:
+    """The keys as the host reads them: YAML, so a value continued onto a second
+    line is one string. Read a line at a time, the continuation escaped every
+    rule on the description. Unparseable reads as empty, which V1 reports."""
     if not text.startswith("---\n"):
         return {}
-    body = text.split("---\n", 2)[1]
-    out = {}
-    for line in body.splitlines():
-        if ":" in line:
-            k, _, v = line.partition(":")
-            out[k.strip()] = v.strip().strip('"')
-    return out
+    try:
+        data = yaml.safe_load(text.split("---\n", 2)[1])
+    except yaml.YAMLError:
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    return {str(k): "" if v is None else str(v) for k, v in data.items()}
 
 
 def sections(text: str) -> dict[str, str]:
@@ -100,7 +103,10 @@ def v1_sizes():
         n = len(t.splitlines())
         if n > LIM["skill_md_lines"]:
             fail("V1", f"{d.name}/SKILL.md is {n} lines (max {LIM['skill_md_lines']})")
-        desc = frontmatter(t).get("description", "")
+        fm = frontmatter(t)
+        if not fm:
+            fail("V1", f"{d.name}/SKILL.md has no frontmatter that parses as YAML keys")
+        desc = fm.get("description", "")
         if len(desc) > LIM["description_chars"]:
             fail("V1", f"{d.name} description is {len(desc)} chars "
                        f"(max {LIM['description_chars']}; the listing truncates)")
@@ -301,7 +307,8 @@ def v16_sections():
 
 def v17_delivery():
     for key, spec in H["delivered"].items():
-        want = read(ROOT / "quality-registry" / "delivered" / f"{key}.md").rstrip("\n")
+        # Stripped as render.py strips it, or a block render wrote is drift here.
+        want = read(ROOT / "quality-registry" / "delivered" / f"{key}.md").strip("\n")
         open_m, close_m = f"<!-- deliver:{key} -->", f"<!-- /deliver:{key} -->"
         for d in SKILL_DIRS:
             text = read(d / "SKILL.md")
@@ -724,9 +731,12 @@ def v34_tools_reachable():
                 if not e.is_symlink():
                     continue
                 tgt = e.resolve()
-                if (tgt == tools_dir or tools_dir in tgt.parents) and \
+                # An ancestor of the tools reaches all of them, render.py included.
+                if (tgt == tools_dir or tools_dir in tgt.parents or tgt in tools_dir.parents) and \
                         (e.parent != d or n not in declared_tools):
-                    fail("V34", f"{e.relative_to(SKILLS_ROOT)} reaches {tgt.relative_to(ROOT)}; "
+                    # An ancestor may lie outside the repo, where relative_to raises.
+                    where = tgt.relative_to(ROOT) if ROOT in tgt.parents or tgt == ROOT else tgt
+                    fail("V34", f"{e.relative_to(SKILLS_ROOT)} reaches {where}; "
                                 "only a declared tool is linked, by name, at the skill root")
         for entry in sorted(d.iterdir()):
             if entry.suffix == ".py" and entry.name not in declared_tools:

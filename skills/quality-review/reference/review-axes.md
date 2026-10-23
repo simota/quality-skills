@@ -70,8 +70,8 @@ Independent of the three axes, and frequently the highest-severity finding in a 
 - Does the change alter behaviour for existing data or existing callers, without saying so?
 - Is a migration required and absent?
 
-An unmentioned behaviour change is at minimum `LOW`, and `MEDIUM` when existing callers or data
-observe it, regardless of how correct it is — nobody downstream is expecting it.
+An unmentioned behaviour change is at minimum `LOW`, however correct it is — nobody downstream is
+expecting it. Above that, grade what the callers or data that observe it now get (`_quality/SEVERITY.md` §2).
 
 ## Framework-specific hot spots
 

@@ -71,15 +71,25 @@ def fail(where: str, msg: str) -> None:
     failures.append(f"  {where}: {msg}")
 
 
-FORMULA = re.compile(r"^interest\s*=.*$", re.M)
+# Every mention, wherever it sits on its line: indented, bulleted, in backticks
+# or mid-sentence is still a statement of the model.
+MENTION = re.compile(r"\binterest\s*=[^\n]*")
+# What reads as a worked example: numbers where the operands go, or a result.
+EXAMPLE_LIKE = re.compile(r"interest\s*=\s*\(?\s*\d|≈")
+
+
+def mentions(text: str) -> list[str]:
+    """Each `interest = ...` from the name to the end of its line, inline code closed."""
+    return [m.group(0).rstrip().rstrip("`").rstrip() for m in MENTION.finditer(text)]
 
 
 def check_formula() -> str:
-    a = FORMULA.findall(SEVERITY.read_text(encoding="utf-8"))
-    # interest.md's worked examples carry digits; check_examples recomputes
-    # them, and fails on any digit-bearing line that does not parse as one.
-    b = [l for l in FORMULA.findall(INTEREST.read_text(encoding="utf-8"))
-         if not re.search(r"\d", l)]
+    a = mentions(SEVERITY.read_text(encoding="utf-8"))
+    # interest.md's worked examples are told apart by parsing as one, not by
+    # carrying a digit: a formula may hold a constant. check_examples recomputes
+    # them, and fails on anything that reads as one and does not parse.
+    b = [l for l in mentions(INTEREST.read_text(encoding="utf-8"))
+         if not EXAMPLE_LIKE.search(l)]
     if not a or not b:
         fail("formula", "no `interest = ...` line found in "
                         f"{'SEVERITY.md' if not a else 'interest.md'} — "
@@ -130,19 +140,24 @@ def interest_bands() -> dict[str, set[str]]:
 
 
 def confidence_values() -> set[str]:
-    """SEVERITY's canonical divisor table."""
+    """SEVERITY's canonical divisor table: the first table under its heading, and
+    no further — a later table in the file is not part of it."""
     text = SEVERITY.read_text(encoding="utf-8")
-    block = text.split("canonical values.")[-1]
-    rows = re.findall(r"^\|\s*[^|]+\|\s*(\d+\.\d+)\s*\|", block, re.M)
+    table: list[str] = []
+    for line in text.partition("canonical values.")[2].splitlines():
+        if line.startswith("|"):
+            table.append(line)
+        elif table:
+            break
+    rows = re.findall(r"^\|\s*[^|]+\|\s*(\d+\.\d+)\s*\|", "\n".join(table), re.M)
     if not rows:
         fail("confidence", "no canonical divisor table found — "
                            "the checker has stopped checking anything")
     return set(rows)
 
 
-def check_bands() -> int:
+def check_bands(conf: set[str]) -> int:
     sev, inte = severity_bands(), interest_bands()
-    conf = confidence_values()
     if "confidence_of_fix" in inte:
         # interest.md says not to restate them: a second table is a second rubric.
         fail("bands", f"interest.md restates confidence_of_fix as {inte['confidence_of_fix']}; "
@@ -180,11 +195,16 @@ def check_examples(conf: set[str]) -> int:
     n = 0
     text = INTEREST.read_text(encoding="utf-8")
     bands = interest_bands()
-    stated = [l for l in FORMULA.findall(text) if re.search(r"\d", l)]
-    found = EXAMPLE.findall(text)
-    if len(found) != len(stated):
-        fail("worked example", f"{len(stated)} `interest = <numbers>` lines, but only "
-                               f"{len(found)} parse; an unparsed one is not checked")
+    found = []
+    for line in mentions(text):
+        m = EXAMPLE.match(line)
+        if m:
+            found.append(m.groups())
+        elif EXAMPLE_LIKE.search(line):
+            # Matched line by line, not counted: a count lets an extra parse
+            # cancel a line that does not.
+            fail("worked example", f"{line!r} reads as a worked example but does not "
+                                   "parse; an unparsed one is not checked")
     for block in re.findall(r"```(.*?)```", text, re.S):
         m = EXAMPLE.search(block)
         if m and ARROW.findall(block) != list(m.groups()[:4]):
@@ -565,8 +585,9 @@ def check_shortstat(tmp: pathlib.Path) -> int:
 
 def main() -> int:
     check_formula()
-    operands = check_bands()
-    examples = check_examples(confidence_values())
+    conf = confidence_values()
+    operands = check_bands(conf)
+    examples = check_examples(conf)
     cells = check_flake_table() + check_compounding()
 
     if shutil.which("git"):

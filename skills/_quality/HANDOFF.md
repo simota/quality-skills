@@ -40,7 +40,7 @@ OUTCOME:    real | refuted | accepted | moot | open      # _quality/OUTCOMES.md
 ```
 
 `ID` is stable across runs so a finding can be tracked to closure rather than rediscovered;
-`<skill>` is the skill's short name in capitals (`Q-REV-041`, `Q-REG-007`, `Q-DEBT-014`).
+`<skill>` is the skill's short name in capitals (`Q-REV-041`, `Q-REG-007`).
 
 ## 2. Fix Directive (any quality skill → the implementer)
 

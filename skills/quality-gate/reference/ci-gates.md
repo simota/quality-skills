@@ -78,7 +78,7 @@ than a long, bypassed one.
 - **`continue-on-error: true` (GitHub) or `allow_failure: true` (GitLab) on a blocking check.** It reports green. It is not a gate; delete it or fix it.
 - **`--passWithNoTests`.** A pipeline that passes when the test command matched nothing has, at some point, been passing for months.
 - **Snapshot update flags in CI** (`-u`, `--update-snapshots`). The gate approves whatever happened.
-- **Retrying the whole test job on failure.** Hides flakiness and doubles the mean time to red. Retry at the test level, with the flake recorded to the registry (`quality-regression`).
+- **Retrying the whole test job on failure.** Hides flakiness and doubles the mean time to red. A retry at the test level hides it the same way (`quality-regression` refuses one); record the flake to the registry instead.
 - **A gate that only runs on the default branch.** It finds the problem after the merge, which is after the decision.
 - **Required checks that do not run on all paths** mislead both ways. A job skipped by an `if:` condition reports success and passes the gate by not running; a workflow skipped by a `paths` filter leaves its required check pending and blocks unrelated changes, which teaches people to bypass it. Gate on a job that always runs and decides inside itself what applies.
 

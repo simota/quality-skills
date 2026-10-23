@@ -36,7 +36,7 @@ gh pr list --state merged --search 'merged:<start>..<end>' --limit 1000 --json a
   | awk 'function rank(p,  i) { i = int(NR*p); if (i < NR*p) i++; return a[i] }
          {a[NR]=$1} END{printf "p50=%d p95=%d n=%d\n", rank(0.5), rank(0.95), NR}'
 # If n equals the limit, the window held more PRs than were fetched; raise it or narrow the window.
-# Do not derive this from merge commits: `--stat` field 4 is insertions only (it becomes
+# Do not derive this from merge commits: `--shortstat` field 4 is insertions only (it becomes
 # deletions on a deletion-only diff), and merge commits miss every squashed or rebased PR.
 
 # lead time to merge, per PR (requires gh)

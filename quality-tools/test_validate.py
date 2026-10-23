@@ -615,6 +615,41 @@ def _(r):
                  + '\n- ask: "the diff makes it fail"\n  expect: quality-review\n', encoding="utf-8")
 
 
+@case("V1-folded")
+def _(r):
+    """A description continued onto a second line is one string to the host."""
+    sub(r / f"{S}quality-test/SKILL.md", "Writing tests that can actually fail",
+        "Writing tests that can actually fail\n  " + "and go on failing " * 12)
+
+
+@case("V2-folded")
+def _(r):
+    """A boundary on the continuation line is still in the description."""
+    sub(r / f"{S}quality-test/SKILL.md", "Writing tests that can actually fail",
+        "Writing tests\n  not for audits, that can actually fail")
+
+
+@case("V34-ancestor")
+def _(r):
+    """A link above the tools directory reaches all of it."""
+    (r / f"{S}quality-review/repo").symlink_to("../..")
+
+
+@case("V34-root")
+def _(r):
+    """An ancestor outside the repo is reported, not a traceback."""
+    (r / f"{S}quality-review/fs").symlink_to("/")
+
+
+@quiet("V17-leading-blank")
+def _(r):
+    """What `make render` writes, V17 accepts: the two read a block the same way."""
+    p = r / "quality-registry/delivered/sizing.md"
+    p.write_text("\n" + p.read_text(encoding="utf-8"), encoding="utf-8")
+    subprocess.run([sys.executable, str(r / "quality-tools" / "render.py")],
+                   check=True, capture_output=True)
+
+
 @quiet("V4-anchor")
 def _(r): sub(r / f"{S}quality-test/SKILL.md", "[traps](playbooks/traps.md)", "[traps](playbooks/traps.md#top)")
 

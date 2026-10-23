@@ -107,6 +107,51 @@ class Broken(unittest.TestCase):
                   "```\ninterest = touch_score × blast_score\n```\n\n## Reporting the ranking")
         self.assertNotEqual(self.run_main(), 0)
 
+    def test_a_second_formula_indented_or_inline(self):
+        # Not at the start of a line is still a statement of the model.
+        self.edit("SEVERITY", "## 5. Regression",
+                  "- In short: `interest = touch_score × blast_score / confidence_of_fix`\n\n"
+                  "## 5. Regression")
+        self.assertNotEqual(self.run_main(), 0)
+        self.assertTrue(any("formula" in f for f in fc.failures), fc.failures)
+
+    def test_the_formula_restated_inline_and_indented_passes(self):
+        formula = "interest = (touch_score × blast_score × comprehension_score) / confidence_of_fix"
+        self.edit("INTEREST", "## Reporting the ranking",
+                  f"- In short: `{formula}`\n\n    {formula}\n\n## Reporting the ranking")
+        self.assertEqual(self.run_main(), 0, fc.failures)
+
+    def test_an_inline_example_mid_sentence_is_recomputed(self):
+        self.edit("INTEREST", "## Reporting the ranking",
+                  "With tests the first entry drops to interest = (2.0 × 2.0 × 2.0) / 1.0 ≈ 8.\n\n"
+                  "## Reporting the ranking")
+        self.assertEqual(self.run_main(), 0, fc.failures)
+        self.edit("INTEREST", "/ 1.0 ≈ 8.", "/ 1.0 ≈ 9.")
+        self.assertNotEqual(self.run_main(), 0)
+
+    def test_an_extra_example_does_not_excuse_a_formula_with_a_digit(self):
+        # Counting lines against parses let the one cancel the other.
+        self.edit("INTEREST", "## Reporting the ranking",
+                  "With tests the first entry drops to interest = (2.0 × 2.0 × 2.0) / 1.0 ≈ 8.\n\n"
+                  "```\ninterest = touch_score × blast_score / confidence_of_fix   (v1, retired 2026)\n```\n\n"
+                  "## Reporting the ranking")
+        self.assertNotEqual(self.run_main(), 0)
+        self.assertTrue(any("formula" in f for f in fc.failures), fc.failures)
+
+    def test_a_formula_carrying_a_constant_in_both_files_passes(self):
+        for page in ("SEVERITY", "INTEREST"):
+            self.edit(page, "comprehension_score) / confidence_of_fix\n",
+                      "comprehension_score) / max(confidence_of_fix, 0.2)\n")
+        self.assertEqual(self.run_main(), 0, fc.failures)
+
+    def test_a_later_table_is_not_the_canonical_divisor_table(self):
+        p = fc.SEVERITY
+        p.write_text(p.read_text(encoding="utf-8")
+                     + "\n| Threshold | Value |\n|---|---|\n| quarantine above | 0.05 |\n"
+                     + "\n**Flake classes — canonical values.**\n\n| a | b |\n|---|---|\n| x | y |\n",
+                     encoding="utf-8")
+        self.assertEqual(self.run_main(), 0, fc.failures)
+
     def test_divisor_values_restated_in_interest(self):
         self.edit("INTEREST", "## Worked example",
                   "| State | Value |\n|---|---|\n| tested | 1.0 |\n| untested | 0.4 |\n\n## Worked example")
@@ -146,7 +191,7 @@ class Broken(unittest.TestCase):
 
     def test_F6_band_rows_swapped(self):
         self.edit("INTEREST", "| 1–3 | 0.5 |\n| 4–10 | 1.0 |", "| 1–3 | 1.0 |\n| 4–10 | 0.5 |")
-        fc.check_bands(); self.assertTrue(fc.failures)
+        fc.check_bands(fc.confidence_values()); self.assertTrue(fc.failures)
 
     def test_F7_example_operand_not_a_band(self):
         self.edit("INTEREST", "interest = (2.0 × 2.0 × 2.0) / 0.3 ≈ 27", "interest = (2.5 × 2.0 × 2.0) / 0.3 ≈ 33")

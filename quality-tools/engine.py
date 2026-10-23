@@ -564,8 +564,11 @@ def main() -> int:
         print(f"cannot read the prompt or schema: {e}", file=sys.stderr)
         return 2
     try:
-        engine = a.engine or other_than(a.running)
-        if a.running and engine == a.running:
+        # Resolved even when a checker is named: other_than() refuses an unknown
+        # --running, and a misspelt one would otherwise exclude nothing.
+        fallback = other_than(a.running)
+        engine = a.engine or fallback
+        if engine == a.running:
             raise EngineError(f"{engine} is the engine running this; "
                               "a verdict from it is not a check")
         got = run(engine, prompt, schema)
