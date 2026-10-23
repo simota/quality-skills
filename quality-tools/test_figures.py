@@ -129,6 +129,23 @@ class Broken(unittest.TestCase):
         self.edit("INTEREST", "/ 1.0 ≈ 8.", "/ 1.0 ≈ 9.")
         self.assertNotEqual(self.run_main(), 0)
 
+    def test_a_second_example_on_the_same_line_is_recomputed(self):
+        # One mention ran to the end of the line and only its prefix was parsed.
+        self.edit("INTEREST", "## Reporting the ranking",
+                  "Compare interest = (2.0 × 2.0 × 2.0) / 1.0 ≈ 8 with "
+                  "interest = (2.0 × 2.0 × 2.0) / 0.3 ≈ 27.\n\n## Reporting the ranking")
+        self.assertEqual(self.run_main(), 0, fc.failures)
+        self.edit("INTEREST", "/ 0.3 ≈ 27.\n", "/ 0.3 ≈ 999.\n")
+        self.assertNotEqual(self.run_main(), 0)
+        self.assertTrue(any("999" in f for f in fc.failures), fc.failures)
+
+    def test_a_formula_after_an_example_on_the_same_line(self):
+        self.edit("INTEREST", "## Reporting the ranking",
+                  "So interest = (2.0 × 2.0 × 2.0) / 1.0 ≈ 8, since "
+                  "interest = touch_score × blast_score.\n\n## Reporting the ranking")
+        self.assertNotEqual(self.run_main(), 0)
+        self.assertTrue(any("formula" in f for f in fc.failures), fc.failures)
+
     def test_an_extra_example_does_not_excuse_a_formula_with_a_digit(self):
         # Counting lines against parses let the one cancel the other.
         self.edit("INTEREST", "## Reporting the ranking",
