@@ -166,6 +166,9 @@ def v5_playbook_budget():
 
 
 def v6_budgets():
+    if (SKILLS_ROOT / SHARED).is_dir():
+        # The shared budgets read *.md at the top level, like every per-file rule.
+        no_subdirectories("V6", SKILLS_ROOT, SHARED)
     total = 0
     for f in sorted((SKILLS_ROOT / SHARED).glob("*.md")):
         n = len(read(f).splitlines())
@@ -318,8 +321,10 @@ def v17_delivery():
             if text.count(open_m) != 1 or text.count(close_m) != 1:
                 fail("V17", f"{d.name}/SKILL.md carries the {key} block "
                             f"{text.count(open_m)} times; only the first is compared")
-            got = text.split(open_m, 1)[1].split(close_m, 1)[0].strip("\n")
-            if got != want:
+            # Not stripped: render writes exactly one newline on each side, so a
+            # blank line added inside the markers is drift render would undo.
+            got = text.split(open_m, 1)[1].split(close_m, 1)[0]
+            if got != f"\n{want}\n":
                 fail("V17", f"{d.name}/SKILL.md {key} block differs from "
                             f"quality-registry/delivered/{key}.md (run: make render)")
             body = sections(text).get(spec["section"], "")
@@ -927,7 +932,10 @@ ENUM_RE = re.compile(r"(?:^|:\s*)((?:[A-Z][A-Z-]*(?: [A-Z][A-Z-]*)*)"
                      r"(?:\s*\|\s*(?:[A-Z][A-Z-]*(?: [A-Z][A-Z-]*)*))+)\s*(?:#.*)?$")
 
 
-KEYED_ENUM_RE = re.compile(r"^\s*(?:[-*+>]\s+)*([A-Z][A-Z ]*[A-Z]):\s*((?:[\w-]+\s*\|\s*)+[\w-]+)\s*(?:#.*)?$")
+# The list ends at its last value, not at the end of the line: a schema line
+# that goes on in prose (`… | NIT — graded per §2`) still switches on its values.
+# Matched with backticks removed, so `CRITICAL` | `HIGH` reads as the bare form.
+KEYED_ENUM_RE = re.compile(r"^\s*(?:[-*+>]\s+)*([A-Z][A-Z ]*[A-Z]):\s*((?:[\w-]+\s*\|\s*)+[\w-]+)")
 
 
 def _vocab_for(key: str):
@@ -955,7 +963,7 @@ def v38_enumerations_declared():
         if ".git" in f.parts:
             continue
         for i, line in enumerate(read(f).splitlines(), 1):
-            km = KEYED_ENUM_RE.match(line)
+            km = KEYED_ENUM_RE.match(line.replace("`", ""))
             if km:
                 ws = [w.strip() for w in km.group(2).split("|")]
                 miscased = [w for w in ws if w not in declared and w.upper() in declared]

@@ -265,6 +265,13 @@ class Run(Fakes):
         fake(self.bin, "agy", 'answer({"structured_output": {"ok": True}})', executable=False)
         self.assertIn("could not be started", self.refused("agy"))
 
+    def test_a_nul_in_the_prompt_is_an_engine_error(self):
+        # argv cannot carry a NUL; subprocess raises ValueError, not OSError.
+        fake(self.bin, "claude", 'answer({"structured_output": {"ok": True}})')
+        with self.assertRaises(engine.EngineError) as cm:
+            engine.run("claude", "a\0b", OK)
+        self.assertIn("could not be started", str(cm.exception))
+
     def test_bad_utf8_is_decoded_not_fatal(self):
         fake(self.bin, "claude", r'''
             sys.stdout.buffer.write(b"\xff\xfe noise\n")
@@ -384,6 +391,25 @@ class Main(Fakes):
         self.assertEqual(self.main("--running", "claude", *missing), 2)  # no such file
         (self.bin / "schema.json").write_text("[1]", encoding="utf-8")
         self.assertEqual(self.main("--running", "claude", *args), 1)    # not an object
+
+    def test_ascii_console_still_prints_the_answer(self):
+        # The answer prints after the engine was paid for; a console that cannot
+        # encode it must not turn it into a traceback, nor --selftest's own dash.
+        fake(self.bin, "codex", 'answer({"ok": True, "why": "checked \u2192 solid"})')
+        schema = {"type": "object", "properties": {"ok": {"type": "boolean"},
+                                                   "why": {"type": "string"}},
+                  "required": ["ok", "why"]}
+        (self.bin / "schema.json").write_text(json.dumps(schema), encoding="utf-8")
+        (self.bin / "prompt.txt").write_text("p", encoding="utf-8")
+        env = {**os.environ, "PATH": str(self.bin), "PYTHONIOENCODING": "ascii"}
+        script = str(Path(engine.__file__))
+        for argv in (["--running", "claude", "--prompt-file", str(self.bin / "prompt.txt"),
+                      "--schema", str(self.bin / "schema.json")], ["--selftest"]):
+            with self.subTest(argv=argv[0]):
+                r = subprocess.run([sys.executable, script, *argv], capture_output=True,
+                                   text=True, env=env, timeout=60)
+                self.assertNotIn("Traceback", r.stderr)
+                self.assertEqual(r.returncode, 0, r.stderr)
 
     def test_selftest_reports_and_does_not_fail(self):
         self.assertEqual(self.main("--selftest"), 0)

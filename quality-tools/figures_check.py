@@ -72,14 +72,17 @@ def fail(where: str, msg: str) -> None:
 
 
 # Every mention, wherever it sits on its line: indented, bulleted, in backticks
-# or mid-sentence is still a statement of the model.
-MENTION = re.compile(r"\binterest\s*=[^\n]*")
+# or mid-sentence is still a statement of the model. One ends where the next
+# begins: run to the end of the line, a second mention on it would be read only
+# as the tail of the first, which nothing parses.
+MENTION = re.compile(r"\binterest\s*=(?:(?!\binterest\s*=)[^\n])*")
 # What reads as a worked example: numbers where the operands go, or a result.
 EXAMPLE_LIKE = re.compile(r"interest\s*=\s*\(?\s*\d|≈")
 
 
 def mentions(text: str) -> list[str]:
-    """Each `interest = ...` from the name to the end of its line, inline code closed."""
+    """Each `interest = ...` from the name to the next one or the end of its line,
+    inline code closed."""
     return [m.group(0).rstrip().rstrip("`").rstrip() for m in MENTION.finditer(text)]
 
 

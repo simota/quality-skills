@@ -173,6 +173,15 @@ class Runs(unittest.TestCase):
         claims = [CLAIM[0], {"id": "c2", "claim": "SECOND claim"}]
         self.assertEqual(self.codes(claims, "--running", "claude"), (3, 3))
 
+    def test_a_claim_argv_cannot_carry_is_unchecked_not_a_crash(self):
+        # A NUL is valid JSON but cannot reach an engine's argv. That claim goes
+        # unchecked; the verdict already paid for on the one before it still prints.
+        self.fake("codex", True)
+        claims = [CLAIM[0], {"id": "c2", "claim": "pasted \u0000 bytes"}]
+        self.assertEqual(self.codes(claims, "--running", "claude"), (3, 3))
+        out = json.loads(self.run_refute(claims, "--json", "--running", "claude").stdout)
+        self.assertEqual([r["verdict"] for r in out], ["REFUTED", "UNCHECKED"])
+
     def test_where_and_evidence_reach_the_refuter(self):
         seen = {}
         def fake_run(name, prompt, schema):

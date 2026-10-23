@@ -464,6 +464,8 @@ def _spawn(engine: str, argv: list[str]) -> subprocess.CompletedProcess:
         raise EngineError(f"{engine} did not answer within {TIMEOUT}s") from None
     except OSError as e:                     # not executable, argv too long, ...
         raise EngineError(f"{engine} could not be started: {e}") from None
+    except ValueError as e:                  # a NUL in the prompt: argv cannot carry it
+        raise EngineError(f"{engine} could not be started: {e}") from None
     # A non-zero exit is not fatal here — an answer may still be on stdout — but
     # every error raised after it carries the code, via _tail and _parse.
     return r
@@ -580,4 +582,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # The answer prints after the engine has been paid for; a non-UTF-8 console
+    # must not turn it, or --selftest's report, into a UnicodeEncodeError.
+    sys.stdout.reconfigure(errors="replace")
     sys.exit(main())
