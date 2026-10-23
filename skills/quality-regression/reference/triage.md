@@ -90,7 +90,7 @@ Open every triage with the expiry list. For each entry:
 | State | Action |
 |-------|--------|
 | Expired, fixed | Append a closure record (`status: "fixed"`) for that test id; never delete the original line |
-| Expired, not fixed, owner present | **Propose** deletion to the owner — deleting a test needs permission (`SKILL.md` § Always / Never). On a yes: delete, append `status: "deleted"`, file the `BLIND SPOT` as a debt entry. On a no: extend, below |
+| Expired, not fixed, owner present | **Propose** deletion to the owner — deleting a test needs permission (`SKILL.md` § Always / Never). On a yes: delete, append `status: "deleted"`, hand the `BLIND SPOT` to `quality-debt` as a Finding with `ROUTE: quality-debt`. On a no: extend, below |
 | Expired, not fixed, `FLAKY-TIME` race | Never propose deletion: the test is the race's only detector (`reference/flaky-repair.md`). Extend under a new owner, and keep the race filed as a product defect |
 | Extended (new owner) | Append a superseding quarantine record — new `OWNER`, new `EXPIRES`, same `BLIND SPOT`, `status: "quarantined"`, so it stays on the active list. The same owner again is not an extension |
 | Expired, owner gone | Note the orphaning in the journal; find a new owner and extend, or propose deletion as above |

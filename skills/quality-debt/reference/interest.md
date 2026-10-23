@@ -101,7 +101,7 @@ not a second arithmetic on top of it.
 | the invariant is enforced in more than one file | the hour-plus bands |
 | no tests covering the behaviour | the hour-plus bands |
 | naming contradicts behaviour | the hour-plus bands |
-| a comment says "do not change this" with no reason | the top band, plus a separate finding |
+| a comment says "do not change this" with no reason | the top band, plus a separate entry for the unexplained warning |
 
 | Estimate | Value |
 |----------|-------|
@@ -110,7 +110,7 @@ not a second arithmetic on top of it.
 | 1–4 hours | 2.0 |
 | over 4 hours, or "ask the one person who knows" | 3.0 |
 
-The last row is a bus-factor finding as much as a debt entry; note it as both.
+The last row is a bus-factor risk as much as a cost; say so in the entry, and name the person.
 
 ## Input 4 — confidence_of_fix
 

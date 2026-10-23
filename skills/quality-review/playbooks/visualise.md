@@ -77,7 +77,7 @@ numbered marks and the findings referring to the numbers beats one map each.
 - **A coverage grid** when the finding is that something went unchecked: what
   the diff touched down one axis, what ran across the other, and the empty cell
   as the finding
-- **A severity-against-blocking square** when a report's grading is the problem
-  — the two are separate axes and a report that collapses them shows it at once
+- **A claim ledger with severity and blocking as columns** when a report's grading
+  is the problem — the two are separate axes and a report that collapses them shows it at once
 - **An evidence chain** when a claim rests on another claim: each link naming
   what was run and what it showed, and the link that is reasoning alone marked

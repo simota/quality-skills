@@ -38,9 +38,9 @@ Phases: `INTENT → SCOPE → AXES → ABSENCE → GRADE → EMIT`.
   a gate that blocks other people. `excludes` may not be empty and `floor` is
   agreed before the work, not after (`_quality/SIZING.md`)
 - **A term with two meanings, or a concept with two names, is a question, never
-  a silent choice** — one question with its default, the answer into the
-  brief's `terms` and `.agents/glossary.md`, and the glossary's names only from
-  then on (`_quality/SIZING.md` § Terms)
+  a silent choice** — one question with its default, the answer into the brief's
+  `terms` and `.agents/glossary.md`, and its names only from then on; a `T0` marks
+  it `OUT-OF-SCOPE` instead (`_quality/SIZING.md` § Terms)
 <!-- /deliver:sizing -->
 
 ## Decide first
@@ -55,7 +55,7 @@ Phases: `INTENT → SCOPE → AXES → ABSENCE → GRADE → EMIT`.
 | A finding spans places, an order, a disagreement, or a region | [visualise](playbooks/visualise.md) — a reader who has to reassemble it will skim it. ASCII by default, and the drawing carries the finding's rung, never a better one |
 | A finding cannot reach its floor | Emit it as `HYPOTHESIS` with the observation or safe check that would settle it, below the fold. Do not downgrade it and ship it as a finding |
 | Three tools flagged the same root cause | One finding with three sources. Agreement raises confidence, never count |
-| The rot predates this change | Not this skill's. It is a debt entry, and saying so is part of the review |
+| The rot predates this change | Not this skill's. It is a debt entry, and saying so is part of the review — unless it is a `CRITICAL` this change makes newly reachable, which blocks (`_quality/SEVERITY.md` §3) |
 | You think the approach is wrong, not defective | That is an architecture conversation. Ask before delivering it as a verdict |
 | A claim here would be expensive to get wrong | [refute](refute.py) — put it to the engines that did not make it, asked to break it rather than to agree. Unrefuted is n engines finding nothing, never proof |
 | A finding is about to be written | Phrase it so it can be refuted — the file, the line, and the condition that would show it is not there. **A finding nobody can refute cannot be adjudicated either**, and it is the kind that survives being wrong |
