@@ -530,6 +530,36 @@ def _(r): ref(r, "Purpose: x.\nRead when: y.\nSource: counts from\n  git.\n"
 def _(r): ref(r, "Purpose: x.\nRead when: y.\nSource: none — x.\n"
                  "Verified: 2026-08-21 — confirmed by running git log in a fixture.\n")
 
+@case("V38-trailing-prose", must=["HANDOFF.md:32 SEVERITY lists low, not as"])
+def _(r):
+    """The value list ends at its last value; prose after it hid the line from V38."""
+    sub(r / f"{S}_quality/HANDOFF.md", "SEVERITY:   CRITICAL | HIGH | MEDIUM | LOW | NIT",
+        "SEVERITY:   CRITICAL | HIGH | MEDIUM | low | NIT — graded per SEVERITY.md §2")
+
+@case("V38-foreign-before-prose", must=["HANDOFF.md:32 SEVERITY lists MINOR, not as"])
+def _(r): sub(r / f"{S}_quality/HANDOFF.md", "SEVERITY:   CRITICAL | HIGH | MEDIUM | LOW | NIT",
+              "SEVERITY:   CRITICAL | HIGH | MINOR | LOW | NIT   (one per finding)")
+
+@case("V38-backticked", must=["HANDOFF.md:32 SEVERITY lists low, not as"])
+def _(r): sub(r / f"{S}_quality/HANDOFF.md", "SEVERITY:   CRITICAL | HIGH | MEDIUM | LOW | NIT",
+              "SEVERITY:   `CRITICAL` | `HIGH` | `MEDIUM` | `low` | `NIT`")
+
+@case("V38-prose-after-declared-values", must_not=["V38:"])
+def _(r): sub(r / f"{S}_quality/HANDOFF.md", "SEVERITY:   CRITICAL | HIGH | MEDIUM | LOW | NIT",
+              "SEVERITY:   `CRITICAL` | `HIGH` | `MEDIUM` | `LOW` | `NIT` — graded per SEVERITY.md §2")
+
+@case("V6-shared-subdirectory", must=["V6: skills/_quality/extra/ is a subdirectory"])
+def _(r):
+    """The shared budgets read _quality/*.md; a file one level down escaped both."""
+    (r / f"{S}_quality/extra").mkdir()
+    (r / f"{S}_quality/extra/BIG.md").write_text("<!-- quality:contract -->\n" + "x\n" * 300,
+                                                 encoding="utf-8")
+
+@case("V17-blank-inside-markers", must=["V17: quality-test/SKILL.md outcome block differs"])
+def _(r):
+    """render writes one newline each side; a blank line added inside is drift it undoes."""
+    sub(r / f"{S}quality-test/SKILL.md", "<!-- deliver:outcome -->\n", "<!-- deliver:outcome -->\n\n")
+
 @case("V23-unclosed-frontmatter", must_not=["V23: skills/quality-test/playbooks/fm.md"])
 def _(r): (r / f"{S}quality-test/playbooks/fm.md").write_text("---\n<!-- quality:guidance -->\nx\n", encoding="utf-8")
 
