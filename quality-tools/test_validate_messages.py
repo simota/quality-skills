@@ -568,6 +568,24 @@ def _(r): sub(r / f"{S}_quality/HANDOFF.md", "SEVERITY:   CRITICAL | HIGH | MEDI
 def _(r): sub(r / f"{S}_quality/HANDOFF.md", "SEVERITY:   CRITICAL | HIGH | MEDIUM | LOW | NIT",
               "SEVERITY:   `CRITICAL` | `HIGH` | `MEDIUM` | `LOW` | `NIT` — graded per SEVERITY.md §2")
 
+@case("V38-spaced-before-prose", must=["HANDOFF.md:114 VERDICT lists GO WITH CONDITIONS, not as"])
+def _(r):
+    """A value with a space in it ended the list there, and prose after it hid the line."""
+    sub(r / f"{S}_quality/HANDOFF.md", "VERDICT:    GO | GO-WITH-CONDITIONS | NO-GO",
+        "VERDICT:    GO | GO WITH CONDITIONS | NO-GO — one per decision")
+
+@case("V38-json-spaced", must=["HANDOFF.md:143 class lists OUT OF SCOPE, not as"])
+def _(r): sub(r / f"{S}_quality/HANDOFF.md", '"class": "BLOCKED | OUT-OF-SCOPE',
+              '"class": "BLOCKED | OUT OF SCOPE')
+
+@case("V24-routing-prose-only", must=["V24: _quality/ROUTING.md does not list quality-debt"])
+def _(r):
+    """Both table rows gone, the prose mention below them is not a listing."""
+    p = r / f"{S}_quality/ROUTING.md"
+    lines = [l for l in p.read_text(encoding="utf-8").splitlines(keepends=True)
+             if not (l.startswith("|") and "`quality-debt`" in l)]
+    p.write_text("".join(lines), encoding="utf-8")
+
 @case("V6-shared-subdirectory", must=["V6: skills/_quality/extra/ is a subdirectory"])
 def _(r):
     """The shared budgets read _quality/*.md; a file one level down escaped both."""

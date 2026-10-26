@@ -489,7 +489,8 @@ def v24_rendered_tables():
     routing = read(SKILLS_ROOT / ROUTING_FILE)
     readme = read(ROOT / "README.md")
     for name in SKILLS:
-        if f"`{name}`" not in routing:
+        # A table row, as for the README: a mention in prose is not a listing.
+        if not re.search(rf"^\|.*`{re.escape(name)}`.*\|[ \t]*$", routing, re.M):
             fail("V24", f"{ROUTING_FILE} does not list {name}")
         # The table row: a mention in prose is not a listing.
         if f"| [`{name}`](" not in readme:
@@ -963,12 +964,16 @@ ENUM_RE = re.compile(r"(?:^|:\s*)((?:[A-Z][A-Z-]*(?: [A-Z][A-Z-]*)*)"
 # The list ends at its last value, not at the end of the line: a schema line
 # that goes on in prose (`… | NIT — graded per §2`) still switches on its values.
 # Matched with backticks removed, so `CRITICAL` | `HIGH` reads as the bare form.
-KEYED_ENUM_RE = re.compile(r"^\s*(?:[-*+>]\s+)*([A-Z][A-Z ]*[A-Z]):\s*((?:[\w-]+\s*\|\s*)+[\w-]+)")
+# A value before a pipe is everything since the last one: read a word at a time,
+# `GO | GO WITH CONDITIONS | NO-GO` ended the list at `GO WITH` and was never read.
+KEYED_ENUM_RE = re.compile(r"^\s*(?:[-*+>]\s+)*([A-Z][A-Z ]*[A-Z]):\s*"
+                           r"((?:[\w-]+(?: [\w-]+)*\s*\|\s*)+[\w-]+)")
 
 
 # The same, written as JSON: `"report_status": "DONE | PARTIAL | BLOCKED"` in the
-# AUTORUN envelope is a value set the caller switches on just as surely.
-JSON_ENUM_RE = re.compile(r'"(\w+)":\s*"((?:[\w-]+\s*\|\s*)+[\w-]+)"')
+# AUTORUN envelope is a value set the caller switches on just as surely. The
+# string is quoted at both ends, so every value in it is read whole.
+JSON_ENUM_RE = re.compile(r'"(\w+)":\s*"([^"|]*(?:\|[^"|]*)+)"')
 
 
 def _vocab_for(key: str):
