@@ -74,12 +74,12 @@ STATUS:     open · closed — <on closed: the test that closes it, and the run 
 `ORACLE` is mandatory. A gap handed over without a named oracle produces a test that asserts the
 current behaviour, which closes the ticket and catches nothing (`_quality/CONTRACT.md` §3).
 
-## 4. Debt Entry (`quality-debt`; others hand it a Finding with `ROUTE: quality-debt`)
+## 4. Debt Entry (`quality-debt`; others hand it a Finding with `ROUTE: quality-debt`, or an `OUT-OF-SCOPE` residual naming it)
 
 Appended to `.agents/quality/debt.md` by `quality-debt`, its only writer:
 
 ```
-| ID | Recorded | Location | Type | Cost today | Interest | Confidence of fix | Deliberate? | Status | Condition | First seen |
+| ID | Recorded | Ref | Location | Type | Cost today | Interest | Confidence of fix | Deliberate? | Status | Condition | First seen |
 ```
 
 This is the **only** ledger shape; `quality-debt`'s taxonomy describes how to fill each column.

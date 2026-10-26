@@ -58,8 +58,8 @@ Read during `AXES`. Ordered by yield, not by category tidiness.
 | Magic value | a literal whose meaning is not derivable at the call site |
 
 Grade `Clear` findings `LOW` or `NIT` **unless** the unclarity is producing a wrong result — a
-misleading name that has already caused a caller to misuse the function is a `MEDIUM` correctness
-finding wearing a readability costume.
+misleading name that has already caused a caller to misuse the function is a correctness finding
+wearing a readability costume — at least `MEDIUM`, and graded by `_quality/SEVERITY.md` §2 like any other.
 
 ## Intent alignment
 

@@ -72,9 +72,9 @@ Phases: `SCOPE → ACQUIRE → EVALUATE → DECIDE → RECORD`.
 - Always: emit `NOT COVERED` with every verdict. A verdict read as "everything
   is fine" when only the diff was examined is how gates get blamed for the
   incident they were never looking at
-- Always: judge blocking by `_quality/SEVERITY.md` §3 exactly — introduced and
-  `MEDIUM` or above, or a `CRITICAL` the change makes newly reachable, blocks;
-  every other pre-existing finding routes to debt
+- Always: block on the `BLOCKING` each finding carries, which its producer
+  graded by `_quality/SEVERITY.md` §3 — never re-grade it here; every
+  pre-existing finding not marked `BLOCK` routes to debt
 - Always: verify the rollback was exercised before approving `R3`; at `R4`, where
   none can exist, the dry run and the written undo plan stand in for it
 - Always: scale gate depth to the risk tier

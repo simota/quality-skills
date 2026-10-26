@@ -27,13 +27,14 @@ from the stack trace is the classic time sink.
 
 | Alone | In suite | Random order | Class |
 |-------|----------|--------------|-------|
-| fail | fail | fail | deterministic → `REGRESSION` / `STALE` / `WRONG-ORACLE` |
+| fail | fail | fail | deterministic → `REGRESSION` / `STALE` / `WRONG-ORACLE` / `PREEXISTING-DEFECT` |
 | pass | fail | varies | `FLAKY-ORDER` |
 | varies | varies | varies | race → `FLAKY-TIME` |
 | pass | pass | pass | environment-only → `FLAKY-ENV` (reproduce at CI's config) |
 
-For deterministic failures, the follow-up question separates the three:
+For deterministic failures, the follow-up question separates the four:
 
+- Is the test itself new? → `PREEXISTING-DEFECT` — nothing to bisect
 - Did product code change in the failing area? → `REGRESSION`
 - Was the behaviour changed on purpose? → `STALE`
 - Was the assertion ever right? → `WRONG-ORACLE`
