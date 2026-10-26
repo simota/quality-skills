@@ -90,6 +90,10 @@ every imperfection is a ledger that gets closed unread.
 The row shape is defined once, in `_quality/HANDOFF.md` §4, and is not copied here: a copy is
 how this page fell two columns behind it.
 
+`Ref` is the commit the row was assessed against (`_quality/HANDOFF.md` §0). A row whose `Ref` is
+not the ref under decision is stale: re-assess it in a new row rather than let a gate read it as
+current.
+
 `First seen` never changes. An entry that has been open for eighteen months at a stable interest
 is telling you something true: either the interest is overstated, or the team has decided — by
 revealed preference — not to repay it. Both are worth writing down at the next review.

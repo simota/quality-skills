@@ -74,7 +74,7 @@ STATUS:     open · closed — <on closed: the test that closes it, and the run 
 `ORACLE` is mandatory. A gap handed over without a named oracle produces a test that asserts the
 current behaviour, which closes the ticket and catches nothing (`_quality/CONTRACT.md` §3).
 
-## 4. Debt Entry (`quality-debt`; others hand it a Finding with `ROUTE: quality-debt`, or an `OUT-OF-SCOPE` residual naming it)
+## 4. Debt Entry (`quality-debt`; others hand it a Finding with `ROUTE: quality-debt`, or a residual naming it)
 
 Appended to `.agents/quality/debt.md` by `quality-debt`, its only writer:
 

@@ -474,6 +474,9 @@ def _spawn(engine: str, argv: list[str]) -> subprocess.CompletedProcess:
     except subprocess.TimeoutExpired:
         _kill_tree(p)
         raise EngineError(f"{engine} did not answer within {TIMEOUT}s") from None
+    except BaseException:                    # ^C to the caller alone: subprocess.run
+        _kill_tree(p)                        # killed the engine here, and so must this
+        raise
     # A non-zero exit is not fatal here — an answer may still be on stdout — but
     # every error raised after it carries the code, via _tail and _parse.
     return subprocess.CompletedProcess(argv, p.returncode, out, err)

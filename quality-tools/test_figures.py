@@ -247,6 +247,19 @@ class Broken(unittest.TestCase):
         self.assertNotEqual(self.run_main(), 0)
         self.assertTrue(any("0.5" in f for f in fc.failures), fc.failures)
 
+    def test_a_wider_canonical_divisor_table_is_read(self):
+        self.edit("SEVERITY", "| State | Value |\n|-------|-------|", "| State | Value | Why |\n|---|---|---|")
+        p = fc.SEVERITY; t = p.read_text(encoding="utf-8")
+        head, table = t.split("| State | Value | Why |", 1)
+        body, rest = table.split("\n\n", 1)
+        body = "\n".join(l + " because |" if l.startswith("| ") else l for l in body.split("\n"))
+        p.write_text(head + "| State | Value | Why |" + body + "\n\n" + rest, encoding="utf-8")
+        self.assertEqual(self.run_main(), 0, fc.failures)
+        self.edit("SEVERITY", "| no tests; behaviour is pure, with no state or I/O | 0.6 | because |",
+                  "| no tests; behaviour is pure, with no state or I/O | 0.5 | because |")
+        self.assertNotEqual(self.run_main(), 0)
+        self.assertTrue(any("0.5" in f for f in fc.failures), fc.failures)
+
     def test_a_canonical_divisor_row_with_no_readable_value(self):
         self.edit("SEVERITY", "| no tests; behaviour is pure, with no state or I/O | 0.6 |",
                   "| no tests; behaviour is pure, with no state or I/O | about half |")

@@ -55,7 +55,7 @@ Phases: `GAP → ORACLE → LEVEL → CASES → RED → GREEN → PRUNE`.
 | Someone quotes a coverage number | [coverage](playbooks/coverage.md) — it measures what executed, never what was verified |
 | About to write the test | [traps](playbooks/traps.md) |
 | The behaviour is already correct, so there is no pre-fix state | Break the code on purpose, watch the test fail, put it back. That injected defect is the control, and it is the cheapest mutation test there is |
-| The code cannot be tested without restructuring | That is `quality-debt`'s entry, not a testing problem: name the seam in an `OUT-OF-SCOPE` residual |
+| The code cannot be tested without restructuring | That is `quality-debt`'s entry, not a testing problem: name the seam in a residual routed there |
 | A claim here would be expensive to get wrong | [refute](refute.py) — put it to the engines that did not make it, asked to break it rather than to agree. Unrefuted is n engines finding nothing, never proof |
 <!-- deliver:values -->
 - Ties break by `_quality/VALUES.md`, read top to bottom: honesty over speed ·

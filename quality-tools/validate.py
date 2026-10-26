@@ -966,8 +966,10 @@ ENUM_RE = re.compile(r"(?:^|:\s*)((?:[A-Z][A-Z-]*(?: [A-Z][A-Z-]*)*)"
 # Matched with backticks removed, so `CRITICAL` | `HIGH` reads as the bare form.
 # A value before a pipe is everything since the last one: read a word at a time,
 # `GO | GO WITH CONDITIONS | NO-GO` ended the list at `GO WITH` and was never read.
+# The last value runs on through upper-case words only, so `| GO WITH CONDITIONS`
+# is read whole and `| NO-GO one per decision` ends at `NO-GO`.
 KEYED_ENUM_RE = re.compile(r"^\s*(?:[-*+>]\s+)*([A-Z][A-Z ]*[A-Z]):\s*"
-                           r"((?:[\w-]+(?: [\w-]+)*\s*\|\s*)+[\w-]+)")
+                           r"((?:[\w-]+(?: [\w-]+)*\s*\|\s*)+[\w-]+(?: [A-Z][A-Z-]*(?![\w-]))*)")
 
 
 # The same, written as JSON: `"report_status": "DONE | PARTIAL | BLOCKED"` in the

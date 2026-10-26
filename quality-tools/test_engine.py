@@ -328,6 +328,34 @@ class Run(Fakes):
             time.sleep(0.1)
         self.assertFalse(alive(pid), "the engine's worker outlived the timeout")
 
+    def test_interrupt_reaches_the_engine(self):
+        # subprocess.run killed its child on any exception; ^C must not orphan one.
+        pidfile = self.bin / "engine.pid"
+        fake(self.bin, "agy", f"""
+            import os
+            open({str(pidfile)!r}, "w").write(str(os.getpid()))
+            time.sleep(30)
+            """)
+        real = subprocess.Popen.communicate
+
+        def interrupted(proc, *a, **kw):
+            if kw.get("timeout") == engine.TIMEOUT:
+                for _ in range(100):
+                    if pidfile.exists() and pidfile.read_text():
+                        break
+                    time.sleep(0.05)
+                raise KeyboardInterrupt
+            return real(proc, *a, **kw)
+        with mock.patch.object(subprocess.Popen, "communicate", interrupted):
+            with self.assertRaises(KeyboardInterrupt):
+                engine.run("agy", "p", OK)
+        pid = int(pidfile.read_text())
+        for _ in range(50):
+            if not alive(pid):
+                break
+            time.sleep(0.1)
+        self.assertFalse(alive(pid), "the engine outlived the interrupt")
+
     def test_engine_never_reads_the_callers_stdin(self):
         # Piped stdin is more prompt to an engine; the caller's must not reach it.
         fake(self.bin, "codex", 'answer({"ok": sys.stdin.read() == ""})')

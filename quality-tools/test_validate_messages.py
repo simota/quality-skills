@@ -574,6 +574,14 @@ def _(r):
     sub(r / f"{S}_quality/HANDOFF.md", "VERDICT:    GO | GO-WITH-CONDITIONS | NO-GO",
         "VERDICT:    GO | GO WITH CONDITIONS | NO-GO — one per decision")
 
+@case("V38-spaced-last-before-prose", must=["HANDOFF.md:114 VERDICT lists GO WITH CONDITIONS, not as"])
+def _(r): sub(r / f"{S}_quality/HANDOFF.md", "VERDICT:    GO | GO-WITH-CONDITIONS | NO-GO",
+              "VERDICT:    GO | NO-GO | GO WITH CONDITIONS — one per decision")
+
+@case("V38-spaced-last-backticked", must=["HANDOFF.md:114 VERDICT lists GO WITH CONDITIONS, not as"])
+def _(r): sub(r / f"{S}_quality/HANDOFF.md", "VERDICT:    GO | GO-WITH-CONDITIONS | NO-GO",
+              "VERDICT:    `GO` | `NO-GO` | `GO WITH CONDITIONS`, one per decision")
+
 @case("V38-json-spaced", must=["HANDOFF.md:143 class lists OUT OF SCOPE, not as"])
 def _(r): sub(r / f"{S}_quality/HANDOFF.md", '"class": "BLOCKED | OUT-OF-SCOPE',
               '"class": "BLOCKED | OUT OF SCOPE')

@@ -198,10 +198,16 @@ def confidence_values() -> set[str]:
     # Read as the band rows are: the value opens its cell and a note may follow.
     # A row that yields none fails rather than drops out — dropped, a changed
     # divisor whose old value another row still carried left the set unchanged.
+    # The cell is the one under `Value`, so a column added for the reason is not
+    # a row with nothing in it.
+    cells = lambda row: [c.strip() for c in row.strip().strip("|").split("|")]
+    head = [c.lower() for c in cells(table[0])] if table else []
+    col = head.index("value") if "value" in head else 1
     for row in table[1:]:
         if re.match(r"^\|[\s|:-]+\|\s*$", row):
             continue
-        v = BAND_TABLE.match(row)
+        cs = cells(row)
+        v = re.match(r"(\d+\.\d+)(?![\d.])", cs[col]) if col < len(cs) else None
         if v:
             rows.append(v.group(1))
         else:
