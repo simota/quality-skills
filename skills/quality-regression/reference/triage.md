@@ -34,7 +34,8 @@ from the stack trace is the classic time sink.
 
 For deterministic failures, the follow-up question separates the four:
 
-- Is the test itself new? → `PREEXISTING-DEFECT` — nothing to bisect
+- Is the test itself new, and its assertion traced to the spec? → `PREEXISTING-DEFECT` — nothing to
+  bisect. New with an assertion nothing backs is the last question's, not this one's
 - Did product code change in the failing area? → `REGRESSION`
 - Was the behaviour changed on purpose? → `STALE`
 - Was the assertion ever right? → `WRONG-ORACLE`
