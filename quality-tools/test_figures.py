@@ -156,7 +156,8 @@ class Broken(unittest.TestCase):
         self.assertTrue(any("about five" in f for f in fc.failures), fc.failures)
 
     def test_a_malformed_number_is_reported_not_raised(self):
-        for old, new in (("0.8%", "0..8%"), ("At `p = 0.10`", "At `p = 0.10.`")):
+        for old, new in (("0.8%", "0..8%"), ("0.8%", "10.0.8%"),
+                         ("At `p = 0.10`", "At `p = 0.10.`")):
             with self.subTest(new=new):
                 fc.failures.clear()
                 self.edit("BISECTION", old, new)

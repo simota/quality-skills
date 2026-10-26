@@ -476,8 +476,9 @@ def check_execute_bit(tmp: pathlib.Path) -> int:
 FLAKE_ROW = re.compile(r"^\|\s*`K=(\d+)`\s*\|([^\n]*)\|\s*$", re.M)
 HEADER_N = re.compile(r"N=(\d+)")
 # _N, not a run of digits and dots: a typo such as `0..8%` is a wrong figure
-# to report, never a float() that stops every later check.
-PCT = re.compile(rf"{_N}%")
+# to report, never a float() that stops every later check. A whole token, too:
+# read from inside `10.0.8%`, the `0.8%` at its end would pass for the figure.
+PCT = re.compile(rf"(?<![\d.]){_N}%")
 
 
 def check_flake_table() -> int:
