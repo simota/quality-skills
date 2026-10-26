@@ -182,7 +182,8 @@ anywhere.
 
 - **`allowed-tools` is one CLI's mechanism.** Where a tool grant is not
   enforced, the `Never` lines are discipline and nothing more
-- **Read-only by class is not "sends nothing".** The class governs local writes
+- **Read-only by default is not "sends nothing".** No class is read-only, and the
+  default (`_quality/OPERATIONAL.md` §1) governs local writes
 - **The fixtures do not model how a model chooses.** They catch a missing or
   duplicated signal, not a misroute
 - **`Verified:` dates are not checked against anything.** A stale reference file

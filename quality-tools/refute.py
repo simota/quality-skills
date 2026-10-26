@@ -23,6 +23,12 @@ a floor on scrutiny and never a ceiling on correctness. A split is reported as
 `CONTESTED` and never resolved by picking a side — with two refuters there is no
 majority to appeal to, and inventing one would turn a disagreement into a verdict.
 
+**`REFUTED` is not the `refuted` outcome.** The refuters are told to lean to
+refuted when unsure, so their verdict is a challenge, never an adjudication: a
+finding they break stays `open` until checked evidence settles it
+(`_quality/OUTCOMES.md`), and counting it `refuted` would move precision on
+nothing more than an engine's doubt.
+
 What counts as a refutation in this domain is `refutation` in harness.yaml, not
 here: the tool is the same in every set, and the lens is not.
 

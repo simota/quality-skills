@@ -30,11 +30,11 @@ Phases: `REPRODUCE → CLASSIFY → LOCATE → REPAIR → GUARD`.
 - **Scale the checks, not the standard.** Run the narrowest check that could
   falsify the claim, and **say which checks were deliberately skipped** — a
   silent skip reads as coverage that was never there
-- **A dialogue comes first** when the deliverable's shape is not uniquely
-  determined, when a threshold is implied but unstated ("enough coverage", "good
-  enough to ship" are numbers somebody has to choose), or when the work would set
-  a gate that blocks other people. `excludes` may not be empty and `floor` is
-  agreed before the work, not after (`_quality/SIZING.md`)
+- **A dialogue comes first** when the deliverable's shape is not uniquely determined, when what
+  counts as achieved fits no one sentence ("improve quality"), when a threshold is implied but
+  unstated ("enough coverage", "good enough to ship" are numbers somebody has to choose), or when
+  the work would set or move a gate that blocks other people. `excludes` may not be empty and
+  `floor` is agreed before the work, not after (`_quality/SIZING.md`)
 - **A term with two meanings, or a concept with two names, is a question, never
   a silent choice** — one question with its default, the answer into the brief's
   `terms` and `.agents/glossary.md`, and its names only from then on; a `T0` marks
@@ -51,7 +51,7 @@ Phases: `REPRODUCE → CLASSIFY → LOCATE → REPAIR → GUARD`.
 | Deciding what a failure is worth | [triage](reference/triage.md) |
 | About to make it green | [traps](playbooks/traps.md) |
 | The test looks wrong rather than the code | **The default hypothesis is that the product code is wrong.** Concluding otherwise requires the spec or an acceptance criterion saying so, cited |
-| It cannot be fixed today | Quarantine needs an owner and a date. No owner, no quarantine — fix it, or propose deleting it today (permission first, below) |
+| It cannot be fixed today | Quarantine needs an owner and a date. No owner, no quarantine — fix it, or propose deleting it today (permission first, below); never a `FLAKY-TIME` race, whose test is its only detector |
 | It turned out to be a one-off | Record it anyway. A registry of one-offs is how the third occurrence gets recognised |
 | A claim here would be expensive to get wrong | [refute](refute.py) — put it to the engines that did not make it, asked to break it rather than to agree. Unrefuted is n engines finding nothing, never proof |
 | A test is called flaky | That is a finding, and it is adjudicated the same way: `real` once the mechanism is shown, `refuted` once the failure reproduces as a genuine defect. **Quarantining is neither** |
@@ -108,9 +108,9 @@ runs is `E0` wearing a fix's name.
   establish a defect; missing evidence never does. Narrowing a claim does not close the
   original question's unresolved parts
 - **Report `status`**: `DONE` (every claim warranted, every residual classified) / `PARTIAL` / `BLOCKED`
-- **Every residual is `BLOCKED` / `OUT-OF-SCOPE` / `DEFERRED` / `HYPOTHESIS`**
-  and appears in the handoff's `residuals`; where this skill's own write scope reaches the place a
-  reader would next look, a `#TODO(agent):` marker carrying that class goes there too
+- **Every residual is `BLOCKED` / `OUT-OF-SCOPE` / `DEFERRED` / `HYPOTHESIS`** and appears in
+  the handoff's `residuals` (at `T0`, in the answer line); where this skill's own write scope reaches
+  the place a reader would next look, a `#TODO(agent):` marker carrying that class goes there too
 - **Never omit the sweep** — markers against `residuals`, claims made against claims warranted:
   `swept, 0 markers; 9 claims / 9 warranted`. While either pair disagrees the status is not `DONE`
 <!-- /deliver:report -->
@@ -134,7 +134,7 @@ anything quarantined carries an owner and a date.
   a blocked path, work that would grow the scope. Asking counts as speaking: one question, the
   decision it unblocks, the default taken if nobody answers
 - **End with the verdict in one line** — status, and the finding that matters; then the sweep
-  line, then one line per residual a human must decide, then what is next
+  line, one line per residual a human must decide, and what is next (at `T0`, all in that line)
 - **The payload is the record, the report is the view.** Every finding, rung and outcome lives
   there; ten findings with two that matter are reported as the two and the count of the rest
 - **The report is the four parts above and nothing else** — verdict, sweep, residuals, next; the
