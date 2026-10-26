@@ -75,15 +75,23 @@ def fail(where: str, msg: str) -> None:
 # or mid-sentence is still a statement of the model. One ends where the next
 # begins: run to the end of the line, a second mention on it would be read only
 # as the tail of the first, which nothing parses.
-MENTION = re.compile(r"\binterest\s*=(?:(?!\binterest\s*=)[^\n])*")
+# The name in any case and any emphasis: `Interest =` opening a sentence and
+# `**interest** =` are statements of the model as surely as the plain form.
+NAME = r"(?<!\w)[*_]{0,2}interest[*_]{0,2}\s*="
+MENTION = re.compile(rf"{NAME}(?:(?!{NAME})[^\n])*", re.I)
 # What reads as a worked example: numbers where the operands go, or a result.
-EXAMPLE_LIKE = re.compile(r"interest\s*=\s*\(?\s*\d|≈")
+EXAMPLE_LIKE = re.compile(rf"{NAME}\s*\(?\s*\d|≈", re.I)
 
 
 def mentions(text: str) -> list[str]:
     """Each `interest = ...` from the name to the next one or the end of its line,
     inline code closed."""
     return [m.group(0).rstrip().rstrip("`").rstrip() for m in MENTION.finditer(text)]
+
+
+def _rhs(mention: str) -> str:
+    """What a mention says the model is: its spelling of the name is not the model."""
+    return re.sub(NAME, "", mention, count=1, flags=re.I).strip()
 
 
 def check_formula() -> str:
@@ -103,7 +111,7 @@ def check_formula() -> str:
     # every line there is a statement, digits or not.
     for page, lines in (("SEVERITY.md", a), ("interest.md", b)):
         for line in lines:
-            if line.strip() != a[0].strip():
+            if _rhs(line) != _rhs(a[0]):
                 fail("formula", f"SEVERITY.md says {a[0].strip()!r}, "
                                 f"{page} says {line.strip()!r}")
     return a[0].strip()
@@ -112,7 +120,8 @@ def check_formula() -> str:
 NUM = re.compile(r"\d+\.\d+")
 ORDERED = ("touch_score", "blast_score", "comprehension_score")
 OPERAND_ROW = re.compile(r"^\|\s*`(\w+_score|confidence_of_fix)`\s*\|[^|]*\|([^|]*)\|", re.M)
-BAND_TABLE = re.compile(r"^\|[^|]*\|\s*(\d+\.\d+)\s*(?:—[^|]*)?\|\s*$", re.M)
+# The value opens its cell; whatever note follows it, dashed or not, is prose.
+BAND_TABLE = re.compile(r"^\|[^|]*\|\s*(\d+\.\d+)(?![\d.])[^|]*\|\s*$", re.M)
 
 
 def severity_bands() -> dict[str, set[str]]:
@@ -127,8 +136,25 @@ def severity_bands() -> dict[str, set[str]]:
     return out
 
 
-def interest_bands() -> dict[str, set[str]]:
-    """Each `## Input n — <operand>` section owns the band table under it."""
+def _value_rows(section: str) -> list[str]:
+    """The data rows of each table in `section` whose last column is `Value`."""
+    rows, inside = [], False
+    for line in section.splitlines():
+        if re.match(r"^\|.*\|\s*Value\s*\|\s*$", line):
+            inside = True
+        elif inside and line.startswith("|"):
+            if not re.match(r"^\|[\s|:-]+\|\s*$", line):
+                rows.append(line)
+        else:
+            inside = False
+    return rows
+
+
+def interest_bands(report: bool = False) -> dict[str, set[str]]:
+    """Each `## Input n — <operand>` section owns the band table under it.
+
+    With `report`, a row of that table that yields no value fails: dropped, it
+    would leave the band set looking whole while a band went uncompared."""
     text = INTEREST.read_text(encoding="utf-8")
     sections = re.split(r"^## ", text, flags=re.M)
     out = {}
@@ -136,6 +162,11 @@ def interest_bands() -> dict[str, set[str]]:
         m = re.match(r"Input \d+ — (\w+)", s)
         if not m:
             continue
+        if report:
+            for row in _value_rows(s):
+                if not BAND_TABLE.match(row):
+                    fail("bands", f"{m.group(1)}: the row {row.strip()!r} carries no value "
+                                  "this can read; an unparsed band is not compared")
         vals = BAND_TABLE.findall(s)
         if vals:
             out[m.group(1)] = vals
@@ -160,7 +191,7 @@ def confidence_values() -> set[str]:
 
 
 def check_bands(conf: set[str]) -> int:
-    sev, inte = severity_bands(), interest_bands()
+    sev, inte = severity_bands(), interest_bands(report=True)
     if "confidence_of_fix" in inte:
         # interest.md says not to restate them: a second table is a second rubric.
         fail("bands", f"interest.md restates confidence_of_fix as {inte['confidence_of_fix']}; "
@@ -188,7 +219,7 @@ def check_bands(conf: set[str]) -> int:
 # A number, not a run of digits and dots: a sentence's full stop is not a decimal.
 _N = r"(\d+(?:\.\d+)?)"
 EXAMPLE = re.compile(
-    rf"interest\s*=\s*\(\s*{_N}\s*×\s*{_N}\s*×\s*{_N}\s*\)\s*/\s*{_N}\s*≈\s*{_N}")
+    rf"{NAME}\s*\(\s*{_N}\s*×\s*{_N}\s*×\s*{_N}\s*\)\s*/\s*{_N}\s*≈\s*{_N}", re.I)
 
 
 ARROW = re.compile(r"→\s*(\d+\.\d+)")
@@ -444,13 +475,15 @@ def check_execute_bit(tmp: pathlib.Path) -> int:
 
 FLAKE_ROW = re.compile(r"^\|\s*`K=(\d+)`\s*\|([^\n]*)\|\s*$", re.M)
 HEADER_N = re.compile(r"N=(\d+)")
-PCT = re.compile(r"([\d.]+)%")
+# _N, not a run of digits and dots: a typo such as `0..8%` is a wrong figure
+# to report, never a float() that stops every later check.
+PCT = re.compile(rf"{_N}%")
 
 
 def check_flake_table() -> int:
     """The false-good table is a binomial tail: P(fewer than K of N fail)."""
     text = BISECTION.read_text(encoding="utf-8")
-    rate = re.search(r"At `p = ([\d.]+)`", text)
+    rate = re.search(rf"At `p = {_N}`", text)
     header = re.search(r"^\|\s*K \(threshold\)\s*\|([^\n]*)\|\s*$", text, re.M)
     if not (rate and header):
         fail("false-good", "no `p = ...` or no N header row in bisection.md — "
@@ -483,7 +516,7 @@ def check_flake_table() -> int:
 
 
 STEPS = re.compile(r"⌈log2 (\d+)⌉ = (\d+)")
-COMPOUND = re.compile(r"1 − \(1 − ([\d.]+)\)\^(\d+) ≈ ([\d.]+)%")
+COMPOUND = re.compile(rf"1 − \(1 − {_N}\)\^(\d+) ≈ {_N}%")
 
 
 def check_compounding() -> int:
@@ -501,7 +534,7 @@ def check_compounding() -> int:
     table = {(int(k), n): float(c) for k, cells in FLAKE_ROW.findall(text)
              for n, c in zip(ns, PCT.findall(cells))}
     k = None
-    cited = re.findall(r"(?:`K=(\d+)`, )?N=(\d+):\s*`1 − \(1 − ([\d.]+)\)", text)
+    cited = re.findall(rf"(?:`K=(\d+)`, )?N=(\d+):\s*`1 − \(1 − {_N}\)", text)
     if len(cited) != len(worked):
         fail("compounding", "a `1 − (1 − q)^b` does not say which K and N its q is from")
     for kk, n, q in cited:
@@ -511,6 +544,9 @@ def check_compounding() -> int:
             fail("compounding", f"q = {q} at K={k}, N={n}, but that cell of the "
                                 f"table is {cell}%")
     for r, b in steps:
+        if int(r) < 1:
+            fail("compounding", f"⌈log2 {r}⌉ has no value; a range holds one commit or more")
+            continue
         if math.ceil(math.log2(int(r))) != int(b):
             fail("compounding", f"⌈log2 {r}⌉ is {math.ceil(math.log2(int(r)))}, not {b}")
     for q, b, claimed in worked:
