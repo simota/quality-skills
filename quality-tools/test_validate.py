@@ -240,6 +240,17 @@ def _(r):
     (r / f"{S}quality-test/_quality").symlink_to("../_gone")
 
 
+@case("V27-shared")          # _quality/ is read through every skill's link
+def _(r):
+    out = r.parent / "outside.md"
+    out.write_text("<!-- quality:contract -->\n", encoding="utf-8")
+    (r / f"{S}_quality/EXTRA.md").symlink_to(out)
+
+
+@case("V27-registry")
+def _(r): (r / "quality-registry/dangling").symlink_to("nowhere")
+
+
 @case("V28")
 def _(r): sub(r / "quality-registry/harness.yaml", "set: quality", "set: qa")
 
@@ -592,6 +603,61 @@ def _(r):
     """A misspelt key no longer falls back to the flattened word set."""
     sub(r / f"{S}_quality/HANDOFF.md", "SEVERITY:   CRITICAL | HIGH | MEDIUM | LOW | NIT",
         "SEVERITYY:  CRITICAL | HIGH | MEDIUM | LOW | NIT")
+
+
+@case("V38-json")
+def _(r):
+    """The AUTORUN envelope's value sets are JSON, and switched on as surely."""
+    sub(r / f"{S}_quality/HANDOFF.md", '"report_status": "DONE | PARTIAL | BLOCKED"',
+        '"report_status": "DONE | PARTIAL | BLOKED"')
+
+
+@case("V38-json-class")
+def _(r): sub(r / f"{S}_quality/HANDOFF.md", '"class": "BLOCKED | OUT-OF-SCOPE',
+              '"class": "BLOKED | OUT-OF-SCOPE')
+
+
+@case("V8-scheme")
+def _(r):
+    """A target that only starts like a URL is a file, and checked as one."""
+    (r / f"{S}quality-test/playbooks/traps.md").open("a", encoding="utf-8").write(
+        "\nSee [HTTP caching](http-caching.md).\n")
+
+
+@case("V19-scheme")
+def _(r):
+    (r / f"{S}quality-test/playbooks/traps.md").open("a", encoding="utf-8").write(
+        "\nRead `http-caching.md`.\n")
+
+
+@case("V23-unlabelled-page")
+def _(r):
+    """A page at a skill's root is installed with it; no pattern may miss it."""
+    (r / f"{S}quality-debt/NOTES.md").write_text("Read `playbooks/nope.md`.\n", encoding="utf-8")
+
+
+@case("V34-shared")
+def _(r):
+    """A tool linked into _quality/ is reachable from every skill through its link."""
+    (r / f"{S}_quality/render.py").symlink_to("../../quality-tools/render.py")
+
+
+@case("V34-registry")
+def _(r): (r / "quality-registry/tools").symlink_to("../quality-tools")
+
+
+@case("V27-two-hops")        # registry/ may link onward; that target is reached too
+def _(r):
+    (r / "docs/x").mkdir()
+    (r / "docs/x/out").symlink_to(tempfile.gettempdir())
+    (r / "quality-registry/extra").symlink_to("../docs/x")
+
+
+@case("V34-two-hops")
+def _(r):
+    (r / "docs/x").mkdir()
+    (r / "docs/x/r.py").symlink_to("../../quality-tools/refute.py")
+    (r / "quality-registry/extra").symlink_to("../docs/x")
 
 
 @case("V3-only-in-yaml")

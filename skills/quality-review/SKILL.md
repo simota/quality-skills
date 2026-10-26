@@ -32,11 +32,11 @@ Phases: `INTENT → SCOPE → AXES → ABSENCE → GRADE → EMIT`.
 - **Scale the checks, not the standard.** Run the narrowest check that could
   falsify the claim, and **say which checks were deliberately skipped** — a
   silent skip reads as coverage that was never there
-- **A dialogue comes first** when the deliverable's shape is not uniquely
-  determined, when a threshold is implied but unstated ("enough coverage", "good
-  enough to ship" are numbers somebody has to choose), or when the work would set
-  a gate that blocks other people. `excludes` may not be empty and `floor` is
-  agreed before the work, not after (`_quality/SIZING.md`)
+- **A dialogue comes first** when the deliverable's shape is not uniquely determined, when what counts
+  as achieved fits no one sentence or a word carries no achievement condition ("improve quality"),
+  when a threshold is implied but unstated ("enough coverage", "good enough to ship" are numbers
+  somebody has to choose), or when work would set or move a gate that blocks other people. `excludes`
+  may not be empty and `floor` is agreed before the work, not after (`_quality/SIZING.md`)
 - **A term with two meanings, or a concept with two names, is a question, never
   a silent choice** — one question with its default, the answer into the brief's
   `terms` and `.agents/glossary.md`, and its names only from then on; a `T0` marks
@@ -113,9 +113,9 @@ Reasoning alone is `E0` and never ships as a finding.
   establish a defect; missing evidence never does. Narrowing a claim does not close the
   original question's unresolved parts
 - **Report `status`**: `DONE` (every claim warranted, every residual classified) / `PARTIAL` / `BLOCKED`
-- **Every residual is `BLOCKED` / `OUT-OF-SCOPE` / `DEFERRED` / `HYPOTHESIS`**
-  and appears in the handoff's `residuals`; where this skill's own write scope reaches the place a
-  reader would next look, a `#TODO(agent):` marker carrying that class goes there too
+- **Every residual is `BLOCKED` / `OUT-OF-SCOPE` / `DEFERRED` / `HYPOTHESIS`** and appears in
+  the handoff's `residuals` (at `T0`, in the answer line); where this skill's own write scope reaches
+  the place a reader would next look, a `#TODO(agent):` marker carrying that class goes there too
 - **Never omit the sweep** — markers against `residuals`, claims made against claims warranted:
   `swept, 0 markers; 9 claims / 9 warranted`. While either pair disagrees the status is not `DONE`
 <!-- /deliver:report -->
@@ -138,8 +138,8 @@ named; and everything found outside this change left as a directive, not an edit
   excluded. Mid-run: a line whenever the reader must act now — a finding that changes the verdict,
   a blocked path, work that would grow the scope. Asking counts as speaking: one question, the
   decision it unblocks, the default taken if nobody answers
-- **End with the verdict in one line** — status, and the finding that matters; then the sweep
-  line, then one line per residual a human must decide, then what is next
+- **End with the verdict in one line** — status, and the finding that matters; then the sweep line,
+  one line per residual a human must decide, and what is next (`T0`: sweep and residuals in that line)
 - **The payload is the record, the report is the view.** Every finding, rung and outcome lives
   there; ten findings with two that matter are reported as the two and the count of the rest
 - **The report is the four parts above and nothing else** — verdict, sweep, residuals, next; the

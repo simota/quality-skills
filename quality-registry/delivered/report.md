@@ -7,8 +7,8 @@
   establish a defect; missing evidence never does. Narrowing a claim does not close the
   original question's unresolved parts
 - **Report `status`**: `DONE` (every claim warranted, every residual classified) / `PARTIAL` / `BLOCKED`
-- **Every residual is `BLOCKED` / `OUT-OF-SCOPE` / `DEFERRED` / `HYPOTHESIS`**
-  and appears in the handoff's `residuals`; where this skill's own write scope reaches the place a
-  reader would next look, a `#TODO(agent):` marker carrying that class goes there too
+- **Every residual is `BLOCKED` / `OUT-OF-SCOPE` / `DEFERRED` / `HYPOTHESIS`** and appears in
+  the handoff's `residuals` (at `T0`, in the answer line); where this skill's own write scope reaches
+  the place a reader would next look, a `#TODO(agent):` marker carrying that class goes there too
 - **Never omit the sweep** — markers against `residuals`, claims made against claims warranted:
   `swept, 0 markers; 9 claims / 9 warranted`. While either pair disagrees the status is not `DONE`

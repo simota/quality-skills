@@ -121,6 +121,66 @@ class Broken(unittest.TestCase):
                   f"- In short: `{formula}`\n\n    {formula}\n\n## Reporting the ranking")
         self.assertEqual(self.run_main(), 0, fc.failures)
 
+    def test_a_capitalised_or_bold_formula_is_still_a_formula(self):
+        for name in ("Interest", "**interest**"):
+            with self.subTest(name=name):
+                fc.failures.clear()
+                self.edit("INTEREST", "## Reporting the ranking",
+                          f"{name} = touch_score × blast_score\n\n## Reporting the ranking")
+                self.assertNotEqual(self.run_main(), 0)
+                self.assertTrue(any("formula" in f for f in fc.failures), fc.failures)
+                self.edit("INTEREST", f"{name} = touch_score × blast_score\n\n", "")
+
+    def test_a_capitalised_restatement_of_the_same_formula_passes(self):
+        self.edit("INTEREST", "## Reporting the ranking",
+                  "Interest = (touch_score × blast_score × comprehension_score) / confidence_of_fix"
+                  "\n\n## Reporting the ranking")
+        self.assertEqual(self.run_main(), 0, fc.failures)
+
+    def test_a_capitalised_example_is_recomputed(self):
+        self.edit("INTEREST", "## Reporting the ranking",
+                  "`Interest = (2.0 × 2.0 × 2.0) / 0.3 ≈ 999`\n\n## Reporting the ranking")
+        self.assertNotEqual(self.run_main(), 0)
+        self.assertTrue(any("999" in f for f in fc.failures), fc.failures)
+
+    def test_an_extra_band_row_with_a_note_is_compared(self):
+        self.edit("INTEREST", "| 26+ | 3.0 — this file is where the team lives |",
+                  "| 26–60 | 3.0 — this file is where the team lives |\n| 61+ | 5.0 (the whole team) |")
+        self.assertNotEqual(self.run_main(), 0)
+        self.assertTrue(any("5.0" in f for f in fc.failures), fc.failures)
+
+    def test_a_band_row_with_no_readable_value(self):
+        self.edit("INTEREST", "| 26+ | 3.0 — this file is where the team lives |",
+                  "| 26–60 | 3.0 — this file is where the team lives |\n| 61+ | about five |")
+        self.assertNotEqual(self.run_main(), 0)
+        self.assertTrue(any("about five" in f for f in fc.failures), fc.failures)
+
+    def test_a_signal_table_opening_with_a_number_is_not_a_band_scale(self):
+        self.edit("INTEREST", "| the invariant is enforced in more than one file | the hour-plus bands |",
+                  "| the invariant is enforced in more than one file | 2.0 or 3.0 (the hour-plus bands) |")
+        self.assertEqual(self.run_main(), 0, fc.failures)
+
+    def test_a_lower_case_value_header_still_guards_its_rows(self):
+        self.edit("INTEREST", "| Commits / 90d | Value |", "| Commits / 90d | value |")
+        self.edit("INTEREST", "| 26+ | 3.0 — this file is where the team lives |",
+                  "| 26–60 | 3.0 |\n| 61+ | about five |")
+        self.assertNotEqual(self.run_main(), 0)
+        self.assertTrue(any("about five" in f for f in fc.failures), fc.failures)
+
+    def test_a_malformed_number_is_reported_not_raised(self):
+        for old, new in (("0.8%", "0..8%"), ("0.8%", "10.0.8%"),
+                         ("At `p = 0.10`", "At `p = 0.10.`")):
+            with self.subTest(new=new):
+                fc.failures.clear()
+                self.edit("BISECTION", old, new)
+                self.assertNotEqual(self.run_main(), 0)
+                self.edit("BISECTION", new, old)
+
+    def test_log2_of_zero_is_reported_not_raised(self):
+        self.edit("BISECTION", "⌈log2 100⌉", "⌈log2 0⌉")
+        self.assertNotEqual(self.run_main(), 0)
+        self.assertTrue(any("log2 0" in f for f in fc.failures), fc.failures)
+
     def test_an_inline_example_mid_sentence_is_recomputed(self):
         self.edit("INTEREST", "## Reporting the ranking",
                   "With tests the first entry drops to interest = (2.0 × 2.0 × 2.0) / 1.0 ≈ 8.\n\n"

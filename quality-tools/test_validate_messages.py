@@ -365,6 +365,26 @@ def _(r):
 @case("V26-outside-target", must_not=["V26:"])
 def _(r): sub(r / "quality-registry/capabilities.yaml", "      go: quality-debt", "      go: the team lead")
 
+# What the walk through `_quality` and `registry` must not take for a skill.
+@case("V34-registry-helper", must_not=["V34:"])
+def _(r): (r / "quality-registry/gen.py").write_text("x = 1\n", encoding="utf-8")
+
+@case("V23-not-installed", must_not=["V23:"])
+def _(r):
+    (r / f"{S}README.md").write_text("x\n", encoding="utf-8")
+    (r / f"{S}quality-wip").mkdir()
+    (r / f"{S}quality-wip/notes.md").write_text("x\n", encoding="utf-8")
+
+@case("V23-root-page", must=["V23: skills/quality-debt/NOTES.md is a page no label_by_path"])
+def _(r): (r / f"{S}quality-debt/NOTES.md").write_text("x\n", encoding="utf-8")
+
+@case("V38-flake-class", must_not=["V38:"])
+def _(r):
+    # A skill's own record gives `class` its own meaning; only the contracts'
+    # JSON binds it to residual classes.
+    sub(r / f"{S}quality-regression/reference/triage.md", '"class":"<_quality/SEVERITY.md §5>"',
+        '"class":"REGRESSION | FLAKY-ORDER | FLAKY-TIME | FLAKY-ENV"')
+
 @case("V27-outside", must=["points outside the repo"])
 def _(r): (r / f"{S}quality-test/outside").symlink_to(tempfile.gettempdir())
 

@@ -56,6 +56,8 @@ LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 # the directory the file writing it lives in.
 TICK_PATH_RE = re.compile(r"`([^`\s]*(?:/[^`\s]*|\.(?:md|yaml|py)))`")
 MARKER_RE = re.compile(r"#" + r"TODO\(agent\):")
+# A URL has a scheme. A prefix test let `http-caching.md` pass as one, unchecked.
+URL_RE = re.compile(r"[A-Za-z][A-Za-z0-9+.-]*:")
 
 
 def read(p: Path) -> str:
@@ -195,7 +197,7 @@ def v8_links():
         if ".git" in f.parts:
             continue
         for target in LINK_RE.findall(read(f)):
-            if target.startswith(("http", "#", "mailto:")):
+            if target.startswith("#") or URL_RE.match(target):
                 continue
             if not (f.parent / target.split("#")[0]).exists():
                 fail("V8", f"{f.relative_to(ROOT)} links to missing {target}")
@@ -378,7 +380,7 @@ def _is_own_reference(p: str) -> bool:
 def _check_links(f: Path, skill: Path, here: Path, label: str) -> None:
     """A link resolves from the file holding it, lexically — so it must stay in the skill."""
     for target in LINK_RE.findall(read(f)):
-        if target.startswith(("http", "#", "mailto:")):
+        if target.startswith("#") or URL_RE.match(target):
             continue
         norm = Path(os.path.normpath(here / target.split("#")[0]))
         if skill != norm and skill not in norm.parents:
@@ -389,7 +391,7 @@ def _check_links(f: Path, skill: Path, here: Path, label: str) -> None:
 def _check_paths(f: Path, base: Path, label: str) -> None:
     for p in TICK_PATH_RE.findall(read(f)):
         p = p.split("#")[0]               # an anchor names a place in the file, not a file
-        if p.startswith(("http", "~", "/")) or " " in p or not _is_own_reference(p):
+        if p.startswith(("~", "/")) or URL_RE.match(p) or " " in p or not _is_own_reference(p):
             continue
         if ".." in p:
             fail("V19", f"{label} references {p!r}; paths are normalised lexically, "
@@ -468,6 +470,11 @@ def v23_labels():
                 want = label
                 break
         if want is None:
+            # Under skills/ every page is installed with a skill and read by it;
+            # one no pattern labels escapes every rule that reads by place.
+            if any(d in f.parents for d in SKILL_DIRS) or (SKILLS_ROOT / SHARED) in f.parents:
+                fail("V23", f"{rel} is a page no label_by_path pattern covers; "
+                            "move it to playbooks/ or reference/, or declare it")
             continue
         lines = read(f).splitlines()
         if lines and lines[0].strip() == "---":          # skip frontmatter
@@ -516,11 +523,30 @@ def v26_boundaries_real():
                 fail("V26", f"{name} `not:` sends work to {go}, which does not exist")
 
 
+def reached_dirs() -> list[Path]:
+    """Every directory a skill reads from: each skill, and each in-repo directory
+    a link at a skill's root leads to (`_quality`, `registry`). Walked without
+    following links, those targets were never walked at all, so a link placed in
+    them was reachable from every skill and checked by nothing. Followed to
+    every depth: a directory reached through `registry` may link onward."""
+    out = list(SKILL_DIRS)
+    for d in out:                                   # grows as targets are found
+        for top, dirs, files in os.walk(d):
+            for n in dirs:
+                e = Path(top) / n
+                if e.is_symlink():
+                    t = e.resolve()
+                    if ROOT.resolve() in t.parents and t not in out:
+                        out.append(t)
+    return out
+
+
 def v27_symlinks_stay_inside():
     """What a skill reaches must live in this repo, and must actually be there."""
-    for d in SKILL_DIRS:
-        # The whole skill, not its top level: a link in playbooks/ is read as surely.
-        # Links are reported, never followed, so _quality/ is not walked again here.
+    for d in reached_dirs():
+        # The whole tree, not its top level: a link in playbooks/ is read as surely.
+        # Links are reported, never followed; their in-repo targets are walked as
+        # roots of their own.
         entries = [Path(top) / n for top, dirs, files in os.walk(d) for n in dirs + files]
         for entry in sorted(entries):
             if not entry.is_symlink():
@@ -729,7 +755,7 @@ def v34_tools_reachable():
                 fail("V34", f"{d.name}/{tool} points at {link.resolve()}, not "
                             "the set's own")
     tools_dir = (ROOT / f"{SET}-tools").resolve()
-    for d in SKILL_DIRS:
+    for d in reached_dirs():
         for top, dirs, files in os.walk(d):          # does not descend through links
             for n in dirs + files:
                 e = Path(top) / n
@@ -738,11 +764,13 @@ def v34_tools_reachable():
                 tgt = e.resolve()
                 # An ancestor of the tools reaches all of them, render.py included.
                 if (tgt == tools_dir or tools_dir in tgt.parents or tgt in tools_dir.parents) and \
-                        (e.parent != d or n not in declared_tools):
+                        (d not in SKILL_DIRS or e.parent != d or n not in declared_tools):
                     # An ancestor may lie outside the repo, where relative_to raises.
                     where = tgt.relative_to(ROOT) if ROOT in tgt.parents or tgt == ROOT else tgt
-                    fail("V34", f"{e.relative_to(SKILLS_ROOT)} reaches {where}; "
+                    fail("V34", f"{e.relative_to(d.parent)} reaches {where}; "
                                 "only a declared tool is linked, by name, at the skill root")
+        if d not in SKILL_DIRS:
+            continue                                # a tool is linked at a skill's root only
         for entry in sorted(d.iterdir()):
             if entry.suffix == ".py" and entry.name not in declared_tools:
                 fail("V34", f"{d.name}/{entry.name} is a tool link nothing "
@@ -938,6 +966,11 @@ ENUM_RE = re.compile(r"(?:^|:\s*)((?:[A-Z][A-Z-]*(?: [A-Z][A-Z-]*)*)"
 KEYED_ENUM_RE = re.compile(r"^\s*(?:[-*+>]\s+)*([A-Z][A-Z ]*[A-Z]):\s*((?:[\w-]+\s*\|\s*)+[\w-]+)")
 
 
+# The same, written as JSON: `"report_status": "DONE | PARTIAL | BLOCKED"` in the
+# AUTORUN envelope is a value set the caller switches on just as surely.
+JSON_ENUM_RE = re.compile(r'"(\w+)":\s*"((?:[\w-]+\s*\|\s*)+[\w-]+)"')
+
+
 def _vocab_for(key: str):
     k = key.lower().replace(" ", "_")
     for cand in (k, k + "s", k[:-1] + "ies" if k.endswith("y") else None, k + "es"):
@@ -959,28 +992,38 @@ def v38_enumerations_declared():
     Declared words are what V20 and V22 reach; the rest is what drifts.
     """
     declared = {w for words in VOCAB.values() for w in words}
+
+    def keyed(where: str, key: str, values: str, bound) -> None:
+        ws = [w.strip() for w in values.split("|")]
+        miscased = [w for w in ws if w not in declared and w.upper() in declared]
+        # bound to a vocabulary, every value must be one of its words — a typo
+        # declared nowhere at all is as foreign as a word from another key
+        foreign = [w for w in ws if bound is not None and w not in bound
+                   and w not in miscased]
+        if miscased or foreign:
+            fail("V38", f"{where} {key} lists "
+                        f"{', '.join(miscased + foreign)}, not as its vocabulary spells it")
+        elif bound is None and any(w in declared for w in ws):
+            # declared words under a key no vocabulary owns: a misspelt key, or
+            # a new value set nobody declared. Lists of undeclared lower-case
+            # values (ROUTE, ORACLE) carry no declared word and stay out of scope.
+            fail("V38", f"{where} {key} lists declared "
+                        "words, but no vocabulary in harness.yaml is keyed by it")
+
     for f in sorted(SKILLS_ROOT.rglob("*.md")):
         if ".git" in f.parts:
             continue
         for i, line in enumerate(read(f).splitlines(), 1):
+            where = f"{f.relative_to(ROOT)}:{i}"
             km = KEYED_ENUM_RE.match(line.replace("`", ""))
             if km:
-                ws = [w.strip() for w in km.group(2).split("|")]
-                miscased = [w for w in ws if w not in declared and w.upper() in declared]
-                bound = _vocab_for(km.group(1))
-                # bound to a vocabulary, every value must be one of its words — a typo
-                # declared nowhere at all is as foreign as a word from another key
-                foreign = [w for w in ws if bound is not None and w not in bound
-                           and w not in miscased]
-                if miscased or foreign:
-                    fail("V38", f"{f.relative_to(ROOT)}:{i} {km.group(1)} lists "
-                                f"{', '.join(miscased + foreign)}, not as its vocabulary spells it")
-                elif bound is None and any(w in declared for w in ws):
-                    # declared words under a key no vocabulary owns: a misspelt key, or
-                    # a new value set nobody declared. Lists of undeclared lower-case
-                    # values (ROUTE, ORACLE) carry no declared word and stay out of scope.
-                    fail("V38", f"{f.relative_to(ROOT)}:{i} {km.group(1)} lists declared "
-                                "words, but no vocabulary in harness.yaml is keyed by it")
+                keyed(where, km.group(1), km.group(2), _vocab_for(km.group(1)))
+            # The contracts' JSON only: there a key qualifies its noun —
+            # `report_status` is a status, `class` a residual class. A record on
+            # a skill's own page may give `class` another meaning (a flake class).
+            for key, values in JSON_ENUM_RE.findall(line) if f.parent.name == SHARED else ():
+                keyed(where, key, values,
+                      _vocab_for(key) or _vocab_for(key.rsplit("_", 1)[-1]))
             m = ENUM_RE.search(line)
             if not m:
                 continue

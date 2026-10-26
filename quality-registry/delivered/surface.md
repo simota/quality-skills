@@ -2,8 +2,8 @@
   excluded. Mid-run: a line whenever the reader must act now — a finding that changes the verdict,
   a blocked path, work that would grow the scope. Asking counts as speaking: one question, the
   decision it unblocks, the default taken if nobody answers
-- **End with the verdict in one line** — status, and the finding that matters; then the sweep
-  line, then one line per residual a human must decide, then what is next
+- **End with the verdict in one line** — status, and the finding that matters; then the sweep line,
+  one line per residual a human must decide, and what is next (`T0`: sweep and residuals in that line)
 - **The payload is the record, the report is the view.** Every finding, rung and outcome lives
   there; ten findings with two that matter are reported as the two and the count of the rest
 - **The report is the four parts above and nothing else** — verdict, sweep, residuals, next; the
