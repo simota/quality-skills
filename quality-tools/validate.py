@@ -472,7 +472,7 @@ def v23_labels():
         if want is None:
             # Under skills/ every page is installed with a skill and read by it;
             # one no pattern labels escapes every rule that reads by place.
-            if SKILLS_ROOT != ROOT and SKILLS_ROOT in f.parents:
+            if any(d in f.parents for d in SKILL_DIRS) or (SKILLS_ROOT / SHARED) in f.parents:
                 fail("V23", f"{rel} is a page no label_by_path pattern covers; "
                             "move it to playbooks/ or reference/, or declare it")
             continue
@@ -527,14 +527,17 @@ def reached_dirs() -> list[Path]:
     """Every directory a skill reads from: each skill, and each in-repo directory
     a link at a skill's root leads to (`_quality`, `registry`). Walked without
     following links, those targets were never walked at all, so a link placed in
-    them was reachable from every skill and checked by nothing."""
+    them was reachable from every skill and checked by nothing. Followed to
+    every depth: a directory reached through `registry` may link onward."""
     out = list(SKILL_DIRS)
-    for d in SKILL_DIRS:
-        for e in sorted(d.iterdir()):
-            if e.is_symlink() and e.is_dir():
-                t = e.resolve()
-                if ROOT.resolve() in t.parents and t not in out:
-                    out.append(t)
+    for d in out:                                   # grows as targets are found
+        for top, dirs, files in os.walk(d):
+            for n in dirs:
+                e = Path(top) / n
+                if e.is_symlink():
+                    t = e.resolve()
+                    if ROOT.resolve() in t.parents and t not in out:
+                        out.append(t)
     return out
 
 
@@ -766,6 +769,8 @@ def v34_tools_reachable():
                     where = tgt.relative_to(ROOT) if ROOT in tgt.parents or tgt == ROOT else tgt
                     fail("V34", f"{e.relative_to(d.parent)} reaches {where}; "
                                 "only a declared tool is linked, by name, at the skill root")
+        if d not in SKILL_DIRS:
+            continue                                # a tool is linked at a skill's root only
         for entry in sorted(d.iterdir()):
             if entry.suffix == ".py" and entry.name not in declared_tools:
                 fail("V34", f"{d.name}/{entry.name} is a tool link nothing "
@@ -1013,9 +1018,10 @@ def v38_enumerations_declared():
             km = KEYED_ENUM_RE.match(line.replace("`", ""))
             if km:
                 keyed(where, km.group(1), km.group(2), _vocab_for(km.group(1)))
-            for key, values in JSON_ENUM_RE.findall(line):
-                # a JSON key qualifies its noun: `report_status` is a status,
-                # `class` a residual class
+            # The contracts' JSON only: there a key qualifies its noun —
+            # `report_status` is a status, `class` a residual class. A record on
+            # a skill's own page may give `class` another meaning (a flake class).
+            for key, values in JSON_ENUM_RE.findall(line) if f.parent.name == SHARED else ():
                 keyed(where, key, values,
                       _vocab_for(key) or _vocab_for(key.rsplit("_", 1)[-1]))
             m = ENUM_RE.search(line)

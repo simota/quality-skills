@@ -6,11 +6,11 @@
 - **Scale the checks, not the standard.** Run the narrowest check that could
   falsify the claim, and **say which checks were deliberately skipped** — a
   silent skip reads as coverage that was never there
-- **A dialogue comes first** when the deliverable's shape is not uniquely determined, when what
-  counts as achieved fits no one sentence ("improve quality"), when a threshold is implied but
-  unstated ("enough coverage", "good enough to ship" are numbers somebody has to choose), or when
-  the work would set or move a gate that blocks other people. `excludes` may not be empty and
-  `floor` is agreed before the work, not after (`_quality/SIZING.md`)
+- **A dialogue comes first** when the deliverable's shape is not uniquely determined, when what counts
+  as achieved fits no one sentence or a word carries no achievement condition ("improve quality"),
+  when a threshold is implied but unstated ("enough coverage", "good enough to ship" are numbers
+  somebody has to choose), or when work would set or move a gate that blocks other people. `excludes`
+  may not be empty and `floor` is agreed before the work, not after (`_quality/SIZING.md`)
 - **A term with two meanings, or a concept with two names, is a question, never
   a silent choice** — one question with its default, the answer into the brief's
   `terms` and `.agents/glossary.md`, and its names only from then on; a `T0` marks

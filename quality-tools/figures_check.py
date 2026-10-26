@@ -140,7 +140,7 @@ def _value_rows(section: str) -> list[str]:
     """The data rows of each table in `section` whose last column is `Value`."""
     rows, inside = [], False
     for line in section.splitlines():
-        if re.match(r"^\|.*\|\s*Value\s*\|\s*$", line):
+        if re.match(r"^\|.*\|\s*Value\s*\|\s*$", line, re.I):
             inside = True
         elif inside and line.startswith("|"):
             if not re.match(r"^\|[\s|:-]+\|\s*$", line):
@@ -151,10 +151,14 @@ def _value_rows(section: str) -> list[str]:
 
 
 def interest_bands(report: bool = False) -> dict[str, set[str]]:
-    """Each `## Input n — <operand>` section owns the band table under it.
+    """Each `## Input n — <operand>` section owns the `Value` table under it.
 
-    With `report`, a row of that table that yields no value fails: dropped, it
-    would leave the band set looking whole while a band went uncompared."""
+    Its values come from that table's rows only: another table in the section
+    (the signals beside comprehension_score) is not a band scale, whatever its
+    cells open with. With `report`, a row of it that yields no value fails:
+    dropped, it would leave the band set looking whole while a band went
+    uncompared. confidence_of_fix is read from the whole section, any table,
+    because there any restatement is the finding."""
     text = INTEREST.read_text(encoding="utf-8")
     sections = re.split(r"^## ", text, flags=re.M)
     out = {}
@@ -167,7 +171,10 @@ def interest_bands(report: bool = False) -> dict[str, set[str]]:
                 if not BAND_TABLE.match(row):
                     fail("bands", f"{m.group(1)}: the row {row.strip()!r} carries no value "
                                   "this can read; an unparsed band is not compared")
-        vals = BAND_TABLE.findall(s)
+        if m.group(1) == "confidence_of_fix":
+            vals = BAND_TABLE.findall(s)
+        else:
+            vals = [v.group(1) for v in map(BAND_TABLE.match, _value_rows(s)) if v]
         if vals:
             out[m.group(1)] = vals
     return out

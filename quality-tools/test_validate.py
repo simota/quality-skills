@@ -646,6 +646,20 @@ def _(r):
 def _(r): (r / "quality-registry/tools").symlink_to("../quality-tools")
 
 
+@case("V27-two-hops")        # registry/ may link onward; that target is reached too
+def _(r):
+    (r / "docs/x").mkdir()
+    (r / "docs/x/out").symlink_to(tempfile.gettempdir())
+    (r / "quality-registry/extra").symlink_to("../docs/x")
+
+
+@case("V34-two-hops")
+def _(r):
+    (r / "docs/x").mkdir()
+    (r / "docs/x/r.py").symlink_to("../../quality-tools/refute.py")
+    (r / "quality-registry/extra").symlink_to("../docs/x")
+
+
 @case("V3-only-in-yaml")
 def _(r):
     p = r / "quality-registry/capabilities.yaml"

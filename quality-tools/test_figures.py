@@ -155,6 +155,18 @@ class Broken(unittest.TestCase):
         self.assertNotEqual(self.run_main(), 0)
         self.assertTrue(any("about five" in f for f in fc.failures), fc.failures)
 
+    def test_a_signal_table_opening_with_a_number_is_not_a_band_scale(self):
+        self.edit("INTEREST", "| the invariant is enforced in more than one file | the hour-plus bands |",
+                  "| the invariant is enforced in more than one file | 2.0 or 3.0 (the hour-plus bands) |")
+        self.assertEqual(self.run_main(), 0, fc.failures)
+
+    def test_a_lower_case_value_header_still_guards_its_rows(self):
+        self.edit("INTEREST", "| Commits / 90d | Value |", "| Commits / 90d | value |")
+        self.edit("INTEREST", "| 26+ | 3.0 — this file is where the team lives |",
+                  "| 26–60 | 3.0 |\n| 61+ | about five |")
+        self.assertNotEqual(self.run_main(), 0)
+        self.assertTrue(any("about five" in f for f in fc.failures), fc.failures)
+
     def test_a_malformed_number_is_reported_not_raised(self):
         for old, new in (("0.8%", "0..8%"), ("0.8%", "10.0.8%"),
                          ("At `p = 0.10`", "At `p = 0.10.`")):
