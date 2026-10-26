@@ -14,6 +14,7 @@ import copy
 import io
 import json
 import os
+import signal
 import stat
 import subprocess
 import sys
@@ -65,6 +66,13 @@ def alive(pid: int) -> bool:
     except ProcessLookupError:
         return False
     return True
+
+
+def reap(pid: int) -> None:
+    try:
+        os.kill(pid, signal.SIGKILL)
+    except (ProcessLookupError, PermissionError):
+        pass
 
 
 class Fakes(unittest.TestCase):
@@ -310,6 +318,8 @@ class Run(Fakes):
         with mock.patch.object(engine, "TIMEOUT", 1):
             self.assertIn("did not answer within", self.refused("agy"))
 
+    @unittest.skipUnless(Path("/proc/self").exists(),
+                         "descendants are read from /proc; without it only the engine is killed")
     def test_timeout_reaches_what_the_engine_started(self):
         # A launcher killed alone leaves its worker running, and billing.
         pidfile = self.bin / "worker.pid"
@@ -322,6 +332,7 @@ class Run(Fakes):
         with mock.patch.object(engine, "TIMEOUT", 2):
             self.assertIn("did not answer within", self.refused("agy"))
         pid = int(pidfile.read_text())
+        self.addCleanup(reap, pid)              # a failed assertion must not leave it running
         for _ in range(50):
             if not alive(pid):
                 break
@@ -350,6 +361,7 @@ class Run(Fakes):
             with self.assertRaises(KeyboardInterrupt):
                 engine.run("agy", "p", OK)
         pid = int(pidfile.read_text())
+        self.addCleanup(reap, pid)
         for _ in range(50):
             if not alive(pid):
                 break
