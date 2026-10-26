@@ -234,6 +234,25 @@ class Broken(unittest.TestCase):
                   "| State | Value |\n|---|---|\n| tested | 1.0 |\n| untested | 0.4 |\n\n## Worked example")
         self.assertNotEqual(self.run_main(), 0)
 
+    def test_divisor_values_restated_in_a_wider_table(self):
+        self.edit("INTEREST", "## Worked example",
+                  "| State | Value | Why |\n|---|---|---|\n| tested | 1.0 | proven |\n"
+                  "| untested | 0.4 | a gamble |\n\n## Worked example")
+        self.assertNotEqual(self.run_main(), 0)
+        self.assertTrue(any("restates confidence_of_fix" in f for f in fc.failures), fc.failures)
+
+    def test_a_canonical_divisor_with_a_note_is_compared(self):
+        self.edit("SEVERITY", "| no tests; behaviour is pure, with no state or I/O | 0.6 |",
+                  "| no tests; behaviour is pure, with no state or I/O | 0.5 (pure code is cheap to pin) |")
+        self.assertNotEqual(self.run_main(), 0)
+        self.assertTrue(any("0.5" in f for f in fc.failures), fc.failures)
+
+    def test_a_canonical_divisor_row_with_no_readable_value(self):
+        self.edit("SEVERITY", "| no tests; behaviour is pure, with no state or I/O | 0.6 |",
+                  "| no tests; behaviour is pure, with no state or I/O | about half |")
+        self.assertNotEqual(self.run_main(), 0)
+        self.assertTrue(any("about half" in f for f in fc.failures), fc.failures)
+
     def test_clean_pages_pass(self):
         self.assertEqual(self.run_main(), 0, fc.failures)
 
