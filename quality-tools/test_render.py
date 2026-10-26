@@ -124,6 +124,17 @@ class Render(unittest.TestCase):
         self.assertIn("values.md", r.stderr)
         self.assertEqual(self.snapshot(), before)
 
+    def test_empty_delivered_block(self):
+        for text in ("", "\n\n  \n"):
+            (self.root / "quality-registry" / "delivered" / "values.md").write_text(
+                text, encoding="utf-8")
+            before = self.snapshot()
+            for args in ((), ("--check",)):
+                r = self.render(*args)
+                self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+                self.assertIn("values.md: empty", r.stderr)
+            self.assertEqual(self.snapshot(), before)
+
     def test_no_skills_is_not_clean(self):
         for p in list(self.snapshot()):
             p.unlink()

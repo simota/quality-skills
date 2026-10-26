@@ -35,7 +35,9 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+import os
 import pathlib
+import signal
 import subprocess
 import sys
 import tempfile
@@ -456,19 +458,60 @@ def _spawn(engine: str, argv: list[str]) -> subprocess.CompletedProcess:
     try:
         # One engine printing bad UTF-8 must not take down a run that asked
         # several: decoded leniently, it fails as an unparseable answer instead.
-        r = subprocess.run(argv, capture_output=True, text=True, encoding="utf-8",
-                           errors="replace", timeout=TIMEOUT)
+        # stdin is closed: an engine reads a piped stdin as more prompt, so the
+        # caller's input would reach it unasked, or an open pipe would hold it.
+        p = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE, text=True, encoding="utf-8",
+                             errors="replace")
     except FileNotFoundError:
         raise EngineError(f"{engine} is not on PATH") from None
-    except subprocess.TimeoutExpired:
-        raise EngineError(f"{engine} did not answer within {TIMEOUT}s") from None
     except OSError as e:                     # not executable, argv too long, ...
         raise EngineError(f"{engine} could not be started: {e}") from None
     except ValueError as e:                  # a NUL in the prompt: argv cannot carry it
         raise EngineError(f"{engine} could not be started: {e}") from None
+    try:
+        out, err = p.communicate(timeout=TIMEOUT)
+    except subprocess.TimeoutExpired:
+        _kill_tree(p)
+        raise EngineError(f"{engine} did not answer within {TIMEOUT}s") from None
+    except BaseException:                    # ^C to the caller alone: subprocess.run
+        _kill_tree(p)                        # killed the engine here, and so must this
+        raise
     # A non-zero exit is not fatal here — an answer may still be on stdout — but
     # every error raised after it carries the code, via _tail and _parse.
-    return r
+    return subprocess.CompletedProcess(argv, p.returncode, out, err)
+
+
+def _kill_tree(p: subprocess.Popen) -> None:
+    """The engine and what it started. A launcher killed alone leaves its worker
+    running, and billing, after the run has given up on it. The engine stays in
+    the caller's process group, so whatever stops the caller stops it too; the
+    tree is read from /proc where there is one, and elsewhere only the engine is
+    killed, as before."""
+    pids = [p.pid]
+    try:
+        children: dict[int, list[int]] = {}
+        for stat in pathlib.Path("/proc").glob("[0-9]*/stat"):
+            try:
+                ppid = int(stat.read_text().rsplit(")", 1)[1].split()[1])
+            except (OSError, IndexError, ValueError):
+                continue                     # exited while being read
+            children.setdefault(ppid, []).append(int(stat.parent.name))
+        for pid in pids:                     # grows as it goes: breadth first
+            pids.extend(children.get(pid, []))
+    except OSError:
+        pass
+    for pid in pids:
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass
+    try:
+        p.communicate(timeout=5)
+    except subprocess.TimeoutExpired:        # held open by something that escaped
+        p.stdout.close()
+        p.stderr.close()
+        p.wait()
 
 
 def _loads(text: str):

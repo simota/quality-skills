@@ -6,6 +6,7 @@
 | Observation | Likely class | The tell |
 |-------------|--------------|----------|
 | Fails alone and in suite, every time | `REGRESSION` or `STALE` | deterministic — bisect it |
+| A new test fails every time, its assertion traced to the spec, against code that has always behaved this way | `PREEXISTING-DEFECT` | the test is new — nothing to bisect; with no source for the assertion, it is `WRONG-ORACLE` |
 | Passes alone, fails in suite | `FLAKY-ORDER` | shared state; random-order run confirms |
 | Fails at 08:00 JST, passes at 14:00 | `FLAKY-TIME` | timezone or date boundary — 08:00 JST is still yesterday in UTC |
 | Fails on CI, passes locally | `FLAKY-ENV` | CPU count, parallelism, container clock, missing fixture |

@@ -172,7 +172,11 @@ def interest_bands(report: bool = False) -> dict[str, set[str]]:
                     fail("bands", f"{m.group(1)}: the row {row.strip()!r} carries no value "
                                   "this can read; an unparsed band is not compared")
         if m.group(1) == "confidence_of_fix":
-            vals = BAND_TABLE.findall(s)
+            # Any cell opening with a value, in a table of any width: a third
+            # column for the reason is still a second rubric.
+            vals = [c.group(1) for row in re.findall(r"^\|.*", s, re.M)
+                    for c in (re.match(r"\s*(\d+\.\d+)(?![\d.])", cell)
+                              for cell in row.strip().strip("|").split("|")) if c]
         else:
             vals = [v.group(1) for v in map(BAND_TABLE.match, _value_rows(s)) if v]
         if vals:
@@ -190,7 +194,25 @@ def confidence_values() -> set[str]:
             table.append(line)
         elif table:
             break
-    rows = re.findall(r"^\|\s*[^|]+\|\s*(\d+\.\d+)\s*\|", "\n".join(table), re.M)
+    rows = []
+    # Read as the band rows are: the value opens its cell and a note may follow.
+    # A row that yields none fails rather than drops out — dropped, a changed
+    # divisor whose old value another row still carried left the set unchanged.
+    # The cell is the one under `Value`, so a column added for the reason is not
+    # a row with nothing in it.
+    cells = lambda row: [c.strip() for c in row.strip().strip("|").split("|")]
+    head = [c.lower() for c in cells(table[0])] if table else []
+    col = head.index("value") if "value" in head else 1
+    for row in table[1:]:
+        if re.match(r"^\|[\s|:-]+\|\s*$", row):
+            continue
+        cs = cells(row)
+        v = re.match(r"(\d+\.\d+)(?![\d.])", cs[col]) if col < len(cs) else None
+        if v:
+            rows.append(v.group(1))
+        else:
+            fail("confidence", f"the canonical divisor row {row.strip()!r} carries no "
+                               "value this can read; an unparsed divisor is not compared")
     if not rows:
         fail("confidence", "no canonical divisor table found — "
                            "the checker has stopped checking anything")

@@ -44,6 +44,12 @@ def delivered(errors: list[str]) -> dict[str, str]:
             blocks[key] = path.read_text(encoding="utf-8").strip("\n")
         except (OSError, UnicodeDecodeError) as e:
             errors.append(f"{path.relative_to(ROOT)}: {getattr(e, 'strerror', None) or e}")
+            continue
+        # An empty file is a missing block: rendered, it deletes the contract
+        # from every SKILL.md, and the drift check then agrees with the deletion.
+        if not blocks[key].strip():
+            errors.append(f"{path.relative_to(ROOT)}: empty; a delivered block "
+                          "with nothing in it is missing")
     return blocks
 
 

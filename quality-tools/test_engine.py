@@ -14,11 +14,13 @@ import copy
 import io
 import json
 import os
+import signal
 import stat
 import subprocess
 import sys
 import tempfile
 import textwrap
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -50,6 +52,27 @@ def fake(bindir: Path, name: str, body: str, executable: bool = True) -> None:
     path = bindir / name
     path.write_text(script, encoding="utf-8")
     path.chmod(0o755 if executable else 0o644)
+
+
+def alive(pid: int) -> bool:
+    """Running, not merely unreaped: an orphan's zombie waits on whoever is pid 1."""
+    if Path("/proc/self").exists():
+        try:
+            return Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[0] != "Z"
+        except (OSError, IndexError):
+            return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    return True
+
+
+def reap(pid: int) -> None:
+    try:
+        os.kill(pid, signal.SIGKILL)
+    except (ProcessLookupError, PermissionError):
+        pass
 
 
 class Fakes(unittest.TestCase):
@@ -294,6 +317,69 @@ class Run(Fakes):
         fake(self.bin, "agy", "time.sleep(30)")
         with mock.patch.object(engine, "TIMEOUT", 1):
             self.assertIn("did not answer within", self.refused("agy"))
+
+    @unittest.skipUnless(Path("/proc/self").exists(),
+                         "descendants are read from /proc; without it only the engine is killed")
+    def test_timeout_reaches_what_the_engine_started(self):
+        # A launcher killed alone leaves its worker running, and billing.
+        pidfile = self.bin / "worker.pid"
+        fake(self.bin, "agy", f"""
+            import subprocess
+            w = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
+            open({str(pidfile)!r}, "w").write(str(w.pid))
+            time.sleep(30)
+            """)
+        with mock.patch.object(engine, "TIMEOUT", 2):
+            self.assertIn("did not answer within", self.refused("agy"))
+        pid = int(pidfile.read_text())
+        self.addCleanup(reap, pid)              # a failed assertion must not leave it running
+        for _ in range(50):
+            if not alive(pid):
+                break
+            time.sleep(0.1)
+        self.assertFalse(alive(pid), "the engine's worker outlived the timeout")
+
+    def test_interrupt_reaches_the_engine(self):
+        # subprocess.run killed its child on any exception; ^C must not orphan one.
+        pidfile = self.bin / "engine.pid"
+        fake(self.bin, "agy", f"""
+            import os
+            open({str(pidfile)!r}, "w").write(str(os.getpid()))
+            time.sleep(30)
+            """)
+        real = subprocess.Popen.communicate
+
+        def interrupted(proc, *a, **kw):
+            if kw.get("timeout") == engine.TIMEOUT:
+                for _ in range(100):
+                    if pidfile.exists() and pidfile.read_text():
+                        break
+                    time.sleep(0.05)
+                raise KeyboardInterrupt
+            return real(proc, *a, **kw)
+        with mock.patch.object(subprocess.Popen, "communicate", interrupted):
+            with self.assertRaises(KeyboardInterrupt):
+                engine.run("agy", "p", OK)
+        pid = int(pidfile.read_text())
+        self.addCleanup(reap, pid)
+        for _ in range(50):
+            if not alive(pid):
+                break
+            time.sleep(0.1)
+        self.assertFalse(alive(pid), "the engine outlived the interrupt")
+
+    def test_engine_never_reads_the_callers_stdin(self):
+        # Piped stdin is more prompt to an engine; the caller's must not reach it.
+        fake(self.bin, "codex", 'answer({"ok": sys.stdin.read() == ""})')
+        (self.bin / "schema.json").write_text(json.dumps(OK), encoding="utf-8")
+        (self.bin / "prompt.txt").write_text("p", encoding="utf-8")
+        r = subprocess.run([sys.executable, str(Path(engine.__file__)), "--running", "claude",
+                            "--prompt-file", str(self.bin / "prompt.txt"),
+                            "--schema", str(self.bin / "schema.json")],
+                           input="the caller's own input\n", capture_output=True, text=True,
+                           env={**os.environ, "PATH": str(self.bin)}, timeout=60)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(json.loads(r.stdout), {"ok": True}, r.stdout)
 
     def test_malformed_schema_is_refused_for_every_engine(self):
         fake(self.bin, "claude", 'answer({"structured_output": {"ok": True}})')
