@@ -83,8 +83,9 @@ Phases: `INTENT → SCOPE → AXES → ABSENCE → GRADE → EMIT`.
 - Never: emit a finding whose cited line you have not opened. Line numbers
   drift, and a confidently wrong citation costs more than the finding was worth
 - Never: turn a preference into a block. Style opinions are `NIT`, permanently
-- Never: dismiss as taste a comment that restates the line under it. That is the
-  code failing to say what it does, and it costs every later reader
+- Never: dismiss as taste a comment that restates its line or excuses a
+  workaround. The next agent to open the file copies it; the directive names the
+  type, test or lint rule that replaces it (`_quality/CONTRACT.md` §10)
 - Never: apply the fix and then approve it
 - Never: rubber-stamp generated code because it reads fluently
 - Never: emit with more than a third of findings in the top two bands unchecked —

@@ -142,19 +142,19 @@ Before reporting, run both halves and state both results:
 Report it in one line: `swept, 1 marker / 1 in residuals; 9 claims / 9 warranted`.
 **While either pair fails to match, the status is not `DONE`.**
 
-## 10. Comments — the code says what, a comment says why
+## 10. Comments — copied before they are read, so deleted by default
 
-A comment restating the line under it is a defect in the code, not a sentence
-missing from it. **The test is mechanical: cover the comment and read the
-code.** Nothing lost — delete it. Something lost — put it in the code, renaming
-or extracting until the comment has become the name, then delete it anyway.
+An agent imitates what surrounds the line it edits, so **one `workaround`, `hack` or
+excuse comment left in a file is learned as the house style and multiplies.** The default
+for a comment this run wrote is deletion; whatever covering it loses goes into a name.
 
-What survives is what code cannot carry: why this way and not the obvious way,
-the constraint from outside, and in this pack above all **the oracle's
-identifier** — the spec clause, ticket or recorded run an expected value came
-from. **Deleting those is the opposite failure and costs more**: a `what` is
-re-read off the code, where an unattributed expected value is a claim at no rung
-at all. A `#TODO(agent):` marker and a licence header are never trimmed by this.
+**A caveat is a mechanism, not a sentence** (`_quality/VALUES.md` §2): a type that makes
+the misuse unrepresentable, a test that fails on it, a lint rule that forbids it. When none
+can be built now, it is a residual whose `#TODO(agent):` marker names the mechanism —
+never a warning left in prose for the next reader to copy.
 
-**Nothing checks this automatically**, §9 included: it is a reading pass over
-the files this run wrote. Comments elsewhere are not this run's to strip.
+Four survive, because code cannot carry them: **the oracle's identifier** — the spec
+clause, ticket or recorded run an expected value came from; deleting it leaves a claim at
+no rung — an outside constraint no mechanism can enforce, a `#TODO(agent):` marker, and a
+licence header. Nothing checks this automatically, §9 included. An excuse comment outside
+this run's files is a finding or a debt entry, not this run's to strip.

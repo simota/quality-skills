@@ -53,6 +53,7 @@ Phases: `INTAKE → MEASURE → SCORE → SEQUENCE → EMIT`.
 | Sequencing the work | [repayment](reference/repayment.md) |
 | About to propose an order | [traps](playbooks/traps.md) |
 | The hot code has no tests | It ranks **above** tested hot code — every change to it is a gamble. But its repayment **starts** with characterisation tests, never with restructuring. Rank order and work order are different questions |
+| A workaround or excuse comment sits in code that is touched | Debt that copies itself: every agent editing nearby learns it as the pattern. Its repayment is the type, test or lint rule that enforces the caveat, then deleting the comment — never a better-worded one (`_quality/CONTRACT.md` §10) |
 | An entry is not being repaid | It carries the condition that would change that. "Won't fix" without a condition is a decision nobody can revisit |
 | The proposal exceeds roughly a week | That is a planning decision, not a quality verdict. Ask |
 | A claim here would be expensive to get wrong | [refute](refute.py) — put it to the engines that did not make it, asked to break it rather than to agree. Unrefuted is n engines finding nothing, never proof |
