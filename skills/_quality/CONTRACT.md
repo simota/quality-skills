@@ -142,7 +142,7 @@ Before reporting, run both halves and state both results:
 Report it in one line: `swept, 1 marker / 1 in residuals; 9 claims / 9 warranted`.
 **While either pair fails to match, the status is not `DONE`.**
 
-## 10. Comments — copied before they are read, so deleted by default
+## 10. Comments and documents — copied before they are read, so deleted by default
 
 An agent imitates what surrounds the line it edits, so **one `workaround`, `hack` or
 excuse comment left in a file is learned as the house style and multiplies.** The default
@@ -150,11 +150,11 @@ for a comment this run wrote is deletion; whatever covering it loses goes into a
 
 **A caveat is a mechanism, not a sentence** (`_quality/VALUES.md` §2): a type that makes
 the misuse unrepresentable, a test that fails on it, a lint rule that forbids it. When none
-can be built now, it is a residual whose `#TODO(agent):` marker names the mechanism —
-never a warning left in prose for the next reader to copy.
+can be built now, it is a residual whose `#TODO(agent):` marker names the mechanism.
 
-Four survive, because code cannot carry them: **the oracle's identifier** — the spec
-clause, ticket or recorded run an expected value came from; deleting it leaves a claim at
-no rung — an outside constraint no mechanism can enforce, a `#TODO(agent):` marker, and a
-licence header. Nothing checks this automatically, §9 included. An excuse comment outside
-this run's files is a finding or a debt entry, not this run's to strip.
+**A page about the code is an index, never a second copy**: it points — path, symbol,
+command — and a passage restating behaviour is deleted, since it is read after the code
+moved. Four survive, in a comment or a page, because code cannot carry them: **the oracle's
+identifier** — the spec clause, ticket or recorded run an expected value came from — an
+outside constraint no mechanism can enforce, a `#TODO(agent):` marker, and a licence header.
+Nothing checks this, §9 included. Outside this run's files, either is a finding or a debt entry.

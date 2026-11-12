@@ -24,4 +24,4 @@ causing wrong behaviour.
 | public API / contract change | high | breaks callers you cannot see |
 | business logic | standard | the default |
 | internal refactor with tests | light | the suite is the evidence — verify it actually covers the change |
-| docs, formatting, config comments | skim | do not manufacture findings here — a comment restating the line under it, or excusing a workaround, is the exception: the next agent copies it, so it is a finding wherever it appears |
+| docs, formatting, config comments | skim | do not manufacture findings here — a comment restating the line under it, or excusing a workaround, is the exception: the next agent copies it, so it is a finding wherever it appears. So is a page restating what the code says: deletable down to a pointer and the why |
